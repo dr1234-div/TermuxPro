@@ -24,14 +24,16 @@ jobs:
             exit 0
           fi
           today="$(date -u +%Y-%m-%d)"
+          body="$(printf '%s\n' \
+            '请由 TermuxPro 项目负责人加载项目 Skill 后完成本轮巡检：' \
+            '' \
+            '- 汇总真实用户反馈、崩溃、CI 和 Release 状态' \
+            '- 逐页面审计深浅主题、文字对比度、大字体、窄屏和触控目标' \
+            '- 回归 SSH 首连、认证、tmux 缺失/新建/恢复及 Claude/Codex 工作流' \
+            '- 运行资源守卫，评估远程共享服务器影响' \
+            '- 形成 P0/P1/P2 backlog，完成最高优先级纵向闭环并保存验收证据' \
+            '' \
+            '关闭本 Issue 前必须关联 PR、测试结果和仍未解决的下一步。')"
           gh issue create \
             --title "[迭代巡检] $today" \
-            --body "请由 TermuxPro 项目负责人加载项目 Skill 后完成本轮巡检：
-
-- 汇总真实用户反馈、崩溃、CI 和 Release 状态
-- 逐页面审计深浅主题、文字对比度、大字体、窄屏和触控目标
-- 回归 SSH 首连、认证、tmux 缺失/新建/恢复及 Claude/Codex 工作流
-- 运行资源守卫，评估远程共享服务器影响
-- 形成 P0/P1/P2 backlog，完成最高优先级纵向闭环并保存验收证据
-
-关闭本 Issue 前必须关联 PR、测试结果和仍未解决的下一步。"
+            --body "$body"
