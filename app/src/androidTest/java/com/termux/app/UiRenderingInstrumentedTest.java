@@ -53,7 +53,8 @@ public final class UiRenderingInstrumentedTest {
         capture(context, "project-tasks",
             ProjectTasksActivity.newIntent(context, "invalid", 0, "~/project"));
         capture(context, "connection-diagnostic",
-            ConnectionDiagnosticActivity.newIntent(context, "invalid", 0, "~/project"));
+            ConnectionDiagnosticActivity.newIntent(context, "invalid", 0, "~/project",
+                "ui-workspace"));
         capture(context, "task-sessions",
             TaskSessionsActivity.newIntent(context, "invalid", 0));
         capture(context, "git-diff",

@@ -28,6 +28,7 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
     private static final String EXTRA_HOST = "host";
     private static final String EXTRA_PORT = "port";
     private static final String EXTRA_PROJECT_PATH = "project_path";
+    private static final String EXTRA_WORKSPACE_ID = "workspace_id";
     private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
     private final Handler mMainHandler = new Handler(Looper.getMainLooper());
     private final RemoteCommandRunner mRunner = new RemoteCommandRunner();
@@ -35,6 +36,8 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
     private String mHost;
     private int mPort;
     private String mProjectPath;
+    private String mWorkspaceId;
+    private WorkspaceConnectionStateStore mConnectionStateStore;
     private ProgressBar mProgress;
     private TextView mStatus;
     private Button mInteractiveConnection;
@@ -42,10 +45,10 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
 
     @NonNull
     static Intent newIntent(@NonNull Context context, @NonNull String host, int port,
-                            @NonNull String projectPath) {
+                            @NonNull String projectPath, @NonNull String workspaceId) {
         return new Intent(context, ConnectionDiagnosticActivity.class)
             .putExtra(EXTRA_HOST, host).putExtra(EXTRA_PORT, port)
-            .putExtra(EXTRA_PROJECT_PATH, projectPath);
+            .putExtra(EXTRA_PROJECT_PATH, projectPath).putExtra(EXTRA_WORKSPACE_ID, workspaceId);
     }
 
     @Override
@@ -55,6 +58,8 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
         mHost = getIntent().getStringExtra(EXTRA_HOST);
         mPort = getIntent().getIntExtra(EXTRA_PORT, 22);
         mProjectPath = getIntent().getStringExtra(EXTRA_PROJECT_PATH);
+        mWorkspaceId = getIntent().getStringExtra(EXTRA_WORKSPACE_ID);
+        mConnectionStateStore = new WorkspaceConnectionStateStore(this);
         mProgress = findViewById(R.id.connection_diagnostic_progress);
         mStatus = findViewById(R.id.connection_diagnostic_status);
         mInteractiveConnection = findViewById(R.id.connection_diagnostic_interactive_button);
@@ -86,7 +91,9 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
         mProgress.setVisibility(View.GONE);
         if (result.exitCode != 0) {
             SshFailureClassifier.Reason reason = SshFailureClassifier.classify(result);
-            addStages(SshDiagnosticStages.failure(reason));
+            List<SshDiagnosticStages.Item> stages = SshDiagnosticStages.failure(reason);
+            addStages(stages);
+            saveConnectionState(stages);
             mAdapter.notifyDataSetChanged();
             mInteractiveConnection.setVisibility(
                 SshDiagnosticStages.canOpenInteractiveConnection(reason) ? View.VISIBLE : View.GONE);
@@ -96,15 +103,25 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
         List<ConnectionDiagnosticReport.Item> remoteItems =
             ConnectionDiagnosticReport.parse(result.output);
         if (remoteItems.isEmpty()) {
-            addStages(SshDiagnosticStages.invalidRemoteEnvironment());
+            List<SshDiagnosticStages.Item> stages = SshDiagnosticStages.invalidRemoteEnvironment();
+            addStages(stages);
+            saveConnectionState(stages);
             mAdapter.notifyDataSetChanged();
             mStatus.setText(R.string.connection_diagnostic_invalid);
             return;
         }
-        addStages(SshDiagnosticStages.success());
+        List<SshDiagnosticStages.Item> stages = SshDiagnosticStages.success();
+        addStages(stages);
+        saveConnectionState(stages);
         mItems.addAll(remoteItems);
         mAdapter.notifyDataSetChanged();
         mStatus.setText(R.string.connection_diagnostic_success);
+    }
+
+    private void saveConnectionState(List<SshDiagnosticStages.Item> stages) {
+        if (mWorkspaceId == null || mWorkspaceId.isEmpty()) return;
+        mConnectionStateStore.save(mWorkspaceId,
+            WorkspaceConnectionState.fromStages(stages, System.currentTimeMillis()));
     }
 
     private void addStages(List<SshDiagnosticStages.Item> stages) {

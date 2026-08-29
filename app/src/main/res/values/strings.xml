@@ -257,6 +257,11 @@
     <string name="workspace_connect_action">Connect remote workspace</string>
     <string name="workspace_connection_guidance">The first connection opens a secure interactive terminal. Verify the server fingerprint, then enter your password or key passphrase. TermuxPro never accepts fingerprints automatically or stores credentials.</string>
     <string name="workspace_connection_terminal_opened">The connection terminal is open. Verify the host fingerprint and authenticate there. The server is authenticated only after “SSH authenticated” appears.</string>
+    <string name="workspace_connection_last_opened">SSH terminal opened %1$s. Authentication has not been verified.</string>
+    <string name="workspace_connection_verified">Verified %1$s: SSH authentication and the remote environment check succeeded.</string>
+    <string name="workspace_connection_action_required">Checked %1$s: %2$s needs your action.</string>
+    <string name="workspace_connection_check_failed">Check failed %1$s at %2$s. Open diagnostics for details.</string>
+    <string name="workspace_connection_check_unknown">The %1$s check could not determine the connection state. Open diagnostics for details.</string>
     <string name="workspace_connection_diagnostic_action">Check active connection and environment</string>
     <string name="workspace_ai_quick_title">AI CLI quick start</string>
     <string name="workspace_start_claude">Claude Code</string>
