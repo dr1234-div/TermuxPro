@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -19,21 +20,37 @@ final class RemoteCommandRunner {
     static final int ERROR_INTERRUPTED = -1002;
     static final int ERROR_PROCESS = -1003;
 
+    private final File mSshExecutable;
+    private final List<String> mTrustedSshArguments;
     private volatile Process mProcess;
+
+    RemoteCommandRunner() {
+        this(new File(TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH, "ssh"),
+            Collections.emptyList());
+    }
+
+    /** 仅供受控测试注入 OpenSSH 可执行文件及固定配置参数，不接受用户输入。 */
+    RemoteCommandRunner(@NonNull File sshExecutable, @NonNull List<String> trustedSshArguments) {
+        mSshExecutable = sshExecutable;
+        mTrustedSshArguments = new ArrayList<>(trustedSshArguments);
+    }
 
     @NonNull
     Result run(@NonNull String host, int port, @NonNull String remoteCommand, int maxOutputBytes) {
-        File ssh = new File(TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH, "ssh");
-        if (!ssh.canExecute()) return new Result(ERROR_SSH_MISSING, "", false, null);
+        if (!mSshExecutable.canExecute()) return new Result(ERROR_SSH_MISSING, "", false, null);
 
         List<String> command = new ArrayList<>();
-        command.add(ssh.getAbsolutePath());
+        command.add(mSshExecutable.getAbsolutePath());
         command.add("-T");
+        command.addAll(mTrustedSshArguments);
         command.add("-o"); command.add("BatchMode=yes");
         command.add("-o"); command.add("ControlMaster=auto");
         command.add("-o"); command.add("ControlPersist=600");
         command.add("-o"); command.add("ControlPath=" + WorkspaceCommandBuilder.CONTROL_PATH);
         command.add("-o"); command.add("ConnectTimeout=8");
+        command.add("-o"); command.add("ServerAliveInterval=15");
+        command.add("-o"); command.add("ServerAliveCountMax=3");
+        command.add("-o"); command.add("TCPKeepAlive=yes");
         command.add("-p"); command.add(String.valueOf(port));
         command.add("--"); command.add(host);
         command.add(remoteCommand);
