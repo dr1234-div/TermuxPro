@@ -32,8 +32,10 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'ndk;29.0.14206865'
       - name: 检查仓库秘密边界
         run: |
-          if git ls-files | grep -E '(^|/)(\.signing/|.*\.(p12|jks|keystore|key)$|.*\.pass$)'; then
+          forbidden_files="$(git ls-files | grep -E '(^|/)(\.signing/|.*\.(p12|jks|keystore|key)$|.*\.pass$)' | grep -v '^app/testkey_untrusted\.jks$' || true)"
+          if [[ -n "$forbidden_files" ]]; then
             echo '仓库包含禁止提交的签名秘密' >&2
+            printf '%s\n' "$forbidden_files" >&2
             exit 1
           fi
       - name: 全模块测试

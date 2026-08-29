@@ -17,6 +17,9 @@
 公告轮换并评估 Android 签名迁移方案。GitHub Actions 只可通过受保护 Environment Secrets 临时恢复
 私钥，PR 和 Fork 工作流不得接触签名秘密。
 
+上游随源码公开的 `app/testkey_untrusted.jks` 仅用于 Debug 兼容测试，任何人都能获得，绝不能用于
+TermuxPro Release。CI 对它设置唯一白名单，其他密钥或密码文件一律拒绝。
+
 ## 为独立开发环境生成测试用 Release 密钥
 
 下面生成的是该开发者自己的密钥，不能发布为官方 TermuxPro 升级包：
