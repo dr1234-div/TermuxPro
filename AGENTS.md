@@ -10,5 +10,7 @@
 业务分支名统一为 `dev_<englishCamelCase>_<YYYYMMDD>`，紧急修复分支名为
 `hotfix_<englishCamelCase>_<YYYYMMDD>` 或使用关联 bug ID。业务部分只使用英语小驼峰，不使用中文。
 
-首次 `dev → master` 发布合并前，两者根历史不同；功能分支只需同步 `origin/dev`，不得对 `master`
-执行 rebase。首次发布合并完成后，再恢复同时同步稳定分支和研发分支的常规流程。
+每次维护从同步 `origin/master` 和 `origin/dev` 开始。普通变更经功能分支 PR 合入 `dev`；候选标签
+`vX.Y.Z-rc.N` 完成真机回归后，经 `dev → master` 发布 PR 合并，最后在 `master` 创建稳定标签
+`vX.Y.Z`。稳定 Release 成功后将 `dev` 快进到 `master` 并确认收尾 CI 通过。Actions Artifact 只是
+临时构建产物，不能替代 GitHub Release；不得移动或覆盖已发布标签。
