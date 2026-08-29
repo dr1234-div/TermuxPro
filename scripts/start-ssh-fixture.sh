@@ -18,8 +18,16 @@ fixture_dir="$RUNNER_TEMP/termuxpro-ssh-fixture"
 install -d -m 700 "$fixture_dir"
 ssh-keygen -q -t ed25519 -N '' -f "$fixture_dir/client_key"
 ssh-keygen -q -t ed25519 -N '' -f "$fixture_dir/host_key"
-cp "$fixture_dir/client_key.pub" "$fixture_dir/authorized_keys"
-chmod 600 "$fixture_dir/client_key" "$fixture_dir/authorized_keys"
+chmod 600 "$fixture_dir/client_key"
+
+fixture_user='termuxproci'
+sudo useradd --user-group --create-home --shell /bin/bash "$fixture_user"
+# Ubuntu sshd 会拒绝 shadow 中处于锁定状态的账号，即使只启用公钥；删除密码只解除锁定，
+# PasswordAuthentication 仍在 fixture 配置中禁用。
+sudo passwd -d "$fixture_user" >/dev/null
+sudo install -d -m 700 -o "$fixture_user" -g "$fixture_user" "/home/$fixture_user/.ssh"
+sudo install -m 600 -o "$fixture_user" -g "$fixture_user" \
+    "$fixture_dir/client_key.pub" "/home/$fixture_user/.ssh/authorized_keys"
 
 port=''
 for candidate in $(seq 32222 32242); do
@@ -38,14 +46,14 @@ Port $port
 ListenAddress 127.0.0.1
 HostKey $fixture_dir/host_key
 PidFile $fixture_dir/sshd.pid
-AuthorizedKeysFile $fixture_dir/authorized_keys
-StrictModes no
+AuthorizedKeysFile .ssh/authorized_keys
+StrictModes yes
 PasswordAuthentication no
 KbdInteractiveAuthentication no
 ChallengeResponseAuthentication no
 UsePAM no
 PermitRootLogin no
-AllowUsers $USER
+AllowUsers $fixture_user
 PrintMotd no
 LogLevel VERBOSE
 EOF
@@ -66,8 +74,13 @@ for attempt in $(seq 1 40); do
 done
 
 ssh-keyscan -p "$port" 127.0.0.1 > "$fixture_dir/known_hosts" 2>/dev/null
+ssh -T -p "$port" \
+    -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+    -o "IdentityFile=$fixture_dir/client_key" \
+    -o "UserKnownHostsFile=$fixture_dir/known_hosts" \
+    "$fixture_user@127.0.0.1" "printf fixture-ready" | grep -qx 'fixture-ready'
 {
-    echo "TERMUXPRO_SSH_FIXTURE_TARGET=$USER@127.0.0.1"
+    echo "TERMUXPRO_SSH_FIXTURE_TARGET=$fixture_user@127.0.0.1"
     echo "TERMUXPRO_SSH_FIXTURE_PORT=$port"
     echo "TERMUXPRO_SSH_FIXTURE_CLIENT=$(command -v ssh)"
     echo "TERMUXPRO_SSH_FIXTURE_IDENTITY=$fixture_dir/client_key"
