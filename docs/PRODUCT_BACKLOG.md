@@ -11,7 +11,7 @@
 | 进行中 | SSH/tmux 连接策略与会话隔离 | 已实现仅连接、只列出、进入指定、创建/进入指定四种工作区策略，并提供当前远端用户全部 tmux 会话的显式列表；归属未知会话只允许进入，禁止停止；待 Actions 模拟器与真实 SSH fixture 回归 |
 | 进行中 | Claude Code 共享账号隔离 | 首页与终端快捷入口均默认新建；历史会话必须进入 Claude/Codex 原生选择器后由用户显式选择，待远端 fixture 与真机复验 |
 | 待办 | 重建真机验收证据 | 每个 Pass 绑定机型、系统、APK SHA、步骤、截图或脱敏日志 |
-| 待办 | 发布版本单一来源 | 标签、versionName/versionCode、产物目录和 Release Notes 动态一致 |
+| 进行中 | 发布版本单一来源 | 已增加 `termuxpro-version.properties`，Gradle、构建脚本、产物目录和 Release 工作流动态读取，并强制标签匹配；待 CI 与下一候选标签实证 |
 | 进行中 | 远程 AI 会话中心 | tmux 全量查看、显式进入和 TermuxPro 自有会话停止已实现；Codex/Claude 已支持新建与历史选择，待补历史元数据展示和安全管理能力 |
 
 ## P1
