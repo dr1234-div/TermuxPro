@@ -82,7 +82,7 @@ jobs:
           mkdir -p test-artifacts/emulator-ui/default
           adb pull /sdcard/Pictures/termuxpro-ui-screenshots/. \
             test-artifacts/emulator-ui/default/
-          test "$(find test-artifacts/emulator-ui/default -name '*-default.png' | wc -l)" -eq 6
+          test "$(find test-artifacts/emulator-ui/default -name '*-default.png' | wc -l)" -eq 7
           adb shell rm -f /sdcard/Pictures/termuxpro-ui-screenshots/'*.png'
       - name: 200% 字体页面截图
         run: |
@@ -93,7 +93,7 @@ jobs:
           mkdir -p test-artifacts/emulator-ui/font200
           adb pull /sdcard/Pictures/termuxpro-ui-screenshots/. \
             test-artifacts/emulator-ui/font200/
-          test "$(find test-artifacts/emulator-ui/font200 -name '*-font200.png' | wc -l)" -eq 6
+          test "$(find test-artifacts/emulator-ui/font200 -name '*-font200.png' | wc -l)" -eq 7
       - name: 收集截图与 UI 层级
         if: always()
         run: |

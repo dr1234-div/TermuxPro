@@ -44,6 +44,8 @@ public final class UiRenderingInstrumentedTest {
             scroll.offsetDescendantRectToMyCoords(policy, bounds);
             scroll.scrollTo(0, Math.max(0, bounds.top - 120));
         });
+        capture(context, "workspace-connection-guidance", new Intent(context, WorkspaceActivity.class),
+            activity -> scrollTo(activity, com.termux.R.id.workspace_connection_feedback));
         capture(context, "remote-files",
             RemoteFilesActivity.newIntent(context, "invalid", 0, "~/project"));
         capture(context, "project-tasks",
@@ -52,6 +54,15 @@ public final class UiRenderingInstrumentedTest {
             ConnectionDiagnosticActivity.newIntent(context, "invalid", 0, "~/project"));
         capture(context, "task-sessions",
             TaskSessionsActivity.newIntent(context, "invalid", 0));
+    }
+
+    private void scrollTo(Activity activity, int viewId) {
+        View target = activity.findViewById(viewId);
+        ScrollView scroll = activity.findViewById(com.termux.R.id.workspace_scroll_view);
+        Rect bounds = new Rect();
+        target.getDrawingRect(bounds);
+        scroll.offsetDescendantRectToMyCoords(target, bounds);
+        scroll.scrollTo(0, Math.max(0, bounds.top - 80));
     }
 
     private void capture(Context context, String name, Intent intent) throws Exception {

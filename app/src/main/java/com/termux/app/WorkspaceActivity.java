@@ -15,6 +15,7 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -99,6 +100,8 @@ public final class WorkspaceActivity extends AppCompatActivity {
         restoreWorkspaces();
 
         findViewById(R.id.workspace_connect_button).setOnClickListener(view -> launchRemote(null));
+        findViewById(R.id.workspace_connection_diagnostic_primary).setOnClickListener(
+            view -> openConnectionDiagnostic());
         findViewById(R.id.workspace_claude_button).setOnClickListener(view -> launchRemote("claude"));
         findViewById(R.id.workspace_codex_button).setOnClickListener(view -> launchRemote("codex"));
         findViewById(R.id.workspace_local_terminal_button).setOnClickListener(view -> {
@@ -372,6 +375,10 @@ public final class WorkspaceActivity extends AppCompatActivity {
         mNameInput.setText(normalizedWorkspaceName());
         mPortInput.setText(String.valueOf(port));
         saveCurrentWorkspace();
+
+        TextView connectionStatus = findViewById(R.id.workspace_connection_feedback);
+        connectionStatus.setText(R.string.workspace_connection_terminal_opened);
+        connectionStatus.setContentDescription(getString(R.string.workspace_connection_terminal_opened));
 
         persistExtraKeysPreset(cli == null ? TermuxTerminalExtraKeys.PRESET_SHELL :
             TermuxTerminalExtraKeys.PRESET_AI);
