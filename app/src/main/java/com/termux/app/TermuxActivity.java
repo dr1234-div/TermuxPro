@@ -68,6 +68,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.core.content.ContextCompat;
 import androidx.viewpager.widget.ViewPager;
 
 import java.util.Arrays;
@@ -695,7 +696,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             .setNegativeButton(android.R.string.cancel, null)
             .create();
         dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-            .setTextColor(getColor(R.color.tp_primary)));
+            .setTextColor(ContextCompat.getColor(this, R.color.tp_primary)));
         dialog.show();
     }
 

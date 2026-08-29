@@ -18,6 +18,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.termux.R;
 import com.termux.app.terminal.io.TermuxTerminalExtraKeys;
@@ -403,7 +404,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
             .setNegativeButton(android.R.string.cancel, null)
             .create();
         dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-            .setTextColor(getColor(R.color.tp_primary)));
+            .setTextColor(ContextCompat.getColor(this, R.color.tp_primary)));
         dialog.show();
     }
 
