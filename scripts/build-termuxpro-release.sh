@@ -43,19 +43,23 @@ if [[ "$badging" != *"package: name='com.termux' versionCode='10000' versionName
     echo "APK 包名或版本不符合 0.1.0 发布约束。" >&2
     exit 4
 fi
+if [[ "$badging" != *"application-label:'TermuxPro'"* ]]; then
+    echo "APK 应用名称不是 TermuxPro。" >&2
+    exit 5
+fi
 if [[ "$badging" != *"launchable-activity: name='com.termux.app.WorkspaceActivity'"* ]]; then
     echo "APK 启动页不是 WorkspaceActivity。" >&2
-    exit 5
+    exit 6
 fi
 if [[ "$badging" != *"native-code: 'arm64-v8a'"* ]]; then
     echo "APK 不是纯 ARM64 产物。" >&2
-    exit 6
+    exit 7
 fi
 if [[ "$signature" != *"Verified using v1 scheme (JAR signing): true"* ||
       "$signature" != *"Verified using v2 scheme (APK Signature Scheme v2): true"* ||
       "$signature" != *"Signer #1 certificate SHA-256 digest: $expected_certificate"* ]]; then
     echo "APK 签名方案或证书指纹不符合发布约束。" >&2
-    exit 7
+    exit 8
 fi
 
 dist_dir="$project_dir/dist/0.1.0"
