@@ -1,0 +1,537 @@
+package com.termux.app;
+
+import android.Manifest;
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.Spinner;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.termux.R;
+import com.termux.app.terminal.io.TermuxTerminalExtraKeys;
+import com.termux.shared.termux.TermuxConstants;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * 面向移动开发场景的工作区首页。
+ *
+ * 这里只保存主机、端口和项目路径等非敏感元数据。密码、私钥和 known_hosts 继续交给
+ * Termux 内的 OpenSSH 管理，避免在产品外壳中复制一套不完整的凭据系统。
+ */
+public final class WorkspaceActivity extends AppCompatActivity {
+
+    private static final int REQUEST_NOTIFICATIONS = 1001;
+
+    private static final String PREFERENCES_NAME = "ai_terminal_workspace";
+    private static final String KEY_NAME = "name";
+    private static final String KEY_HOST = "host";
+    private static final String KEY_PORT = "port";
+    private static final String KEY_PATH = "path";
+    private static final String KEY_PROFILES = "profiles_v2";
+    private static final String KEY_ACTIVE_PROFILE = "active_profile";
+
+    private EditText mNameInput;
+    private EditText mHostInput;
+    private EditText mPortInput;
+    private EditText mPathInput;
+    private EditText mRemotePortInput;
+    private EditText mLocalPortInput;
+    private Spinner mWorkspaceSelector;
+    private final List<WorkspaceProfile> mProfiles = new ArrayList<>();
+    private String mActiveProfileId;
+    private boolean mUpdatingSelector;
+
+    private static final String INSTALL_SSH_COMMAND = "pkg update -y && pkg install -y openssh";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_workspace);
+        requestNotificationPermissionIfNeeded();
+
+        mNameInput = findViewById(R.id.workspace_name_input);
+        mHostInput = findViewById(R.id.workspace_host_input);
+        mPortInput = findViewById(R.id.workspace_port_input);
+        mPathInput = findViewById(R.id.workspace_path_input);
+        mRemotePortInput = findViewById(R.id.workspace_remote_port_input);
+        mLocalPortInput = findViewById(R.id.workspace_local_port_input);
+        mWorkspaceSelector = findViewById(R.id.workspace_selector);
+
+        restoreWorkspaces();
+
+        findViewById(R.id.workspace_connect_button).setOnClickListener(view -> launchRemote(null));
+        findViewById(R.id.workspace_claude_button).setOnClickListener(view -> launchRemote("claude"));
+        findViewById(R.id.workspace_codex_button).setOnClickListener(view -> launchRemote("codex"));
+        findViewById(R.id.workspace_local_terminal_button).setOnClickListener(view -> {
+            persistExtraKeysPreset(TermuxTerminalExtraKeys.PRESET_SHELL);
+            openTerminal(null);
+        });
+        findViewById(R.id.workspace_setup_button).setOnClickListener(view -> installSshClient());
+        findViewById(R.id.workspace_new_button).setOnClickListener(view -> createWorkspace());
+        findViewById(R.id.workspace_save_button).setOnClickListener(view -> saveCurrentWorkspace());
+        findViewById(R.id.workspace_delete_button).setOnClickListener(view -> confirmDeleteWorkspace());
+        findViewById(R.id.workspace_start_preview_button).setOnClickListener(view -> startPreviewTunnel());
+        findViewById(R.id.workspace_open_preview_button).setOnClickListener(view -> openPreviewInBrowser());
+        findViewById(R.id.workspace_review_diff_button).setOnClickListener(view -> openGitDiffReview());
+        findViewById(R.id.workspace_remote_files_button).setOnClickListener(view -> openRemoteFiles());
+        findViewById(R.id.workspace_project_tasks_button).setOnClickListener(view -> openProjectTasks());
+        findViewById(R.id.workspace_diagnostic_button).setOnClickListener(view -> openConnectionDiagnostic());
+        findViewById(R.id.workspace_ssh_keys_button).setOnClickListener(view -> openSshKeys());
+        findViewById(R.id.workspace_task_sessions_button).setOnClickListener(view -> openTaskSessions());
+
+        mWorkspaceSelector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (mUpdatingSelector || position < 0 || position >= mProfiles.size()) return;
+                mActiveProfileId = mProfiles.get(position).id;
+                bindProfile(mProfiles.get(position));
+                persistProfiles();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+    }
+
+    private void requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQUEST_NOTIFICATIONS);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshSetupState();
+    }
+
+    private boolean isSshClientInstalled() {
+        return new File(TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH, "ssh").canExecute();
+    }
+
+    private void refreshSetupState() {
+        boolean ready = isSshClientInstalled();
+        findViewById(R.id.workspace_setup_button).setEnabled(!ready);
+        ((android.widget.Button) findViewById(R.id.workspace_setup_button)).setText(
+            ready ? R.string.workspace_setup_ready : R.string.workspace_setup_action);
+    }
+
+    private void installSshClient() {
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.workspace_setup_title)
+            .setMessage(R.string.workspace_setup_description)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.workspace_setup_action,
+                (dialog, which) -> openTerminal(INSTALL_SSH_COMMAND))
+            .show();
+    }
+
+    private void restoreWorkspaces() {
+        SharedPreferences preferences = getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE);
+        String serialized = preferences.getString(KEY_PROFILES, null);
+        if (serialized != null) {
+            try {
+                JSONArray profiles = new JSONArray(serialized);
+                for (int index = 0; index < profiles.length(); index++) {
+                    JSONObject item = profiles.getJSONObject(index);
+                    mProfiles.add(new WorkspaceProfile(
+                        item.optString("id", UUID.randomUUID().toString()),
+                        item.optString("name", getString(R.string.workspace_default_name)),
+                        item.optString("host", ""), item.optString("port", "22"),
+                        item.optString("path", "~/"), item.optString("remotePort", "5173"),
+                        item.optString("localPort", "5173")));
+                }
+            } catch (JSONException ignored) {
+                // 配置损坏时保留应用可用性，下面会创建默认工作区。
+            }
+        }
+
+        if (mProfiles.isEmpty()) {
+            mProfiles.add(new WorkspaceProfile(UUID.randomUUID().toString(),
+                preferences.getString(KEY_NAME, getString(R.string.workspace_default_name)),
+                preferences.getString(KEY_HOST, ""), preferences.getString(KEY_PORT, "22"),
+                preferences.getString(KEY_PATH, "~/"), "5173", "5173"));
+        }
+        mActiveProfileId = preferences.getString(KEY_ACTIVE_PROFILE, mProfiles.get(0).id);
+        refreshWorkspaceSelector();
+    }
+
+    private void refreshWorkspaceSelector() {
+        mUpdatingSelector = true;
+        ArrayAdapter<WorkspaceProfile> adapter = new ArrayAdapter<>(this,
+            R.layout.item_workspace_spinner, mProfiles);
+        adapter.setDropDownViewResource(R.layout.item_workspace_spinner_dropdown);
+        mWorkspaceSelector.setAdapter(adapter);
+        int selected = findActiveProfileIndex();
+        mWorkspaceSelector.setSelection(selected, false);
+        bindProfile(mProfiles.get(selected));
+        mUpdatingSelector = false;
+    }
+
+    private int findActiveProfileIndex() {
+        for (int index = 0; index < mProfiles.size(); index++) {
+            if (mProfiles.get(index).id.equals(mActiveProfileId)) return index;
+        }
+        mActiveProfileId = mProfiles.get(0).id;
+        return 0;
+    }
+
+    private void bindProfile(WorkspaceProfile profile) {
+        mNameInput.setText(profile.name);
+        mHostInput.setText(profile.host);
+        mPortInput.setText(profile.port);
+        mPathInput.setText(profile.path);
+        mRemotePortInput.setText(profile.remotePort);
+        mLocalPortInput.setText(profile.localPort);
+    }
+
+    private void createWorkspace() {
+        WorkspaceProfile profile = new WorkspaceProfile(UUID.randomUUID().toString(),
+            getString(R.string.workspace_default_name), "", "22", "~/", "5173", "5173");
+        mProfiles.add(profile);
+        mActiveProfileId = profile.id;
+        persistProfiles();
+        refreshWorkspaceSelector();
+        mHostInput.requestFocus();
+    }
+
+    private void saveCurrentWorkspace() {
+        WorkspaceProfile profile = mProfiles.get(findActiveProfileIndex());
+        profile.name = normalizedWorkspaceName();
+        profile.host = mHostInput.getText().toString().trim();
+        profile.port = mPortInput.getText().toString().trim();
+        profile.path = mPathInput.getText().toString().trim();
+        profile.remotePort = mRemotePortInput.getText().toString().trim();
+        profile.localPort = mLocalPortInput.getText().toString().trim();
+        persistProfiles();
+        refreshWorkspaceSelector();
+    }
+
+    private String normalizedWorkspaceName() {
+        String name = mNameInput.getText().toString().trim();
+        return TextUtils.isEmpty(name) ? getString(R.string.workspace_default_name) : name;
+    }
+
+    private void confirmDeleteWorkspace() {
+        WorkspaceProfile profile = mProfiles.get(findActiveProfileIndex());
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.workspace_delete_title)
+            .setMessage(getString(R.string.workspace_delete_message, profile.name))
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.workspace_delete_action, (dialog, which) -> {
+                mProfiles.remove(profile);
+                if (mProfiles.isEmpty()) {
+                    mProfiles.add(new WorkspaceProfile(UUID.randomUUID().toString(),
+                        getString(R.string.workspace_default_name), "", "22", "~/", "5173", "5173"));
+                }
+                mActiveProfileId = mProfiles.get(0).id;
+                persistProfiles();
+                refreshWorkspaceSelector();
+            })
+            .show();
+    }
+
+    private void persistProfiles() {
+        JSONArray profiles = new JSONArray();
+        for (WorkspaceProfile profile : mProfiles) {
+            JSONObject item = new JSONObject();
+            try {
+                item.put("id", profile.id);
+                item.put("name", profile.name);
+                item.put("host", profile.host);
+                item.put("port", profile.port);
+                item.put("path", profile.path);
+                item.put("remotePort", profile.remotePort);
+                item.put("localPort", profile.localPort);
+                profiles.put(item);
+            } catch (JSONException ignored) {
+                // String 字段不会触发 JSON 编码失败。
+            }
+        }
+        getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE).edit()
+            .putString(KEY_PROFILES, profiles.toString())
+            .putString(KEY_ACTIVE_PROFILE, mActiveProfileId)
+            .apply();
+    }
+
+    private void launchRemote(String cli) {
+        if (!isSshClientInstalled()) {
+            installSshClient();
+            return;
+        }
+        String host = mHostInput.getText().toString().trim();
+        String portText = mPortInput.getText().toString().trim();
+        String path = mPathInput.getText().toString().trim();
+
+        if (!SshTargetValidator.isValid(host)) {
+            mHostInput.setError(getString(R.string.workspace_error_host));
+            return;
+        }
+
+        int port;
+        try {
+            port = TextUtils.isEmpty(portText) ? 22 : Integer.parseInt(portText);
+        } catch (NumberFormatException exception) {
+            port = -1;
+        }
+        if (port < 1 || port > 65535) {
+            mPortInput.setError(getString(R.string.workspace_error_port));
+            return;
+        }
+        if (TextUtils.isEmpty(path)) {
+            mPathInput.setError(getString(R.string.workspace_error_path));
+            return;
+        }
+
+        mNameInput.setText(normalizedWorkspaceName());
+        mPortInput.setText(String.valueOf(port));
+        saveCurrentWorkspace();
+
+        persistExtraKeysPreset(cli == null ? TermuxTerminalExtraKeys.PRESET_SHELL :
+            TermuxTerminalExtraKeys.PRESET_AI);
+        // 远程连接必须进入独立本地终端会话，避免命令被写入正在运行任务的旧 Shell。
+        openTerminal(WorkspaceCommandBuilder.buildSshCommand(host, port, path, cli), true);
+    }
+
+    private void persistExtraKeysPreset(String preset) {
+        getSharedPreferences("ai_terminal_ui", MODE_PRIVATE).edit()
+            .putString("extra_keys_preset", preset).apply();
+    }
+
+    private void startPreviewTunnel() {
+        if (!isSshClientInstalled()) {
+            installSshClient();
+            return;
+        }
+        String host = mHostInput.getText().toString().trim();
+        if (!SshTargetValidator.isValid(host)) {
+            mHostInput.setError(getString(R.string.workspace_error_host));
+            return;
+        }
+        int sshPort = parsePort(mPortInput.getText().toString(), 22);
+        int remotePort = parsePort(mRemotePortInput.getText().toString(), -1);
+        int localPort = parsePort(mLocalPortInput.getText().toString(), -1);
+        if (sshPort < 1) {
+            mPortInput.setError(getString(R.string.workspace_error_port));
+            return;
+        }
+        if (remotePort < 1) {
+            mRemotePortInput.setError(getString(R.string.workspace_error_preview_port));
+            return;
+        }
+        if (localPort < 1) {
+            mLocalPortInput.setError(getString(R.string.workspace_error_preview_port));
+            return;
+        }
+        saveCurrentWorkspace();
+        openTerminal(WorkspaceCommandBuilder.buildPortForwardCommand(host, sshPort, localPort, remotePort), true);
+    }
+
+    private void openGitDiffReview() {
+        if (!isSshClientInstalled()) {
+            installSshClient();
+            return;
+        }
+        String host = mHostInput.getText().toString().trim();
+        String path = mPathInput.getText().toString().trim();
+        int sshPort = parsePort(mPortInput.getText().toString(), 22);
+        if (!SshTargetValidator.isValid(host)) {
+            mHostInput.setError(getString(R.string.workspace_error_host));
+            return;
+        }
+        if (TextUtils.isEmpty(path)) {
+            mPathInput.setError(getString(R.string.workspace_error_path));
+            return;
+        }
+        if (sshPort < 1) {
+            mPortInput.setError(getString(R.string.workspace_error_port));
+            return;
+        }
+        saveCurrentWorkspace();
+        startActivity(GitDiffActivity.newIntent(this, host, sshPort, path));
+    }
+
+    private void openRemoteFiles() {
+        if (!isSshClientInstalled()) {
+            installSshClient();
+            return;
+        }
+        String host = mHostInput.getText().toString().trim();
+        String path = mPathInput.getText().toString().trim();
+        int sshPort = parsePort(mPortInput.getText().toString(), 22);
+        if (!SshTargetValidator.isValid(host)) {
+            mHostInput.setError(getString(R.string.workspace_error_host));
+            return;
+        }
+        if (TextUtils.isEmpty(path)) {
+            mPathInput.setError(getString(R.string.workspace_error_path));
+            return;
+        }
+        if (sshPort < 1) {
+            mPortInput.setError(getString(R.string.workspace_error_port));
+            return;
+        }
+        saveCurrentWorkspace();
+        startActivity(RemoteFilesActivity.newIntent(this, host, sshPort, path));
+    }
+
+    private void openProjectTasks() {
+        if (!isSshClientInstalled()) {
+            installSshClient();
+            return;
+        }
+        String host = mHostInput.getText().toString().trim();
+        String path = mPathInput.getText().toString().trim();
+        int sshPort = parsePort(mPortInput.getText().toString(), 22);
+        if (!SshTargetValidator.isValid(host)) {
+            mHostInput.setError(getString(R.string.workspace_error_host));
+            return;
+        }
+        if (TextUtils.isEmpty(path)) {
+            mPathInput.setError(getString(R.string.workspace_error_path));
+            return;
+        }
+        if (sshPort < 1) {
+            mPortInput.setError(getString(R.string.workspace_error_port));
+            return;
+        }
+        saveCurrentWorkspace();
+        startActivity(ProjectTasksActivity.newIntent(this, host, sshPort, path));
+    }
+
+    private void openConnectionDiagnostic() {
+        if (!isSshClientInstalled()) {
+            installSshClient();
+            return;
+        }
+        String host = mHostInput.getText().toString().trim();
+        String path = mPathInput.getText().toString().trim();
+        int sshPort = parsePort(mPortInput.getText().toString(), 22);
+        if (!SshTargetValidator.isValid(host)) {
+            mHostInput.setError(getString(R.string.workspace_error_host));
+            return;
+        }
+        if (TextUtils.isEmpty(path)) {
+            mPathInput.setError(getString(R.string.workspace_error_path));
+            return;
+        }
+        if (sshPort < 1) {
+            mPortInput.setError(getString(R.string.workspace_error_port));
+            return;
+        }
+        saveCurrentWorkspace();
+        startActivity(ConnectionDiagnosticActivity.newIntent(this, host, sshPort, path));
+    }
+
+    private void openSshKeys() {
+        if (!isSshClientInstalled()) {
+            installSshClient();
+            return;
+        }
+        String host = mHostInput.getText().toString().trim();
+        int sshPort = parsePort(mPortInput.getText().toString(), 22);
+        if (!SshTargetValidator.isValid(host)) {
+            mHostInput.setError(getString(R.string.workspace_error_host));
+            return;
+        }
+        if (sshPort < 1) {
+            mPortInput.setError(getString(R.string.workspace_error_port));
+            return;
+        }
+        saveCurrentWorkspace();
+        startActivity(SshKeysActivity.newIntent(this, host, sshPort));
+    }
+
+    private void openTaskSessions() {
+        if (!isSshClientInstalled()) {
+            installSshClient();
+            return;
+        }
+        String host = mHostInput.getText().toString().trim();
+        int sshPort = parsePort(mPortInput.getText().toString(), 22);
+        if (!SshTargetValidator.isValid(host)) {
+            mHostInput.setError(getString(R.string.workspace_error_host));
+            return;
+        }
+        if (sshPort < 1) {
+            mPortInput.setError(getString(R.string.workspace_error_port));
+            return;
+        }
+        startActivity(TaskSessionsActivity.newIntent(this, host, sshPort));
+    }
+
+    private int parsePort(String value, int defaultValue) {
+        try {
+            int port = TextUtils.isEmpty(value.trim()) ? defaultValue : Integer.parseInt(value.trim());
+            return port >= 1 && port <= 65535 ? port : -1;
+        } catch (NumberFormatException exception) {
+            return -1;
+        }
+    }
+
+    private void openPreviewInBrowser() {
+        int localPort = parsePort(mLocalPortInput.getText().toString(), -1);
+        if (localPort < 1) {
+            mLocalPortInput.setError(getString(R.string.workspace_error_preview_port));
+            return;
+        }
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://127.0.0.1:" + localPort)));
+    }
+
+    private void openTerminal(String startupCommand) {
+        openTerminal(startupCommand, false);
+    }
+
+    private void openTerminal(String startupCommand, boolean newSession) {
+        Intent intent = new Intent(this, TermuxActivity.class);
+        if (startupCommand != null) intent.putExtra(TermuxActivity.EXTRA_STARTUP_COMMAND, startupCommand);
+        if (newSession) intent.putExtra(TermuxActivity.EXTRA_NEW_SESSION, true);
+        startActivity(intent);
+    }
+
+    private static final class WorkspaceProfile {
+        final String id;
+        String name;
+        String host;
+        String port;
+        String path;
+        String remotePort;
+        String localPort;
+
+        WorkspaceProfile(String id, String name, String host, String port, String path,
+                         String remotePort, String localPort) {
+            this.id = id;
+            this.name = name;
+            this.host = host;
+            this.port = port;
+            this.path = path;
+            this.remotePort = remotePort;
+            this.localPort = localPort;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+
+}

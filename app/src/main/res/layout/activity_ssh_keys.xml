@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#08131C"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#111E2A"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="10dp">
+        <ImageButton
+            android:id="@+id/ssh_keys_back_button"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/git_diff_back"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="#AFC1CF" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingHorizontal="8dp"
+            android:text="@string/ssh_keys_title"
+            android:textColor="#F5F8FA"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:text="@string/ssh_keys_description"
+        android:textColor="#AFC1CF"
+        android:textSize="14sp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_weight="1"
+        android:background="#111E2A"
+        android:padding="14dp">
+        <TextView
+            android:id="@+id/ssh_keys_public_key"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#D8E4EC"
+            android:textIsSelectable="true"
+            android:textSize="12sp"
+            android:typeface="monospace" />
+    </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/ssh_keys_generate_button"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="@string/ssh_keys_generate_action"
+            android:textAllCaps="false"
+            android:textColor="#062118"
+            android:backgroundTint="#68E0B7" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/ssh_keys_copy_button"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:text="@string/ssh_keys_copy_action"
+                android:textAllCaps="false"
+                android:textColor="#D8E4EC"
+                android:backgroundTint="#24394A" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/ssh_keys_install_button"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="@string/ssh_keys_install_action"
+                android:textAllCaps="false"
+                android:textColor="#D8E4EC"
+                android:backgroundTint="#24394A" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

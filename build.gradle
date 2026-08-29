@@ -1,0 +1,30 @@
+buildscript {
+    repositories {
+        if (System.getenv("TERMUXPRO_USE_CHINA_MIRROR") == "1") {
+            maven { url "https://mirrors.cloud.tencent.com/nexus/repository/maven-public/" }
+        }
+        google()
+        mavenCentral()
+        // 中国网络环境的回退代理；依赖版本仍由工程锁定。
+        if (System.getenv("TERMUXPRO_USE_CHINA_MIRROR") != "1") {
+            maven { url "https://mirrors.cloud.tencent.com/nexus/repository/maven-public/" }
+        }
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:8.13.2"
+    }
+}
+
+allprojects {
+    repositories {
+        if (System.getenv("TERMUXPRO_USE_CHINA_MIRROR") == "1") {
+            maven { url "https://mirrors.cloud.tencent.com/nexus/repository/maven-public/" }
+        }
+        google()
+        mavenCentral()
+        if (System.getenv("TERMUXPRO_USE_CHINA_MIRROR") != "1") {
+            maven { url "https://mirrors.cloud.tencent.com/nexus/repository/maven-public/" }
+        }
+        maven { url "https://jitpack.io" }
+    }
+}
