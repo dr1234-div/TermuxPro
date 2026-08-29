@@ -46,6 +46,8 @@ public final class UiRenderingInstrumentedTest {
         });
         capture(context, "workspace-connection-guidance", new Intent(context, WorkspaceActivity.class),
             activity -> scrollTo(activity, com.termux.R.id.workspace_connection_feedback));
+        capture(context, "ai-session-choice", new Intent(context, WorkspaceActivity.class),
+            activity -> activity.findViewById(com.termux.R.id.workspace_claude_button).performClick());
         capture(context, "remote-files",
             RemoteFilesActivity.newIntent(context, "invalid", 0, "~/project"));
         capture(context, "project-tasks",

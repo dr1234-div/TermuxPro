@@ -143,6 +143,9 @@
     <string name="workspace_ai_quick_title">AI CLI 快速启动</string>
     <string name="workspace_start_claude">Claude Code</string>
     <string name="workspace_start_codex">Codex CLI</string>
+    <string name="ai_session_launch_title">启动 %1$s</string>
+    <string name="ai_session_new_action">新建会话（安全默认）</string>
+    <string name="ai_session_pick_history_action">选择历史会话</string>
     <string name="workspace_open_local_terminal">打开本地终端</string>
     <string name="workspace_security_tip">首次连接需确认服务器指纹并输入密码或配置 SSH 密钥；TermuxPro 不会自动进入未指定的 tmux 或 AI 历史会话。</string>
     <string name="workspace_error_host">请输入有效的 SSH 别名、主机或“用户名@主机”。</string>
