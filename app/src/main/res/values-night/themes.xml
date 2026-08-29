@@ -37,4 +37,20 @@
         <item name="extraKeysButtonActiveBackgroundColor">@color/grey_500</item>
     </style>
 
+    <!-- 夜间资源显式继承同名产品主题，避免厂商深色模式覆盖可视化页面文字色。 -->
+    <style name="Theme.TermuxPro.DayNight.NoActionBar" parent="Theme.TermuxApp.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/tp_surface</item>
+        <item name="colorPrimaryVariant">@color/tp_background</item>
+        <item name="colorOnPrimary">@color/tp_text_primary</item>
+        <item name="colorSecondary">@color/tp_primary</item>
+        <item name="colorOnSecondary">@color/tp_on_primary</item>
+        <item name="android:windowBackground">@color/tp_background</item>
+        <item name="android:navigationBarColor">@color/tp_background</item>
+        <item name="android:statusBarColor">@color/tp_surface</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:textColorPrimary">@color/tp_text_primary</item>
+        <item name="android:textColorSecondary">@color/tp_text_secondary</item>
+    </style>
+
 </resources>
