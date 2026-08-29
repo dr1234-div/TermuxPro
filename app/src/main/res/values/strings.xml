@@ -381,7 +381,7 @@
     <string name="ssh_keys_install_message">Open an interactive terminal to install the public key on %1$s?\n\n%2$s</string>
     <string name="ssh_keys_clipboard_label">SSH public key</string>
     <string name="ssh_keys_copied">Public key copied</string>
-    <string name="workspace_task_sessions_action">Background tasks</string>
+    <string name="workspace_task_sessions_action">tmux sessions</string>
     <string name="workspace_development_tools_title">Development tools</string>
     <string name="workspace_development_tools_description">Review code, inspect files, run tasks, and manage the remote environment.</string>
     <string name="terminal_search_action">Search output</string>
@@ -390,17 +390,21 @@
     <string name="terminal_search_results_title">“%1$s” · %2$d matches</string>
     <string name="terminal_search_empty">No match was found in the available terminal history.</string>
     <string name="terminal_search_truncated">Results are bounded to the latest 1 MB and 100 matches.</string>
-    <string name="task_sessions_title">Background project tasks</string>
-    <string name="task_sessions_loading">Loading persistent task sessions…</string>
-    <string name="task_sessions_ready">Tap a task to reattach or stop it.</string>
-    <string name="task_sessions_empty">No project task is currently running.</string>
-    <string name="task_sessions_failed">Unable to manage task sessions (exit code %1$d). Connect to the workspace first.</string>
-    <string name="task_sessions_attach">Reattach</string>
-    <string name="task_sessions_stop">Stop task</string>
-    <string name="task_sessions_stop_title">Stop this background task?</string>
+    <string name="task_sessions_title">tmux sessions</string>
+    <string name="task_sessions_loading">Loading remote tmux sessions…</string>
+    <string name="task_sessions_ready">Tap to explicitly attach. Only TermuxPro-created sessions can be stopped here.</string>
+    <string name="task_sessions_empty">This remote user has no tmux sessions.</string>
+    <string name="task_sessions_failed">Unable to read tmux sessions (exit code %1$d). Connect to the workspace first.</string>
+    <string name="task_sessions_tmux_missing">tmux is not installed remotely. A normal SSH terminal is still available.</string>
+    <string name="task_sessions_attach">Attach</string>
+    <string name="task_sessions_stop">Stop session</string>
+    <string name="task_sessions_stop_title">Stop this TermuxPro session?</string>
     <string name="task_sessions_stop_message">The tmux session %1$s and its running process will be terminated.</string>
-    <string name="task_sessions_row">%1$s\n%2$s window(s) · %3$s</string>
+    <string name="task_sessions_row">%1$s\n%2$d window(s) · %3$s · %4$s</string>
     <string name="task_sessions_background">running in background</string>
     <string name="task_sessions_attached">attached</string>
+    <string name="task_sessions_owned">created by TermuxPro</string>
+    <string name="task_sessions_unknown_owner">ownership unknown</string>
+    <string name="task_sessions_unknown_owner_warning">TermuxPro cannot reliably identify who created this session. It can be attached, but not deleted here, to avoid disrupting other work.</string>
 
 </resources>
