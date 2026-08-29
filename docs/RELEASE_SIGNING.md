@@ -72,5 +72,8 @@ git tag -a v0.1.0 -m "TermuxPro 0.1.0"
 git push origin v0.1.0
 ```
 
+`v*-alpha.*`、`v*-beta.*` 和 `v*-rc.*` 标签会自动发布为 GitHub Pre-release；不含这些后缀的版本
+标签才会成为稳定 Release。手动运行只上传保留 30 天的 Actions Artifact，不会创建仓库 Release。
+
 不要把 Base64 内容或密码写入仓库、Issue、PR、Actions 日志。GitHub Secrets 不能作为唯一备份，原始
 PKCS12 私钥仍需保存于密码管理器、加密介质或离线备份中。
