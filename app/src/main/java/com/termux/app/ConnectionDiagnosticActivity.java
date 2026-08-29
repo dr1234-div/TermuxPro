@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -36,6 +37,7 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
     private String mProjectPath;
     private ProgressBar mProgress;
     private TextView mStatus;
+    private Button mInteractiveConnection;
     private ArrayAdapter<ConnectionDiagnosticReport.Item> mAdapter;
 
     @NonNull
@@ -55,11 +57,13 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
         mProjectPath = getIntent().getStringExtra(EXTRA_PROJECT_PATH);
         mProgress = findViewById(R.id.connection_diagnostic_progress);
         mStatus = findViewById(R.id.connection_diagnostic_status);
+        mInteractiveConnection = findViewById(R.id.connection_diagnostic_interactive_button);
         ListView list = findViewById(R.id.connection_diagnostic_list);
         mAdapter = new ArrayAdapter<>(this, R.layout.item_termuxpro_list, mItems);
         list.setAdapter(mAdapter);
         findViewById(R.id.connection_diagnostic_back_button).setOnClickListener(view -> finish());
         findViewById(R.id.connection_diagnostic_refresh_button).setOnClickListener(view -> diagnose());
+        mInteractiveConnection.setOnClickListener(view -> openInteractiveConnection());
         diagnose();
     }
 
@@ -68,6 +72,7 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
         mItems.clear();
         mAdapter.notifyDataSetChanged();
         mProgress.setVisibility(View.VISIBLE);
+        mInteractiveConnection.setVisibility(View.GONE);
         mStatus.setText(R.string.connection_diagnostic_running);
         mExecutor.execute(() -> {
             RemoteCommandRunner.Result result = mRunner.run(mHost, mPort,
@@ -80,13 +85,60 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
         if (isFinishing() || isDestroyed()) return;
         mProgress.setVisibility(View.GONE);
         if (result.exitCode != 0) {
-            mStatus.setText(messageForFailure(SshFailureClassifier.classify(result), result.exitCode));
+            SshFailureClassifier.Reason reason = SshFailureClassifier.classify(result);
+            addStages(SshDiagnosticStages.failure(reason));
+            mAdapter.notifyDataSetChanged();
+            mInteractiveConnection.setVisibility(
+                SshDiagnosticStages.canOpenInteractiveConnection(reason) ? View.VISIBLE : View.GONE);
+            mStatus.setText(messageForFailure(reason, result.exitCode));
             return;
         }
-        mItems.addAll(ConnectionDiagnosticReport.parse(result.output));
+        List<ConnectionDiagnosticReport.Item> remoteItems =
+            ConnectionDiagnosticReport.parse(result.output);
+        if (remoteItems.isEmpty()) {
+            addStages(SshDiagnosticStages.invalidRemoteEnvironment());
+            mAdapter.notifyDataSetChanged();
+            mStatus.setText(R.string.connection_diagnostic_invalid);
+            return;
+        }
+        addStages(SshDiagnosticStages.success());
+        mItems.addAll(remoteItems);
         mAdapter.notifyDataSetChanged();
-        mStatus.setText(mItems.isEmpty() ? R.string.connection_diagnostic_invalid :
-            R.string.connection_diagnostic_success);
+        mStatus.setText(R.string.connection_diagnostic_success);
+    }
+
+    private void addStages(List<SshDiagnosticStages.Item> stages) {
+        for (SshDiagnosticStages.Item stage : stages) {
+            mItems.add(new ConnectionDiagnosticReport.Item(
+                getString(stageLabel(stage.stage)), getString(stageState(stage.state)),
+                stage.state == SshDiagnosticStages.State.PASSED));
+        }
+    }
+
+    private int stageLabel(SshDiagnosticStages.Stage stage) {
+        switch (stage) {
+            case NETWORK: return R.string.connection_stage_network;
+            case HOST_IDENTITY: return R.string.connection_stage_host_identity;
+            case AUTHENTICATION: return R.string.connection_stage_authentication;
+            default: return R.string.connection_stage_remote_environment;
+        }
+    }
+
+    private int stageState(SshDiagnosticStages.State state) {
+        switch (state) {
+            case PASSED: return R.string.connection_stage_passed;
+            case ACTION_REQUIRED: return R.string.connection_stage_action_required;
+            case FAILED: return R.string.connection_stage_failed;
+            default: return R.string.connection_stage_pending;
+        }
+    }
+
+    private void openInteractiveConnection() {
+        String command = WorkspaceCommandBuilder.buildSshCommand(mHost, mPort, mProjectPath, null,
+            WorkspaceCommandBuilder.POLICY_SSH_ONLY, "");
+        startActivity(new Intent(this, TermuxActivity.class)
+            .putExtra(TermuxActivity.EXTRA_STARTUP_COMMAND, command)
+            .putExtra(TermuxActivity.EXTRA_NEW_SESSION, true));
     }
 
     private String messageForFailure(SshFailureClassifier.Reason reason, int exitCode) {

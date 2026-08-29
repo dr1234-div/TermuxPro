@@ -57,6 +57,18 @@
         android:padding="16dp"
         android:textColor="#AFC1CF"
         android:textSize="14sp" />
+    <Button
+        android:id="@+id/connection_diagnostic_interactive_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        android:minHeight="48dp"
+        android:text="@string/connection_diagnostic_interactive_action"
+        android:textAllCaps="false"
+        android:textColor="#08131C"
+        android:visibility="gone"
+        app:backgroundTint="#68E0B7" />
     <ListView
         android:id="@+id/connection_diagnostic_list"
         android:layout_width="match_parent"

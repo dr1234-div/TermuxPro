@@ -234,6 +234,15 @@
     <string name="connection_diagnostic_success">连接成功，可用能力如下。</string>
     <string name="connection_diagnostic_failed">诊断失败（退出码 %1$d）。请先交互连接一次，确认主机指纹并完成认证。</string>
     <string name="connection_diagnostic_invalid">服务器返回的诊断信息无效。</string>
+    <string name="connection_diagnostic_interactive_action">打开交互连接并完成认证</string>
+    <string name="connection_stage_network">网络与 SSH 端口</string>
+    <string name="connection_stage_host_identity">服务器指纹</string>
+    <string name="connection_stage_authentication">用户身份认证</string>
+    <string name="connection_stage_remote_environment">远端环境读取</string>
+    <string name="connection_stage_passed">已通过</string>
+    <string name="connection_stage_action_required">需要你在交互终端中处理</string>
+    <string name="connection_stage_failed">未通过</string>
+    <string name="connection_stage_pending">尚未验证</string>
     <string name="connection_error_ssh_missing">尚未安装 SSH 连接组件，请返回首页完成安装。</string>
     <string name="connection_error_interrupted">连接检查已取消，可以重新检查。</string>
     <string name="connection_error_process">无法启动本机 OpenSSH，请检查 TermuxPro 环境。</string>
