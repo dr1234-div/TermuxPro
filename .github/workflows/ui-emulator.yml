@@ -23,8 +23,6 @@ jobs:
   emulator-ui:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
-    env:
-      ANDROID_AVD_HOME: ${{ runner.temp }}/android-avd
     steps:
       - uses: actions/checkout@v6
       - uses: gradle/actions/wrapper-validation@v6
@@ -41,6 +39,7 @@ jobs:
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
       - name: 创建并启动隔离模拟器
         run: |
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/android-avd"
           if [[ -e /dev/kvm ]]; then
             sudo chmod 666 /dev/kvm
           fi
