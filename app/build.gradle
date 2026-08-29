@@ -21,6 +21,12 @@ android {
     def apkVersionTag = System.getenv("TERMUX_APK_VERSION_TAG") ?: ""
     def splitAPKsForDebugBuilds = System.getenv("TERMUX_SPLIT_APKS_FOR_DEBUG_BUILDS") ?: "1"
     def splitAPKsForReleaseBuilds = System.getenv("TERMUX_SPLIT_APKS_FOR_RELEASE_BUILDS") ?: "0" // F-Droid does not support split APKs #1904
+    def releaseKeystore = rootProject.file(".signing/ai-terminal-release.p12")
+    def releasePasswordFile = rootProject.file(".signing/ai-terminal-release.pass")
+    def releaseRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }
+    if (releaseRequested && (!releaseKeystore.exists() || !releasePasswordFile.exists())) {
+        throw new GradleException("Release signing files are missing. See docs/RELEASE_SIGNING.md")
+    }
 
     dependencies {
         implementation "androidx.annotation:annotation:1.9.0"
@@ -43,8 +49,8 @@ android {
     defaultConfig {
         minSdkVersion project.properties.minSdkVersion.toInteger()
         targetSdkVersion project.properties.targetSdkVersion.toInteger()
-        versionCode 118
-        versionName "0.118.0"
+        versionCode 10000
+        versionName "0.1.0"
 
         if (appVersionName) versionName = appVersionName
         validateVersionName(versionName)
@@ -52,7 +58,8 @@ android {
         buildConfigField "String", "TERMUX_PACKAGE_VARIANT", "\"" + project.ext.packageVariant + "\"" // Used by TermuxApplication class
 
         manifestPlaceholders.TERMUX_PACKAGE_NAME = "com.termux"
-        manifestPlaceholders.TERMUX_APP_NAME = "Termux"
+        // 保留 com.termux 包名以兼容官方 bootstrap 与软件仓库，但使用独立品牌避免冒充上游。
+        manifestPlaceholders.TERMUX_APP_NAME = "AI 终端"
         manifestPlaceholders.TERMUX_API_APP_NAME = "Termux:API"
         manifestPlaceholders.TERMUX_BOOT_APP_NAME = "Termux:Boot"
         manifestPlaceholders.TERMUX_FLOAT_APP_NAME = "Termux:Float"
@@ -84,6 +91,15 @@ android {
             storePassword 'xrj45yWGLbsO7W0v'
             keyPassword 'xrj45yWGLbsO7W0v'
         }
+        if (releaseKeystore.exists() && releasePasswordFile.exists()) {
+            release {
+                storeFile releaseKeystore
+                storePassword releasePasswordFile.text.trim()
+                keyAlias "ai-terminal"
+                keyPassword releasePasswordFile.text.trim()
+                storeType "PKCS12"
+            }
+        }
     }
 
     buildTypes {
@@ -91,6 +107,7 @@ android {
             minifyEnabled true
             shrinkResources false // Reproducible builds
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (signingConfigs.findByName("release") != null) signingConfig signingConfigs.release
         }
 
         debug {

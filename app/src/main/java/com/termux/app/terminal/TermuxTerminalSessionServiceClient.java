@@ -22,6 +22,11 @@ public class TermuxTerminalSessionServiceClient extends TermuxTerminalSessionCli
     }
 
     @Override
+    public void onBell(@NonNull TerminalSession session) {
+        mService.notifySessionNeedsAttention();
+    }
+
+    @Override
     public void setTerminalShellPid(@NonNull TerminalSession terminalSession, int pid) {
         TermuxSession termuxSession = mService.getTermuxSessionForTerminalSession(terminalSession);
         if (termuxSession != null)

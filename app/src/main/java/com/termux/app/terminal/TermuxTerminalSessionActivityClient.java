@@ -198,7 +198,11 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
 
     @Override
     public void onBell(@NonNull TerminalSession session) {
-        if (!mActivity.isVisible()) return;
+        if (!mActivity.isVisible()) {
+            TermuxService service = mActivity.getTermuxService();
+            if (service != null) service.notifySessionNeedsAttention();
+            return;
+        }
 
         switch (mActivity.getProperties().getBellBehaviour()) {
             case TermuxPropertyConstants.IVALUE_BELL_BEHAVIOUR_VIBRATE:

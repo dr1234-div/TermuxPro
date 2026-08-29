@@ -11,7 +11,10 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.text.InputType;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
@@ -23,6 +26,8 @@ import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.PopupMenu;
+import android.widget.TextView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -78,6 +83,28 @@ import java.util.Arrays;
  * about memory leaks.
  */
 public final class TermuxActivity extends AppCompatActivity implements ServiceConnection {
+
+    private static final int TOOL_GIT_STATUS = 1;
+    private static final int TOOL_GIT_DIFF = 2;
+    private static final int TOOL_PROJECT_CHECK = 3;
+    private static final int TOOL_TMUX_SESSIONS = 4;
+    private static final int TOOL_INTERRUPT = 5;
+    private static final int TOOL_KEYS_SHELL = 6;
+    private static final int TOOL_KEYS_AI = 7;
+    private static final int TOOL_KEYS_VIM = 8;
+    private static final int TOOL_AI_CONFIRM = 9;
+    private static final int TOOL_AI_REJECT = 10;
+    private static final int TOOL_SEARCH_OUTPUT = 11;
+    private static final int TERMINAL_SEARCH_MAX_CHARS = 1_000_000;
+    private static final int TERMINAL_SEARCH_MAX_MATCHES = 100;
+    private static final String UI_PREFERENCES = "ai_terminal_ui";
+    private static final String KEY_EXTRA_KEYS_PRESET = "extra_keys_preset";
+
+    public static final String EXTRA_STARTUP_COMMAND = "com.termux.extra.STARTUP_COMMAND";
+    public static final String EXTRA_NEW_SESSION = "com.termux.extra.NEW_SESSION";
+
+    /** 尚未发送的提示词仅保留在当前进程内，避免敏感内容落盘。 */
+    private String mPromptDraft = "";
 
     /**
      * The connection to the {@link TermuxService}. Requested in {@link #onCreate(Bundle)} with a call to
@@ -251,6 +278,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
         setToggleKeyboardView();
 
+        setWorkspaceHeaderView();
+
         registerForContextMenu(mTerminalView);
 
         FileReceiverActivity.updateFileReceiverActivityComponentsState(this);
@@ -393,6 +422,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
         final Intent intent = getIntent();
         setIntent(null);
+        final String startupCommand = intent == null ? null : intent.getStringExtra(EXTRA_STARTUP_COMMAND);
 
         if (mTermuxService.isTermuxSessionsEmpty()) {
             if (mIsVisible) {
@@ -404,6 +434,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                             launchFailsafe = intent.getExtras().getBoolean(TERMUX_ACTIVITY.EXTRA_FAILSAFE_SESSION, false);
                         }
                         mTermuxTerminalSessionActivityClient.addNewSession(launchFailsafe, null);
+                        scheduleStartupCommand(startupCommand, 0);
                     } catch (WindowManager.BadTokenException e) {
                         // Activity finished - ignore.
                     }
@@ -420,13 +451,46 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 // Android 7.1 app shortcut from res/xml/shortcuts.xml.
                 boolean isFailSafe = intent.getBooleanExtra(TERMUX_ACTIVITY.EXTRA_FAILSAFE_SESSION, false);
                 mTermuxTerminalSessionActivityClient.addNewSession(isFailSafe, null);
+            } else if (intent != null && intent.getBooleanExtra(EXTRA_NEW_SESSION, false)) {
+                mTermuxTerminalSessionActivityClient.addNewSession(false, null);
+                scheduleStartupCommand(startupCommand, 0);
             } else {
                 mTermuxTerminalSessionActivityClient.setCurrentSession(mTermuxTerminalSessionActivityClient.getCurrentStoredSessionOrLast());
+                scheduleStartupCommand(startupCommand, 0);
             }
         }
 
         // Update the {@link TerminalSession} and {@link TerminalEmulator} clients.
         mTermuxService.setTermuxTerminalSessionClient(mTermuxTerminalSessionActivityClient);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent == null) return;
+        if (intent.getBooleanExtra(EXTRA_NEW_SESSION, false) && mTermuxService != null) {
+            mTermuxTerminalSessionActivityClient.addNewSession(false, null);
+        }
+        scheduleStartupCommand(intent.getStringExtra(EXTRA_STARTUP_COMMAND), 0);
+    }
+
+    /**
+     * 工作区首页启动终端后，等待 Shell 会话就绪再发送经过转义的启动命令。
+     * 重试只发生在会话尚未建立时，避免重复执行已经写入的命令。
+     */
+    private void scheduleStartupCommand(@Nullable String command, int attempt) {
+        if (command == null || command.trim().isEmpty()) return;
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            TerminalSession session = getCurrentSession();
+            if (session != null && session.isRunning()) {
+                session.write(command + "\r");
+            } else if (attempt < 12 && !isFinishing()) {
+                scheduleStartupCommand(command, attempt + 1);
+            } else {
+                showToast(getString(R.string.error_termux_service_start_failed_general), true);
+            }
+        }, attempt == 0 ? 450L : 250L);
     }
 
     @Override
@@ -510,6 +574,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     private void setTerminalToolbarView(Bundle savedInstanceState) {
         mTermuxTerminalExtraKeys = new TermuxTerminalExtraKeys(this, mTerminalView,
             mTermuxTerminalViewClient, mTermuxTerminalSessionActivityClient);
+        mTermuxTerminalExtraKeys.applyPreset(getSharedPreferences(UI_PREFERENCES, MODE_PRIVATE)
+            .getString(KEY_EXTRA_KEYS_PRESET, TermuxTerminalExtraKeys.PRESET_SHELL));
 
         final ViewPager terminalToolbarViewPager = getTerminalToolbarViewPager();
         if (mPreferences.shouldShowTerminalToolbar()) terminalToolbarViewPager.setVisibility(View.VISIBLE);
@@ -592,6 +658,231 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             toggleTerminalToolbar();
             return true;
         });
+    }
+
+    /** 设置会话抽屉、工作区返回入口和 AI CLI 快捷动作。 */
+    private void setWorkspaceHeaderView() {
+        findViewById(R.id.workspace_drawer_button).setOnClickListener(view -> getDrawer().openDrawer(Gravity.LEFT));
+        findViewById(R.id.workspace_home_button).setOnClickListener(view -> {
+            Intent intent = new Intent(this, WorkspaceActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            startActivity(intent);
+        });
+        findViewById(R.id.terminal_claude_button).setOnClickListener(view ->
+            startAiCli("claude --continue || claude"));
+        findViewById(R.id.terminal_codex_button).setOnClickListener(view ->
+            startAiCli("codex resume --last || codex"));
+        findViewById(R.id.terminal_prompt_button).setOnClickListener(view -> showPromptComposer());
+        findViewById(R.id.terminal_tools_button).setOnClickListener(this::showProjectTools);
+    }
+
+    private void startAiCli(String command) {
+        applyExtraKeysPreset(TermuxTerminalExtraKeys.PRESET_AI, R.string.workspace_keys_ai_applied);
+        confirmAndSendCommand(command);
+    }
+
+    private void showProjectTools(View anchor) {
+        PopupMenu popup = new PopupMenu(this, anchor);
+        popup.getMenu().add(Menu.NONE, TOOL_SEARCH_OUTPUT, Menu.NONE, R.string.terminal_search_action);
+        popup.getMenu().add(Menu.NONE, TOOL_GIT_STATUS, Menu.NONE, R.string.workspace_git_status_action);
+        popup.getMenu().add(Menu.NONE, TOOL_GIT_DIFF, Menu.NONE, R.string.workspace_git_diff_action);
+        popup.getMenu().add(Menu.NONE, TOOL_PROJECT_CHECK, Menu.NONE, R.string.workspace_project_check_action);
+        popup.getMenu().add(Menu.NONE, TOOL_TMUX_SESSIONS, Menu.NONE, R.string.workspace_tmux_sessions_action);
+        popup.getMenu().add(Menu.NONE, TOOL_AI_CONFIRM, Menu.NONE, R.string.ai_action_confirm_selection);
+        popup.getMenu().add(Menu.NONE, TOOL_AI_REJECT, Menu.NONE, R.string.ai_action_reject_or_back);
+        popup.getMenu().add(Menu.NONE, TOOL_INTERRUPT, Menu.NONE, R.string.workspace_interrupt_action);
+        popup.getMenu().add(Menu.NONE, TOOL_KEYS_SHELL, Menu.NONE, R.string.workspace_keys_shell_action);
+        popup.getMenu().add(Menu.NONE, TOOL_KEYS_AI, Menu.NONE, R.string.workspace_keys_ai_action);
+        popup.getMenu().add(Menu.NONE, TOOL_KEYS_VIM, Menu.NONE, R.string.workspace_keys_vim_action);
+        popup.setOnMenuItemClickListener(item -> {
+            switch (item.getItemId()) {
+                case TOOL_SEARCH_OUTPUT:
+                    showTerminalSearch();
+                    return true;
+                case TOOL_GIT_STATUS:
+                    confirmAndSendCommand("git status --short --branch");
+                    return true;
+                case TOOL_GIT_DIFF:
+                    confirmAndSendCommand("git diff --color=always --stat && git diff --color=always");
+                    return true;
+                case TOOL_PROJECT_CHECK:
+                    confirmAndSendCommand("if [ -f package.json ]; then " +
+                        "if command -v pnpm >/dev/null 2>&1; then pnpm test; " +
+                        "elif command -v npm >/dev/null 2>&1; then npm test; fi; " +
+                        "elif [ -x ./mvnw ]; then ./mvnw test; " +
+                        "elif [ -f pom.xml ]; then mvn test; " +
+                        "elif [ -x ./gradlew ]; then ./gradlew test; " +
+                        "else printf 'No supported project check was detected.\\n'; fi");
+                    return true;
+                case TOOL_TMUX_SESSIONS:
+                    confirmAndSendCommand("tmux list-sessions");
+                    return true;
+                case TOOL_AI_CONFIRM:
+                    confirmAiSelection();
+                    return true;
+                case TOOL_AI_REJECT:
+                    sendTerminalAction(AiTerminalAction.Type.REJECT_OR_BACK);
+                    return true;
+                case TOOL_INTERRUPT:
+                    sendTerminalAction(AiTerminalAction.Type.INTERRUPT);
+                    return true;
+                case TOOL_KEYS_SHELL:
+                    applyExtraKeysPreset(TermuxTerminalExtraKeys.PRESET_SHELL,
+                        R.string.workspace_keys_shell_applied);
+                    return true;
+                case TOOL_KEYS_AI:
+                    applyExtraKeysPreset(TermuxTerminalExtraKeys.PRESET_AI,
+                        R.string.workspace_keys_ai_applied);
+                    return true;
+                case TOOL_KEYS_VIM:
+                    applyExtraKeysPreset(TermuxTerminalExtraKeys.PRESET_VIM,
+                        R.string.workspace_keys_vim_applied);
+                    return true;
+                default:
+                    return false;
+            }
+        });
+        popup.show();
+    }
+
+    private void showTerminalSearch() {
+        TerminalSession session = getCurrentSession();
+        if (session == null || session.getEmulator() == null) {
+            showToast(getString(R.string.error_termux_service_start_failed_general), true);
+            return;
+        }
+        EditText input = new EditText(this);
+        input.setSingleLine(true);
+        input.setHint(R.string.terminal_search_hint);
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.terminal_search_title)
+            .setView(input)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.terminal_search_action, (dialog, which) -> {
+                String query = input.getText().toString().trim();
+                if (!query.isEmpty()) showTerminalSearchResults(session, query);
+            })
+            .show();
+    }
+
+    private void showTerminalSearchResults(TerminalSession session, String query) {
+        if (session.getEmulator() == null) return;
+        String transcript = session.getEmulator().getScreen().getTranscriptText();
+        TerminalSearchMatcher.Result result = TerminalSearchMatcher.search(
+            transcript, query, TERMINAL_SEARCH_MAX_CHARS, TERMINAL_SEARCH_MAX_MATCHES);
+        StringBuilder text = new StringBuilder();
+        if (result.matches.isEmpty()) {
+            text.append(getString(R.string.terminal_search_empty));
+        } else {
+            for (String match : result.matches) text.append("• ").append(match).append("\n\n");
+        }
+        if (result.inputTruncated || result.resultTruncated) {
+            text.append(getString(R.string.terminal_search_truncated));
+        }
+        TextView output = new TextView(this);
+        int padding = (int) (16 * getResources().getDisplayMetrics().density);
+        output.setPadding(padding, padding, padding, padding);
+        output.setText(text.toString().trim());
+        output.setTextIsSelectable(true);
+        output.setTextSize(13);
+        android.widget.ScrollView scroll = new android.widget.ScrollView(this);
+        scroll.addView(output);
+        new AlertDialog.Builder(this)
+            .setTitle(getString(R.string.terminal_search_results_title, query, result.matches.size()))
+            .setView(scroll)
+            .setPositiveButton(android.R.string.ok, null)
+            .show();
+    }
+
+    /** Enter 可能确认危险授权，因此始终要求用户再次确认，且不推断终端当前状态。 */
+    private void confirmAiSelection() {
+        TerminalSession session = getCurrentSession();
+        if (session == null || !session.isRunning()) {
+            showToast(getString(R.string.error_termux_service_start_failed_general), true);
+            return;
+        }
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.ai_action_confirm_title)
+            .setMessage(R.string.ai_action_confirm_message)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.ai_action_confirm_send,
+                (dialog, which) -> session.write(AiTerminalAction.payload(
+                    AiTerminalAction.Type.CONFIRM_SELECTION)))
+            .show();
+    }
+
+    private void sendTerminalAction(AiTerminalAction.Type type) {
+        TerminalSession session = getCurrentSession();
+        if (session != null && session.isRunning()) session.write(AiTerminalAction.payload(type));
+    }
+
+    private void applyExtraKeysPreset(String preset, int confirmationMessage) {
+        if (!mTermuxTerminalExtraKeys.applyPreset(preset)) return;
+        getSharedPreferences(UI_PREFERENCES, MODE_PRIVATE).edit()
+            .putString(KEY_EXTRA_KEYS_PRESET, preset).apply();
+        setTerminalToolbarHeight();
+        if (mExtraKeysView != null) {
+            mExtraKeysView.reload(mTermuxTerminalExtraKeys.getExtraKeysInfo(), mTerminalToolbarDefaultHeight);
+        }
+        showToast(getString(confirmationMessage), false);
+    }
+
+    /** 使用系统输入法舒适编辑多行提示词，再一次性写入当前 PTY。 */
+    private void showPromptComposer() {
+        TerminalSession session = getCurrentSession();
+        if (session == null || !session.isRunning()) {
+            showToast(getString(R.string.error_termux_service_start_failed_general), true);
+            return;
+        }
+
+        EditText input = new EditText(this);
+        input.setHint(R.string.workspace_prompt_hint);
+        input.setText(mPromptDraft);
+        input.setSelection(input.length());
+        input.setGravity(Gravity.TOP | Gravity.START);
+        input.setMinLines(6);
+        input.setMaxLines(12);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE |
+            InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+
+        final boolean[] sent = {false};
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.workspace_prompt_title)
+            .setView(input)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.workspace_prompt_send, (ignored, which) -> {
+                String payload = input.getText().toString().replace("\r\n", "\n").replace('\r', '\n');
+                if (!payload.isEmpty()) {
+                    session.write(payload + "\r");
+                    sent[0] = true;
+                    mPromptDraft = "";
+                }
+            })
+            .create();
+        dialog.setOnDismissListener(ignored -> {
+            if (!sent[0]) mPromptDraft = input.getText().toString();
+        });
+        dialog.setOnShowListener(ignored -> {
+            input.requestFocus();
+            dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+        });
+        dialog.show();
+    }
+
+    private void confirmAndSendCommand(String command) {
+        TerminalSession session = getCurrentSession();
+        if (session == null || !session.isRunning()) {
+            showToast(getString(R.string.error_termux_service_start_failed_general), true);
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.workspace_command_confirm_title)
+            .setMessage(getString(R.string.workspace_command_confirm_message, command))
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.workspace_command_confirm_action,
+                (dialog, which) -> session.write(command + "\r"))
+            .show();
     }
 
 

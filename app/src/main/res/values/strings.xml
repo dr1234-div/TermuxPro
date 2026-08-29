@@ -2,7 +2,7 @@
 
 <!DOCTYPE resources [
     <!ENTITY TERMUX_PACKAGE_NAME "com.termux">
-    <!ENTITY TERMUX_APP_NAME "Termux">
+    <!ENTITY TERMUX_APP_NAME "AI 终端">
     <!ENTITY TERMUX_API_APP_NAME "Termux:API">
     <!ENTITY TERMUX_BOOT_APP_NAME "Termux:Boot">
     <!ENTITY TERMUX_FLOAT_APP_NAME "Termux:Float">
@@ -234,5 +234,147 @@
 
     <!-- Donate Preference -->
     <string name="donate_preference_title">Donate</string>
+
+    <!-- AI workspace home -->
+    <string name="workspace_home_eyebrow">Mobile development workspace</string>
+    <string name="workspace_home_title">Continue your remote project</string>
+    <string name="workspace_home_subtitle">Connect once, restore tmux, and continue Claude Code or Codex without rebuilding your context.</string>
+    <string name="workspace_remote_card_title">Remote workspace</string>
+    <string name="workspace_remote_card_description">Only non-sensitive connection metadata is stored here. Passwords and private keys stay in OpenSSH.</string>
+    <string name="workspace_name_hint">Workspace name</string>
+    <string name="workspace_host_hint">SSH alias, host, or user@host</string>
+    <string name="workspace_port_hint">SSH port (default 22)</string>
+    <string name="workspace_path_hint">Remote project path</string>
+    <string name="workspace_connect_action">Connect and restore tmux</string>
+    <string name="workspace_ai_quick_title">AI CLI quick start</string>
+    <string name="workspace_start_claude">Claude Code</string>
+    <string name="workspace_start_codex">Codex CLI</string>
+    <string name="workspace_open_local_terminal">Open local terminal</string>
+    <string name="workspace_security_tip">The first SSH connection still requires explicit host fingerprint confirmation.</string>
+    <string name="workspace_error_host">Enter a valid SSH alias, host, or user@host.</string>
+    <string name="workspace_error_port">SSH port must be between 1 and 65535.</string>
+    <string name="workspace_error_path">Enter a remote project path.</string>
+    <string name="workspace_open_sessions">Open session drawer</string>
+    <string name="workspace_command_confirm_title">Send command to current session?</string>
+    <string name="workspace_command_confirm_message">The following command will be typed into the active terminal:\n\n%1$s</string>
+    <string name="workspace_command_confirm_action">Send command</string>
+    <string name="workspace_prompt_action">Prompt</string>
+    <string name="workspace_prompt_title">Compose terminal input</string>
+    <string name="workspace_prompt_hint">Write or paste a multi-line prompt. It is sent only to the active terminal.</string>
+    <string name="workspace_prompt_send">Send</string>
+    <string name="workspace_setup_title">Prepare SSH connectivity</string>
+    <string name="workspace_setup_description">The first installation includes a minimal shell. This action opens a terminal and installs the official OpenSSH package. Keep the app in the foreground until installation finishes.</string>
+    <string name="workspace_setup_action">Install SSH component</string>
+    <string name="workspace_setup_ready">SSH component is ready</string>
+    <string name="workspace_selector_description">Saved workspaces</string>
+    <string name="workspace_new_action">New</string>
+    <string name="workspace_save_action">Save</string>
+    <string name="workspace_delete_action">Delete</string>
+    <string name="workspace_default_name">Remote development</string>
+    <string name="workspace_delete_title">Delete this workspace?</string>
+    <string name="workspace_delete_message">Connection metadata for “%1$s” will be removed. SSH keys and remote files are not affected.</string>
+    <string name="workspace_tools_action">Project tools</string>
+    <string name="workspace_git_status_action">Git status</string>
+    <string name="workspace_git_diff_action">Review Git diff</string>
+    <string name="workspace_project_check_action">Run project checks</string>
+    <string name="workspace_tmux_sessions_action">tmux sessions</string>
+    <string name="workspace_interrupt_action">Interrupt (Ctrl+C)</string>
+    <string name="workspace_preview_title">Web preview</string>
+    <string name="workspace_preview_description">Create a loopback-only SSH tunnel, then open the project in your browser.</string>
+    <string name="workspace_remote_port_hint">Remote port</string>
+    <string name="workspace_local_port_hint">Phone port</string>
+    <string name="workspace_start_preview_action">Start tunnel</string>
+    <string name="workspace_open_preview_action">Open browser</string>
+    <string name="workspace_error_preview_port">Port must be between 1 and 65535.</string>
+    <string name="ai_attention_channel_name">Terminal attention</string>
+    <string name="ai_attention_title">Terminal needs attention</string>
+    <string name="ai_attention_message">A background session signaled that input may be required.</string>
+    <string name="workspace_keys_shell_action">Keys: Shell</string>
+    <string name="workspace_keys_ai_action">Keys: AI CLI</string>
+    <string name="workspace_keys_vim_action">Keys: Vim</string>
+    <string name="workspace_keys_shell_applied">Shell keys enabled</string>
+    <string name="workspace_keys_ai_applied">AI CLI keys enabled</string>
+    <string name="workspace_keys_vim_applied">Vim keys enabled</string>
+    <string name="workspace_review_diff_action">Git changes</string>
+    <string name="git_diff_title">Git change review</string>
+    <string name="git_diff_back">Back</string>
+    <string name="git_diff_refresh">Refresh</string>
+    <string name="git_diff_loading">Loading changes through the active SSH connection…</string>
+    <string name="git_diff_clean">The working tree has no unstaged changes.</string>
+    <string name="git_diff_truncated">Output was truncated at 1.5 MB. Use the terminal for the complete diff.</string>
+    <string name="git_diff_failed">Git review failed (exit code %1$d). Connect to this workspace first, then retry.</string>
+    <string name="git_diff_invalid_workspace">The workspace connection information is invalid.</string>
+    <string name="git_diff_ssh_missing">OpenSSH is not installed. Return to the workspace and install the SSH component.</string>
+    <string name="git_diff_cancelled">Review was cancelled.</string>
+    <string name="git_diff_connection_error">Unable to read changes (%1$s).</string>
+    <string name="workspace_remote_files_action">Remote files</string>
+    <string name="remote_files_title">Remote files</string>
+    <string name="remote_file_preview_title">File preview</string>
+    <string name="remote_files_invalid_workspace">The workspace connection information is invalid.</string>
+    <string name="remote_files_failed">Unable to list this directory (exit code %1$d). Connect to the workspace first.</string>
+    <string name="remote_files_empty">This directory is empty.</string>
+    <string name="remote_files_truncated">Too many entries; the list was truncated.</string>
+    <string name="remote_file_loading">Loading the file through the active SSH connection…</string>
+    <string name="remote_file_failed">Unable to read this file (exit code %1$d).</string>
+    <string name="remote_file_failed_format">The remote file response format is invalid.</string>
+    <string name="remote_file_binary">Binary files are not loaded into the text preview.</string>
+    <string name="remote_file_truncated">Preview stopped at 1 MB.</string>
+    <string name="workspace_project_tasks_action">Project tasks</string>
+    <string name="project_tasks_title">Project tasks</string>
+    <string name="project_tasks_description">Only project metadata is read during detection. Review the exact command before starting a task.</string>
+    <string name="project_tasks_detecting">Detecting project type…</string>
+    <string name="project_tasks_type">Detected: %1$s</string>
+    <string name="project_tasks_invalid_workspace">The workspace connection information is invalid.</string>
+    <string name="project_tasks_failed">Unable to detect the project. Connect to the workspace first.</string>
+    <string name="project_tasks_invalid_metadata">The project metadata is invalid or too large.</string>
+    <string name="project_tasks_empty">No supported tasks were found.</string>
+    <string name="project_tasks_confirm_title">Run %1$s?</string>
+    <string name="project_tasks_confirm_message">A new persistent terminal session will run:\n\n%1$s</string>
+    <string name="project_tasks_run">Run task</string>
+    <string name="workspace_diagnostic_action">Environment</string>
+    <string name="connection_diagnostic_title">Connection diagnostics</string>
+    <string name="connection_diagnostic_running">Checking the active SSH connection and remote tools…</string>
+    <string name="connection_diagnostic_success">Connection succeeded. Available tools are listed below.</string>
+    <string name="connection_diagnostic_failed">Unable to diagnose (exit code %1$d). Connect interactively first to confirm the host key and authentication.</string>
+    <string name="connection_diagnostic_invalid">The server returned an invalid diagnostic response.</string>
+    <string name="ai_action_confirm_selection">AI: Confirm selected option</string>
+    <string name="ai_action_reject_or_back">AI: Reject / back (Esc)</string>
+    <string name="ai_action_confirm_title">Confirm the selected terminal option?</string>
+    <string name="ai_action_confirm_message">This sends Enter only. Check the highlighted Claude Code or Codex option first; the app never approves automatically.</string>
+    <string name="ai_action_confirm_send">Send Enter</string>
+    <string name="workspace_ssh_keys_action">SSH keys</string>
+    <string name="ssh_keys_title">SSH public keys</string>
+    <string name="ssh_keys_description">Only public keys are displayed. Private keys remain in the app-private OpenSSH directory and are never copied by this page.</string>
+    <string name="ssh_keys_empty">No supported public key was found. Generate an Ed25519 key to get started.</string>
+    <string name="ssh_keys_generate_action">Generate Ed25519 key</string>
+    <string name="ssh_keys_generate_title">Generate an SSH key?</string>
+    <string name="ssh_keys_generate_message">The official ssh-keygen prompt will open in a new terminal. Set a passphrase there; the app does not read or save it.</string>
+    <string name="ssh_keys_copy_action">Copy public key</string>
+    <string name="ssh_keys_install_action">Install on server</string>
+    <string name="ssh_keys_install_title">Install the public key?</string>
+    <string name="ssh_keys_install_message">Open an interactive terminal to install the public key on %1$s?\n\n%2$s</string>
+    <string name="ssh_keys_clipboard_label">SSH public key</string>
+    <string name="ssh_keys_copied">Public key copied</string>
+    <string name="workspace_task_sessions_action">Background tasks</string>
+    <string name="workspace_development_tools_title">Development tools</string>
+    <string name="workspace_development_tools_description">Review code, inspect files, run tasks, and manage the remote environment.</string>
+    <string name="terminal_search_action">Search output</string>
+    <string name="terminal_search_title">Search terminal output</string>
+    <string name="terminal_search_hint">Error text, filename, command…</string>
+    <string name="terminal_search_results_title">“%1$s” · %2$d matches</string>
+    <string name="terminal_search_empty">No match was found in the available terminal history.</string>
+    <string name="terminal_search_truncated">Results are bounded to the latest 1 MB and 100 matches.</string>
+    <string name="task_sessions_title">Background project tasks</string>
+    <string name="task_sessions_loading">Loading persistent task sessions…</string>
+    <string name="task_sessions_ready">Tap a task to reattach or stop it.</string>
+    <string name="task_sessions_empty">No project task is currently running.</string>
+    <string name="task_sessions_failed">Unable to manage task sessions (exit code %1$d). Connect to the workspace first.</string>
+    <string name="task_sessions_attach">Reattach</string>
+    <string name="task_sessions_stop">Stop task</string>
+    <string name="task_sessions_stop_title">Stop this background task?</string>
+    <string name="task_sessions_stop_message">The tmux session %1$s and its running process will be terminated.</string>
+    <string name="task_sessions_row">%1$s\n%2$s window(s) · %3$s</string>
+    <string name="task_sessions_background">running in background</string>
+    <string name="task_sessions_attached">attached</string>
 
 </resources>

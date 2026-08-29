@@ -1,0 +1,47 @@
+package com.termux.app;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import android.view.View;
+
+import com.termux.R;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.Robolectric;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
+
+/** 无设备环境下验证启动页可创建、中文资源可加载且关键入口齐全。 */
+@RunWith(RobolectricTestRunner.class)
+@Config(sdk = 28, qualifiers = "zh-rCN")
+public class WorkspaceActivitySmokeTest {
+
+    @Test
+    public void launcherInflatesWithAllPrimaryMobileActions() {
+        WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
+
+        assertEquals("继续远程项目", activity.getString(R.string.workspace_home_title));
+        int[] requiredViews = {
+            R.id.workspace_connect_button,
+            R.id.workspace_claude_button,
+            R.id.workspace_codex_button,
+            R.id.workspace_review_diff_button,
+            R.id.workspace_remote_files_button,
+            R.id.workspace_project_tasks_button,
+            R.id.workspace_task_sessions_button,
+            R.id.workspace_diagnostic_button,
+            R.id.workspace_ssh_keys_button,
+            R.id.workspace_start_preview_button,
+            R.id.workspace_open_preview_button,
+            R.id.workspace_local_terminal_button
+        };
+        for (int id : requiredViews) {
+            View view = activity.findViewById(id);
+            assertNotNull(view);
+            assertEquals(View.VISIBLE, view.getVisibility());
+        }
+        activity.finish();
+    }
+}

@@ -67,6 +67,9 @@ import java.util.List;
  */
 public final class TermuxService extends Service implements AppShell.AppShellClient, TermuxSession.TermuxSessionClient {
 
+    private static final String AI_ATTENTION_CHANNEL_ID = "ai_terminal_attention";
+    private static final int AI_ATTENTION_NOTIFICATION_ID = 1339;
+
     /** This service is only bound from inside the same process and never uses IPC. */
     class LocalBinder extends Binder {
         public final TermuxService service = TermuxService.this;
@@ -784,7 +787,8 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
 
         // Set pending intent to be launched when notification is clicked
         Intent notificationIntent = TermuxActivity.newInstance(this);
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent,
+            PendingIntent.FLAG_IMMUTABLE);
 
 
         // Set notification text
@@ -827,7 +831,8 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
 
         // Set Exit button action
         Intent exitIntent = new Intent(this, TermuxService.class).setAction(TERMUX_SERVICE.ACTION_STOP_SERVICE);
-        builder.addAction(android.R.drawable.ic_delete, res.getString(R.string.notification_action_exit), PendingIntent.getService(this, 0, exitIntent, 0));
+        builder.addAction(android.R.drawable.ic_delete, res.getString(R.string.notification_action_exit),
+            PendingIntent.getService(this, 0, exitIntent, PendingIntent.FLAG_IMMUTABLE));
 
 
         // Set Wakelock button actions
@@ -835,7 +840,8 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
         Intent toggleWakeLockIntent = new Intent(this, TermuxService.class).setAction(newWakeAction);
         String actionTitle = res.getString(wakeLockHeld ? R.string.notification_action_wake_unlock : R.string.notification_action_wake_lock);
         int actionIcon = wakeLockHeld ? android.R.drawable.ic_lock_idle_lock : android.R.drawable.ic_lock_lock;
-        builder.addAction(actionIcon, actionTitle, PendingIntent.getService(this, 0, toggleWakeLockIntent, 0));
+        builder.addAction(actionIcon, actionTitle,
+            PendingIntent.getService(this, 0, toggleWakeLockIntent, PendingIntent.FLAG_IMMUTABLE));
 
 
         return builder.build();
@@ -846,6 +852,31 @@ public final class TermuxService extends Service implements AppShell.AppShellCli
 
         NotificationUtils.setupNotificationChannel(this, TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_ID,
             TermuxConstants.TERMUX_APP_NOTIFICATION_CHANNEL_NAME, NotificationManager.IMPORTANCE_LOW);
+    }
+
+    /**
+     * 终端在后台响铃时显示隐私安全的提醒。通知不包含终端正文、命令、主机名或提示词。
+     * Claude Code、Codex 等 TUI 可使用标准 BEL 请求用户返回处理输入或授权。
+     */
+    public void notifySessionNeedsAttention() {
+        NotificationUtils.setupNotificationChannel(this, AI_ATTENTION_CHANNEL_ID,
+            getString(R.string.ai_attention_channel_name), NotificationManager.IMPORTANCE_DEFAULT);
+
+        Intent intent = TermuxActivity.newInstance(this);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, AI_ATTENTION_NOTIFICATION_ID, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        Notification.Builder builder = NotificationUtils.geNotificationBuilder(this,
+            AI_ATTENTION_CHANNEL_ID, Notification.PRIORITY_DEFAULT,
+            getString(R.string.ai_attention_title), getString(R.string.ai_attention_message), null,
+            contentIntent, null, NotificationUtils.NOTIFICATION_MODE_VIBRATE);
+        if (builder == null) return;
+        builder.setSmallIcon(R.drawable.ic_service_notification)
+            .setColor(0xFF68E0B7)
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .setVisibility(Notification.VISIBILITY_PRIVATE);
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager != null) manager.notify(AI_ATTENTION_NOTIFICATION_ID, builder.build());
     }
 
     /** Update the shown foreground service notification after making any changes that affect it. */

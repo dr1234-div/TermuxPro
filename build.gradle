@@ -1,7 +1,7 @@
 buildscript {
     repositories {
-        mavenCentral()
-        google()
+        // 当前共享构建机无法直连 Google Maven，镜像仅作为依赖代理，版本仍由上游锁定。
+        maven { url "https://mirrors.cloud.tencent.com/nexus/repository/maven-public/" }
     }
     dependencies {
         classpath "com.android.tools.build:gradle:8.13.2"
@@ -10,8 +10,7 @@ buildscript {
 
 allprojects {
     repositories {
-        google()
-        mavenCentral()
+        maven { url "https://mirrors.cloud.tencent.com/nexus/repository/maven-public/" }
         maven { url "https://jitpack.io" }
     }
 }

@@ -22,6 +22,17 @@ import org.json.JSONException;
 
 public class TermuxTerminalExtraKeys extends TerminalExtraKeys {
 
+    public static final String PRESET_SHELL = "shell";
+    public static final String PRESET_AI = "ai";
+    public static final String PRESET_VIM = "vim";
+
+    private static final String SHELL_KEYS =
+        "[['ESC','TAB','CTRL','ALT','LEFT','UP','RIGHT'],['KEYBOARD','PASTE','/','-','HOME','DOWN','END']]";
+    private static final String AI_KEYS =
+        "[['ESC','TAB','CTRL','UP','DOWN','LEFT','RIGHT'],['KEYBOARD','PASTE',{macro:'CTRL c',display:'C-C'},'ENTER','HOME','END','PGUP']]";
+    private static final String VIM_KEYS =
+        "[['ESC',':','/','i','u',{macro:'CTRL r',display:'C-R'},'ENTER'],['KEYBOARD','PASTE','CTRL','LEFT','DOWN','UP','RIGHT']]";
+
     private ExtraKeysInfo mExtraKeysInfo;
 
     final TermuxActivity mActivity;
@@ -79,6 +90,32 @@ public class TermuxTerminalExtraKeys extends TerminalExtraKeys {
 
     public ExtraKeysInfo getExtraKeysInfo() {
         return mExtraKeysInfo;
+    }
+
+    /** 切换适合触屏的上下文键区；失败时保留当前布局。 */
+    public boolean applyPreset(@NonNull String preset) {
+        String keys;
+        switch (preset) {
+            case PRESET_AI:
+                keys = AI_KEYS;
+                break;
+            case PRESET_VIM:
+                keys = VIM_KEYS;
+                break;
+            case PRESET_SHELL:
+            default:
+                keys = SHELL_KEYS;
+                break;
+        }
+        try {
+            mExtraKeysInfo = new ExtraKeysInfo(keys,
+                TermuxPropertyConstants.DEFAULT_IVALUE_EXTRA_KEYS_STYLE,
+                ExtraKeysConstants.CONTROL_CHARS_ALIASES);
+            return true;
+        } catch (JSONException exception) {
+            Logger.logStackTraceWithMessage(LOG_TAG, "Could not apply mobile key preset: ", exception);
+            return false;
+        }
     }
 
     @SuppressLint("RtlHardcoded")
