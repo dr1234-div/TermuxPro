@@ -1,8 +1,12 @@
 package com.termux.app;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
+import android.R.attr;
+import android.util.TypedValue;
 import android.view.View;
 
 import com.termux.R;
@@ -44,6 +48,19 @@ public class WorkspaceActivitySmokeTest {
             assertNotNull(view);
             assertEquals(View.VISIBLE, view.getVisibility());
         }
+        activity.finish();
+    }
+
+    @Test
+    public void productPagesUseOpaqueSystemBarsAndLightDefaultText() {
+        WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
+        TypedValue value = new TypedValue();
+
+        assertTrue(activity.getTheme().resolveAttribute(attr.windowTranslucentStatus, value, true));
+        assertFalse(value.data != 0);
+        assertTrue(activity.getTheme().resolveAttribute(attr.textColorPrimary, value, true));
+        assertEquals(activity.getColor(R.color.tp_text_primary),
+            activity.getColorStateList(value.resourceId).getDefaultColor());
         activity.finish();
     }
 }

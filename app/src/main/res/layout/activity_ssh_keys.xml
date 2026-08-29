@@ -73,6 +73,7 @@
             android:textColor="#062118"
             android:backgroundTint="#68E0B7" />
         <LinearLayout
+            android:id="@+id/ssh_keys_secondary_actions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"

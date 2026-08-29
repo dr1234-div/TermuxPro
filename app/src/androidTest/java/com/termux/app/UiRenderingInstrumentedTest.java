@@ -54,6 +54,12 @@ public final class UiRenderingInstrumentedTest {
             ConnectionDiagnosticActivity.newIntent(context, "invalid", 0, "~/project"));
         capture(context, "task-sessions",
             TaskSessionsActivity.newIntent(context, "invalid", 0));
+        capture(context, "git-diff",
+            GitDiffActivity.newIntent(context, "invalid", 0, "~/project"));
+        capture(context, "remote-file-preview",
+            RemoteFilePreviewActivity.newIntent(context, "invalid", 0, "~/project", "README.md"));
+        capture(context, "ssh-keys",
+            SshKeysActivity.newIntent(context, "invalid", 0));
     }
 
     private void scrollTo(Activity activity, int viewId) {
