@@ -8,6 +8,7 @@ import static org.robolectric.Shadows.shadowOf;
 
 import android.R.attr;
 import android.app.AlertDialog;
+import android.os.Looper;
 import android.util.TypedValue;
 import android.view.View;
 
@@ -74,11 +75,14 @@ public class WorkspaceActivitySmokeTest {
         WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
 
         activity.findViewById(R.id.workspace_claude_button).performClick();
+        shadowOf(Looper.getMainLooper()).idle();
         AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
         assertNotNull(dialog);
         assertEquals("启动 Claude Code", shadowOf(dialog).getTitle());
         assertEquals("新建会话（安全默认）", dialog.getListView().getAdapter().getItem(0));
         assertEquals("选择历史会话", dialog.getListView().getAdapter().getItem(1));
+        assertEquals(activity.getColor(R.color.tp_primary),
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).getCurrentTextColor());
         dialog.dismiss();
         activity.finish();
     }
