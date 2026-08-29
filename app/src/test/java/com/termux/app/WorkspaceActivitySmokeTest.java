@@ -11,6 +11,8 @@ import android.app.AlertDialog;
 import android.os.Looper;
 import android.util.TypedValue;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.Spinner;
 
 import com.termux.R;
 
@@ -45,13 +47,81 @@ public class WorkspaceActivitySmokeTest {
             R.id.workspace_ssh_keys_button,
             R.id.workspace_start_preview_button,
             R.id.workspace_open_preview_button,
-            R.id.workspace_local_terminal_button
+            R.id.workspace_local_terminal_button,
+            R.id.workspace_copy_button
         };
         for (int id : requiredViews) {
             View view = activity.findViewById(id);
             assertNotNull(view);
             assertEquals(View.VISIBLE, view.getVisibility());
         }
+        activity.finish();
+    }
+
+    @Test
+    public void copyWorkspaceKeepsEditedConnectionMetadataAndPersistsIt() {
+        WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
+        ((EditText) activity.findViewById(R.id.workspace_host_input)).setText("hdr@192.168.1.153");
+        ((EditText) activity.findViewById(R.id.workspace_path_input)).setText("~/termux-pro");
+
+        activity.findViewById(R.id.workspace_copy_button).performClick();
+
+        Spinner selector = activity.findViewById(R.id.workspace_selector);
+        assertEquals(2, selector.getCount());
+        assertEquals("远程开发 副本", selector.getSelectedItem().toString());
+        assertEquals("hdr@192.168.1.153",
+            ((EditText) activity.findViewById(R.id.workspace_host_input)).getText().toString());
+        assertEquals(View.GONE,
+            activity.findViewById(R.id.workspace_unsaved_indicator).getVisibility());
+        activity.finish();
+
+        WorkspaceActivity restored = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
+        assertEquals(2, ((Spinner) restored.findViewById(R.id.workspace_selector)).getCount());
+        assertEquals("hdr@192.168.1.153",
+            ((EditText) restored.findViewById(R.id.workspace_host_input)).getText().toString());
+        restored.finish();
+    }
+
+    @Test
+    public void unsavedEditsRequireConfirmationBeforeCreatingWorkspace() {
+        WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
+        ((EditText) activity.findViewById(R.id.workspace_host_input)).setText("edited.example.com");
+        assertEquals(View.VISIBLE,
+            activity.findViewById(R.id.workspace_unsaved_indicator).getVisibility());
+
+        activity.findViewById(R.id.workspace_new_button).performClick();
+        AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotNull(dialog);
+        assertEquals("放弃未保存的修改？", shadowOf(dialog).getTitle());
+        assertEquals(1, ((Spinner) activity.findViewById(R.id.workspace_selector)).getCount());
+
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        shadowOf(Looper.getMainLooper()).idle();
+        assertEquals(2, ((Spinner) activity.findViewById(R.id.workspace_selector)).getCount());
+        assertEquals(View.GONE,
+            activity.findViewById(R.id.workspace_unsaved_indicator).getVisibility());
+        activity.finish();
+    }
+
+    @Test
+    public void unsavedEditsRequireConfirmationBeforeSwitchingWorkspace() {
+        WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
+        activity.findViewById(R.id.workspace_new_button).performClick();
+        Spinner selector = activity.findViewById(R.id.workspace_selector);
+        assertEquals(2, selector.getCount());
+
+        ((EditText) activity.findViewById(R.id.workspace_host_input)).setText("unsaved.example.com");
+        selector.setSelection(0);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotNull(dialog);
+        assertEquals(1, selector.getSelectedItemPosition());
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        shadowOf(Looper.getMainLooper()).idle();
+        assertEquals(0, selector.getSelectedItemPosition());
+        assertEquals("", ((EditText) activity.findViewById(R.id.workspace_host_input))
+            .getText().toString());
         activity.finish();
     }
 

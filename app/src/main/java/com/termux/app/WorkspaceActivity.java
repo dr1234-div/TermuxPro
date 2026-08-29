@@ -8,7 +8,9 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -63,6 +65,8 @@ public final class WorkspaceActivity extends AppCompatActivity {
     private final List<WorkspaceProfile> mProfiles = new ArrayList<>();
     private String mActiveProfileId;
     private boolean mUpdatingSelector;
+    private boolean mBindingProfile;
+    private boolean mHasUnsavedChanges;
 
     private static final String INSTALL_SSH_COMMAND = "pkg update -y && pkg install -y openssh";
 
@@ -92,6 +96,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 updateSessionNameState();
+                if (!mBindingProfile) updateWorkspaceDirtyState();
             }
 
             @Override
@@ -99,6 +104,21 @@ public final class WorkspaceActivity extends AppCompatActivity {
         });
 
         restoreWorkspaces();
+
+        TextWatcher dirtyWatcher = new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence text, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence text, int start, int before, int count) {
+                if (!mBindingProfile) updateWorkspaceDirtyState();
+            }
+            @Override public void afterTextChanged(Editable editable) {}
+        };
+        mNameInput.addTextChangedListener(dirtyWatcher);
+        mHostInput.addTextChangedListener(dirtyWatcher);
+        mPortInput.addTextChangedListener(dirtyWatcher);
+        mPathInput.addTextChangedListener(dirtyWatcher);
+        mSessionNameInput.addTextChangedListener(dirtyWatcher);
+        mRemotePortInput.addTextChangedListener(dirtyWatcher);
+        mLocalPortInput.addTextChangedListener(dirtyWatcher);
 
         findViewById(R.id.workspace_connect_button).setOnClickListener(view -> launchRemote(null));
         findViewById(R.id.workspace_connection_diagnostic_primary).setOnClickListener(
@@ -112,8 +132,10 @@ public final class WorkspaceActivity extends AppCompatActivity {
             openTerminal(null);
         });
         findViewById(R.id.workspace_setup_button).setOnClickListener(view -> installSshClient());
-        findViewById(R.id.workspace_new_button).setOnClickListener(view -> createWorkspace());
+        findViewById(R.id.workspace_new_button).setOnClickListener(view ->
+            runAfterDiscardConfirmation(this::createWorkspace));
         findViewById(R.id.workspace_save_button).setOnClickListener(view -> saveCurrentWorkspace());
+        findViewById(R.id.workspace_copy_button).setOnClickListener(view -> copyCurrentWorkspace());
         findViewById(R.id.workspace_delete_button).setOnClickListener(view -> confirmDeleteWorkspace());
         findViewById(R.id.workspace_start_preview_button).setOnClickListener(view -> startPreviewTunnel());
         findViewById(R.id.workspace_open_preview_button).setOnClickListener(view -> openPreviewInBrowser());
@@ -128,9 +150,16 @@ public final class WorkspaceActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (mUpdatingSelector || position < 0 || position >= mProfiles.size()) return;
-                mActiveProfileId = mProfiles.get(position).id;
-                bindProfile(mProfiles.get(position));
-                persistProfiles();
+                int current = findActiveProfileIndex();
+                if (position == current) return;
+                if (mHasUnsavedChanges) {
+                    mUpdatingSelector = true;
+                    mWorkspaceSelector.setSelection(current, false);
+                    mUpdatingSelector = false;
+                    confirmDiscardChanges(() -> selectWorkspace(position));
+                } else {
+                    selectWorkspace(position);
+                }
             }
 
             @Override
@@ -177,6 +206,11 @@ public final class WorkspaceActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         refreshSetupState();
+    }
+
+    @Override
+    public void onBackPressed() {
+        runAfterDiscardConfirmation(super::onBackPressed);
     }
 
     private boolean isSshClientInstalled() {
@@ -254,6 +288,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
     }
 
     private void bindProfile(WorkspaceProfile profile) {
+        mBindingProfile = true;
         mNameInput.setText(profile.name);
         mHostInput.setText(profile.host);
         mPortInput.setText(profile.port);
@@ -263,6 +298,51 @@ public final class WorkspaceActivity extends AppCompatActivity {
         updateSessionNameState();
         mRemotePortInput.setText(profile.remotePort);
         mLocalPortInput.setText(profile.localPort);
+        mBindingProfile = false;
+        setWorkspaceDirty(false);
+    }
+
+    private void selectWorkspace(int position) {
+        mActiveProfileId = mProfiles.get(position).id;
+        bindProfile(mProfiles.get(position));
+        persistProfiles();
+        mUpdatingSelector = true;
+        mWorkspaceSelector.setSelection(position, false);
+        mUpdatingSelector = false;
+    }
+
+    private void updateWorkspaceDirtyState() {
+        WorkspaceProfile profile = mProfiles.get(findActiveProfileIndex());
+        boolean dirty = !TextUtils.equals(profile.name, mNameInput.getText().toString())
+            || !TextUtils.equals(profile.host, mHostInput.getText().toString())
+            || !TextUtils.equals(profile.port, mPortInput.getText().toString())
+            || !TextUtils.equals(profile.path, mPathInput.getText().toString())
+            || !TextUtils.equals(profile.sessionName, mSessionNameInput.getText().toString())
+            || !TextUtils.equals(profile.remotePort, mRemotePortInput.getText().toString())
+            || !TextUtils.equals(profile.localPort, mLocalPortInput.getText().toString())
+            || !TextUtils.equals(profile.connectionPolicy,
+                indexToPolicy(mConnectionPolicySelector.getSelectedItemPosition()));
+        setWorkspaceDirty(dirty);
+    }
+
+    private void setWorkspaceDirty(boolean dirty) {
+        mHasUnsavedChanges = dirty;
+        findViewById(R.id.workspace_unsaved_indicator).setVisibility(dirty ? View.VISIBLE : View.GONE);
+    }
+
+    private void runAfterDiscardConfirmation(Runnable action) {
+        if (mHasUnsavedChanges) confirmDiscardChanges(action); else action.run();
+    }
+
+    private void confirmDiscardChanges(Runnable action) {
+        WorkspaceProfile profile = mProfiles.get(findActiveProfileIndex());
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.workspace_discard_changes_title)
+            .setMessage(getString(R.string.workspace_discard_changes_message, profile.name))
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.workspace_discard_changes_action,
+                (dialog, which) -> action.run())
+            .show();
     }
 
     private void createWorkspace() {
@@ -274,6 +354,22 @@ public final class WorkspaceActivity extends AppCompatActivity {
         persistProfiles();
         refreshWorkspaceSelector();
         mHostInput.requestFocus();
+    }
+
+    private void copyCurrentWorkspace() {
+        WorkspaceProfile copy = new WorkspaceProfile(UUID.randomUUID().toString(),
+            getString(R.string.workspace_copy_name, normalizedWorkspaceName()),
+            mHostInput.getText().toString().trim(), mPortInput.getText().toString().trim(),
+            mPathInput.getText().toString().trim(), mRemotePortInput.getText().toString().trim(),
+            mLocalPortInput.getText().toString().trim(),
+            indexToPolicy(mConnectionPolicySelector.getSelectedItemPosition()),
+            mSessionNameInput.getText().toString().trim());
+        mProfiles.add(copy);
+        mActiveProfileId = copy.id;
+        persistProfiles();
+        refreshWorkspaceSelector();
+        mNameInput.requestFocus();
+        mNameInput.selectAll();
     }
 
     private void saveCurrentWorkspace() {

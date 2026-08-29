@@ -284,7 +284,13 @@
     <string name="workspace_selector_description">Saved workspaces</string>
     <string name="workspace_new_action">New</string>
     <string name="workspace_save_action">Save</string>
+    <string name="workspace_copy_action">Copy</string>
     <string name="workspace_delete_action">Delete</string>
+    <string name="workspace_unsaved_changes">Unsaved changes</string>
+    <string name="workspace_discard_changes_title">Discard unsaved changes?</string>
+    <string name="workspace_discard_changes_message">Leaving “%1$s” will discard its unsaved edits.</string>
+    <string name="workspace_discard_changes_action">Discard</string>
+    <string name="workspace_copy_name">%1$s copy</string>
     <string name="workspace_default_name">Remote development</string>
     <string name="workspace_delete_title">Delete this workspace?</string>
     <string name="workspace_delete_message">Connection metadata for “%1$s” will be removed. SSH keys and remote files are not affected.</string>
