@@ -9,3 +9,6 @@
 
 业务分支名统一为 `dev_<englishCamelCase>_<YYYYMMDD>`，紧急修复分支名为
 `hotfix_<englishCamelCase>_<YYYYMMDD>` 或使用关联 bug ID。业务部分只使用英语小驼峰，不使用中文。
+
+首次 `dev → master` 发布合并前，两者根历史不同；功能分支只需同步 `origin/dev`，不得对 `master`
+执行 rebase。首次发布合并完成后，再恢复同时同步稳定分支和研发分支的常规流程。
