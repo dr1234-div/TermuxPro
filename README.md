@@ -13,8 +13,8 @@ TermuxPro 是面向 Android 手机的移动 AI 开发终端。它以官方
 `0.1.0` 是 ARM64 测试版，面向 Android 7 及以上设备，优先验证 Android 14–16。第一阶段聚焦：
 
 - 中文工作区与多 SSH 项目配置
-- Claude Code `--continue` 和 Codex CLI `resume --last` 快速恢复
-- 持久化 tmux 会话、后台任务和二次确认停止
+- Claude Code 与 Codex CLI 安全新建上下文，历史会话必须由用户显式选择
+- 工作区级 SSH/tmux 策略、指定会话隔离、后台任务和二次确认停止
 - Shell、AI、Vim 软键盘快捷键与 AI 确认/拒绝/中断安全操作
 - 远端只读文件浏览、文件预览、Git Diff 和项目任务识别
 - SSH 连接诊断、公钥生成/复制/安装以及安全目标校验
@@ -32,7 +32,9 @@ TermuxPro 是面向 Android 手机的移动 AI 开发终端。它以官方
 首次启动点击“安装 SSH 连接组件”，等待 bootstrap 与 OpenSSH 安装完成。创建工作区时填写 SSH
 主机/IP/`user@host`/`~/.ssh/config` 别名和远端项目目录。建议远端提前安装 OpenSSH、tmux、Git、
 Claude Code 和 Codex CLI。工作区内的 Claude、Codex、Git、文件、任务与诊断入口复用同一 SSH 配置。
-应用不保存 SSH 密码，不读取私钥，也不会自动确认 AI CLI 的危险授权。
+默认策略只建立普通 SSH，不探测、创建或进入任何 tmux 会话；可按工作区选择只查看列表、仅进入指定
+会话，或创建/进入指定会话。应用不保存 SSH 密码，不读取私钥，不会跨项目自动续接 AI 历史，也不会
+自动确认 AI CLI 的危险授权。
 
 ## 开发环境
 
@@ -45,7 +47,7 @@ Claude Code 和 Codex CLI。工作区内的 Claude、Codex、Git、文件、任�
 Gradle Wrapper 已提交，无需单独安装 Gradle：
 
 ```bash
-git clone git@github.com:dr1234-div/TermuxPro.git
+git clone git@github.com:heydarey/TermuxPro.git
 cd TermuxPro
 git switch dev
 export ANDROID_SDK_ROOT=/path/to/android-sdk

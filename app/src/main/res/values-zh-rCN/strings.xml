@@ -120,19 +120,28 @@
     <string name="donate_preference_title">捐赠</string>
     <string name="workspace_home_eyebrow">移动开发工作台</string>
     <string name="workspace_home_title">继续远程项目</string>
-    <string name="workspace_home_subtitle">通过 SSH 继续远程开发；远端已安装 tmux 时恢复已有会话，否则创建普通 Shell。</string>
+    <string name="workspace_home_subtitle">通过 SSH 继续远程开发；默认仅连接服务器，是否进入 tmux 由每个工作区单独配置。</string>
     <string name="workspace_remote_card_title">远程工作区</string>
     <string name="workspace_remote_card_description">这里只保存非敏感连接信息。密码和私钥仍由 OpenSSH 管理。</string>
     <string name="workspace_name_hint">工作区名称</string>
     <string name="workspace_host_hint">SSH 地址，例如 hdr@192.168.1.153</string>
     <string name="workspace_port_hint">SSH 端口（默认 22）</string>
     <string name="workspace_path_hint">远程项目路径</string>
+    <string name="workspace_connection_policy_description">连接与 tmux 策略</string>
+    <string-array name="workspace_connection_policy_labels">
+        <item>仅 SSH（推荐）</item>
+        <item>查看 tmux 列表，不自动进入</item>
+        <item>仅进入指定 tmux 会话</item>
+        <item>创建或进入指定 tmux 会话</item>
+    </string-array>
+    <string name="workspace_session_name_hint">精确的 tmux 会话名称</string>
+    <string name="workspace_error_session_name">请输入 1–64 位字母、数字、点、下划线或连字符</string>
     <string name="workspace_connect_action">连接远程工作区</string>
     <string name="workspace_ai_quick_title">AI CLI 快速启动</string>
     <string name="workspace_start_claude">Claude Code</string>
     <string name="workspace_start_codex">Codex CLI</string>
     <string name="workspace_open_local_terminal">打开本地终端</string>
-    <string name="workspace_security_tip">首次连接需确认服务器指纹并输入密码或配置 SSH 密钥；远端有 tmux 时会恢复或创建会话。</string>
+    <string name="workspace_security_tip">首次连接需确认服务器指纹并输入密码或配置 SSH 密钥；TermuxPro 不会自动进入未指定的 tmux 或 AI 历史会话。</string>
     <string name="workspace_error_host">请输入有效的 SSH 别名、主机或“用户名@主机”。</string>
     <string name="workspace_error_port">SSH 端口必须在 1 到 65535 之间。</string>
     <string name="workspace_error_path">请输入远程项目路径。</string>

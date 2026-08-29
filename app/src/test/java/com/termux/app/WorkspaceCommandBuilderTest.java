@@ -13,40 +13,80 @@ public class WorkspaceCommandBuilderTest {
     }
 
     @Test
-    public void regularWorkspaceRestoresStableTmuxSession() {
+    public void regularWorkspaceDoesNotTouchTmuxByDefault() {
         String command = WorkspaceCommandBuilder.buildSshCommand(
-            "developer@example.com", 2222, "/srv/my project", null);
+            "developer@example.com", 2222, "/srv/my project", null,
+            WorkspaceCommandBuilder.POLICY_SSH_ONLY, "");
 
         assertTrue(command.startsWith("ssh -t -o ControlMaster=auto -o ControlPersist=600"));
         assertTrue(command.contains("termuxpro-%C"));
         assertTrue(command.contains("-p 2222 -- 'developer@example.com'"));
         assertTrue(command.contains("'\\''/srv/my project'\\''"));
-        assertTrue(command.contains("tmux new-session -A -s"));
+        assertTrue(!command.contains("tmux"));
         assertTrue(command.contains("exec ${SHELL:-sh}"));
-        assertTrue(command.contains("opened a normal shell without session recovery"));
     }
 
     @Test
-    public void claudeWorkspaceKeepsFallbackInsideRemoteCommand() {
+    public void claudeStartsNewContextWithoutGlobalContinue() {
         String command = WorkspaceCommandBuilder.buildSshCommand(
-            "dev@example.com", 22, "/repo; touch /tmp/unsafe", "claude");
+            "dev@example.com", 22, "/repo; touch /tmp/unsafe", "claude",
+            WorkspaceCommandBuilder.POLICY_SSH_ONLY, "");
 
-        assertTrue(command.contains("mobile-claude"));
-        assertTrue(command.contains("claude --continue || exec claude"));
         assertTrue(command.contains("exec claude"));
+        assertTrue(!command.contains("--continue"));
+        assertTrue(!command.contains("tmux"));
         assertTrue(command.contains("'\\''/repo; touch /tmp/unsafe'\\''"));
     }
 
     @Test
-    public void codexWorkspaceUsesResumeLast() {
+    public void codexStartsNewContextWithoutResumeLast() {
         String command = WorkspaceCommandBuilder.buildSshCommand(
-            "dev@example.com", 22, "~/repo", "codex");
+            "dev@example.com", 22, "~/repo", "codex",
+            WorkspaceCommandBuilder.POLICY_SSH_ONLY, "");
 
-        assertTrue(command.contains("mobile-codex"));
-        assertTrue(command.contains("codex resume --last || exec codex"));
         assertTrue(command.contains("exec codex"));
+        assertTrue(!command.contains("resume --last"));
         assertTrue(command.contains("\"$HOME\"/"));
         assertTrue(command.contains("'\\''repo'\\''"));
+    }
+
+    @Test
+    public void listPolicyShowsSessionsWithoutAttaching() {
+        String command = WorkspaceCommandBuilder.buildSshCommand(
+            "dev@example.com", 22, "~/repo", null,
+            WorkspaceCommandBuilder.POLICY_LIST_SESSIONS, "");
+
+        assertTrue(command.contains("tmux list-sessions"));
+        assertTrue(command.contains("not attached"));
+        assertTrue(!command.contains("attach-session"));
+        assertTrue(!command.contains("new-session"));
+    }
+
+    @Test
+    public void attachPolicyUsesOnlyExactConfiguredSessionAndNeverCreatesIt() {
+        String command = WorkspaceCommandBuilder.buildSshCommand(
+            "dev@example.com", 22, "~/repo", "claude",
+            WorkspaceCommandBuilder.POLICY_ATTACH_SESSION, "team.project");
+
+        assertTrue(command.contains("tmux has-session -t"));
+        assertTrue(command.contains("tmux attach-session -t"));
+        assertTrue(command.contains("team.project"));
+        assertTrue(!command.contains("new-session"));
+        assertTrue(!command.contains("--continue"));
+    }
+
+    @Test
+    public void createPolicyCreatesOnlyConfiguredSessionWithFreshAiContext() {
+        String command = WorkspaceCommandBuilder.buildSshCommand(
+            "dev@example.com", 22, "~/repo", "claude",
+            WorkspaceCommandBuilder.POLICY_CREATE_OR_ATTACH, "termuxpro-mine");
+
+        assertTrue(command.contains("tmux has-session -t"));
+        assertTrue(command.contains("tmux new-session -s"));
+        assertTrue(command.contains("termuxpro-mine"));
+        assertTrue(command.contains("exec claude"));
+        assertTrue(!command.contains("--continue"));
+        assertTrue(!command.contains("new-session -A"));
     }
 
     @Test

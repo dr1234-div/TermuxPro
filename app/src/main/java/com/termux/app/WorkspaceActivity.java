@@ -13,6 +13,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -52,9 +53,11 @@ public final class WorkspaceActivity extends AppCompatActivity {
     private EditText mHostInput;
     private EditText mPortInput;
     private EditText mPathInput;
+    private EditText mSessionNameInput;
     private EditText mRemotePortInput;
     private EditText mLocalPortInput;
     private Spinner mWorkspaceSelector;
+    private Spinner mConnectionPolicySelector;
     private final List<WorkspaceProfile> mProfiles = new ArrayList<>();
     private String mActiveProfileId;
     private boolean mUpdatingSelector;
@@ -71,9 +74,27 @@ public final class WorkspaceActivity extends AppCompatActivity {
         mHostInput = findViewById(R.id.workspace_host_input);
         mPortInput = findViewById(R.id.workspace_port_input);
         mPathInput = findViewById(R.id.workspace_path_input);
+        mSessionNameInput = findViewById(R.id.workspace_session_name_input);
         mRemotePortInput = findViewById(R.id.workspace_remote_port_input);
         mLocalPortInput = findViewById(R.id.workspace_local_port_input);
         mWorkspaceSelector = findViewById(R.id.workspace_selector);
+        mConnectionPolicySelector = findViewById(R.id.workspace_connection_policy_selector);
+
+        ArrayAdapter<CharSequence> policyAdapter = ArrayAdapter.createFromResource(this,
+            R.array.workspace_connection_policy_labels, R.layout.item_workspace_spinner);
+        policyAdapter.setDropDownViewResource(R.layout.item_workspace_spinner_dropdown);
+        mConnectionPolicySelector.setAdapter(policyAdapter);
+        configureLargeFontLayout();
+
+        mConnectionPolicySelector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                updateSessionNameState();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
 
         restoreWorkspaces();
 
@@ -118,6 +139,34 @@ public final class WorkspaceActivity extends AppCompatActivity {
         }
     }
 
+    private void configureLargeFontLayout() {
+        if (getResources().getConfiguration().fontScale < 1.5f) return;
+        stackButtonRow(R.id.workspace_ai_actions);
+        stackButtonRow(R.id.workspace_tools_row_one);
+        stackButtonRow(R.id.workspace_tools_row_two);
+        stackButtonRow(R.id.workspace_tools_row_three);
+    }
+
+    /** 大字体下取消双列，避免按钮文字被横向省略或固定高度裁切。 */
+    private void stackButtonRow(int rowId) {
+        LinearLayout row = findViewById(rowId);
+        row.setOrientation(LinearLayout.VERTICAL);
+        int margin = Math.round(8 * getResources().getDisplayMetrics().density);
+        int visibleIndex = 0;
+        for (int index = 0; index < row.getChildCount(); index++) {
+            View child = row.getChildAt(index);
+            if (!(child instanceof android.widget.Button)) {
+                child.setVisibility(View.GONE);
+                continue;
+            }
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            if (visibleIndex++ > 0) params.topMargin = margin;
+            child.setLayoutParams(params);
+            child.setMinimumHeight(Math.round(56 * getResources().getDisplayMetrics().density));
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -158,7 +207,9 @@ public final class WorkspaceActivity extends AppCompatActivity {
                         item.optString("name", getString(R.string.workspace_default_name)),
                         item.optString("host", ""), item.optString("port", "22"),
                         item.optString("path", "~/"), item.optString("remotePort", "5173"),
-                        item.optString("localPort", "5173")));
+                        item.optString("localPort", "5173"),
+                        item.optString("connectionPolicy", WorkspaceCommandBuilder.POLICY_SSH_ONLY),
+                        item.optString("sessionName", defaultSessionName(item.optString("id", "")))));
                 }
             } catch (JSONException ignored) {
                 // 配置损坏时保留应用可用性，下面会创建默认工作区。
@@ -169,7 +220,8 @@ public final class WorkspaceActivity extends AppCompatActivity {
             mProfiles.add(new WorkspaceProfile(UUID.randomUUID().toString(),
                 preferences.getString(KEY_NAME, getString(R.string.workspace_default_name)),
                 preferences.getString(KEY_HOST, ""), preferences.getString(KEY_PORT, "22"),
-                preferences.getString(KEY_PATH, "~/"), "5173", "5173"));
+                preferences.getString(KEY_PATH, "~/"), "5173", "5173",
+                WorkspaceCommandBuilder.POLICY_SSH_ONLY, ""));
         }
         mActiveProfileId = preferences.getString(KEY_ACTIVE_PROFILE, mProfiles.get(0).id);
         refreshWorkspaceSelector();
@@ -200,13 +252,17 @@ public final class WorkspaceActivity extends AppCompatActivity {
         mHostInput.setText(profile.host);
         mPortInput.setText(profile.port);
         mPathInput.setText(profile.path);
+        mConnectionPolicySelector.setSelection(policyToIndex(profile.connectionPolicy), false);
+        mSessionNameInput.setText(profile.sessionName);
+        updateSessionNameState();
         mRemotePortInput.setText(profile.remotePort);
         mLocalPortInput.setText(profile.localPort);
     }
 
     private void createWorkspace() {
         WorkspaceProfile profile = new WorkspaceProfile(UUID.randomUUID().toString(),
-            getString(R.string.workspace_default_name), "", "22", "~/", "5173", "5173");
+            getString(R.string.workspace_default_name), "", "22", "~/", "5173", "5173",
+            WorkspaceCommandBuilder.POLICY_SSH_ONLY, "");
         mProfiles.add(profile);
         mActiveProfileId = profile.id;
         persistProfiles();
@@ -220,6 +276,8 @@ public final class WorkspaceActivity extends AppCompatActivity {
         profile.host = mHostInput.getText().toString().trim();
         profile.port = mPortInput.getText().toString().trim();
         profile.path = mPathInput.getText().toString().trim();
+        profile.connectionPolicy = indexToPolicy(mConnectionPolicySelector.getSelectedItemPosition());
+        profile.sessionName = mSessionNameInput.getText().toString().trim();
         profile.remotePort = mRemotePortInput.getText().toString().trim();
         profile.localPort = mLocalPortInput.getText().toString().trim();
         persistProfiles();
@@ -241,7 +299,8 @@ public final class WorkspaceActivity extends AppCompatActivity {
                 mProfiles.remove(profile);
                 if (mProfiles.isEmpty()) {
                     mProfiles.add(new WorkspaceProfile(UUID.randomUUID().toString(),
-                        getString(R.string.workspace_default_name), "", "22", "~/", "5173", "5173"));
+                        getString(R.string.workspace_default_name), "", "22", "~/", "5173", "5173",
+                        WorkspaceCommandBuilder.POLICY_SSH_ONLY, ""));
                 }
                 mActiveProfileId = mProfiles.get(0).id;
                 persistProfiles();
@@ -262,6 +321,8 @@ public final class WorkspaceActivity extends AppCompatActivity {
                 item.put("path", profile.path);
                 item.put("remotePort", profile.remotePort);
                 item.put("localPort", profile.localPort);
+                item.put("connectionPolicy", profile.connectionPolicy);
+                item.put("sessionName", profile.sessionName);
                 profiles.put(item);
             } catch (JSONException ignored) {
                 // String 字段不会触发 JSON 编码失败。
@@ -281,6 +342,8 @@ public final class WorkspaceActivity extends AppCompatActivity {
         String host = mHostInput.getText().toString().trim();
         String portText = mPortInput.getText().toString().trim();
         String path = mPathInput.getText().toString().trim();
+        String policy = indexToPolicy(mConnectionPolicySelector.getSelectedItemPosition());
+        String sessionName = mSessionNameInput.getText().toString().trim();
 
         if (!SshTargetValidator.isValid(host)) {
             mHostInput.setError(getString(R.string.workspace_error_host));
@@ -301,6 +364,10 @@ public final class WorkspaceActivity extends AppCompatActivity {
             mPathInput.setError(getString(R.string.workspace_error_path));
             return;
         }
+        if (requiresSessionName(policy) && !sessionName.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,63}")) {
+            mSessionNameInput.setError(getString(R.string.workspace_error_session_name));
+            return;
+        }
 
         mNameInput.setText(normalizedWorkspaceName());
         mPortInput.setText(String.valueOf(port));
@@ -309,7 +376,39 @@ public final class WorkspaceActivity extends AppCompatActivity {
         persistExtraKeysPreset(cli == null ? TermuxTerminalExtraKeys.PRESET_SHELL :
             TermuxTerminalExtraKeys.PRESET_AI);
         // 远程连接必须进入独立本地终端会话，避免命令被写入正在运行任务的旧 Shell。
-        openTerminal(WorkspaceCommandBuilder.buildSshCommand(host, port, path, cli), true);
+        openTerminal(WorkspaceCommandBuilder.buildSshCommand(
+            host, port, path, cli, policy, sessionName), true);
+    }
+
+    private void updateSessionNameState() {
+        boolean enabled = requiresSessionName(
+            indexToPolicy(mConnectionPolicySelector.getSelectedItemPosition()));
+        mSessionNameInput.setEnabled(enabled);
+        mSessionNameInput.setAlpha(enabled ? 1f : 0.55f);
+    }
+
+    private static boolean requiresSessionName(String policy) {
+        return WorkspaceCommandBuilder.POLICY_ATTACH_SESSION.equals(policy)
+            || WorkspaceCommandBuilder.POLICY_CREATE_OR_ATTACH.equals(policy);
+    }
+
+    private static String indexToPolicy(int index) {
+        if (index == 1) return WorkspaceCommandBuilder.POLICY_LIST_SESSIONS;
+        if (index == 2) return WorkspaceCommandBuilder.POLICY_ATTACH_SESSION;
+        if (index == 3) return WorkspaceCommandBuilder.POLICY_CREATE_OR_ATTACH;
+        return WorkspaceCommandBuilder.POLICY_SSH_ONLY;
+    }
+
+    private static int policyToIndex(String policy) {
+        if (WorkspaceCommandBuilder.POLICY_LIST_SESSIONS.equals(policy)) return 1;
+        if (WorkspaceCommandBuilder.POLICY_ATTACH_SESSION.equals(policy)) return 2;
+        if (WorkspaceCommandBuilder.POLICY_CREATE_OR_ATTACH.equals(policy)) return 3;
+        return 0;
+    }
+
+    private static String defaultSessionName(String id) {
+        if (TextUtils.isEmpty(id)) return "";
+        return "termuxpro-" + id.substring(0, Math.min(8, id.length()));
     }
 
     private void persistExtraKeysPreset(String preset) {
@@ -516,9 +615,12 @@ public final class WorkspaceActivity extends AppCompatActivity {
         String path;
         String remotePort;
         String localPort;
+        String connectionPolicy;
+        String sessionName;
 
         WorkspaceProfile(String id, String name, String host, String port, String path,
-                         String remotePort, String localPort) {
+                         String remotePort, String localPort, String connectionPolicy,
+                         String sessionName) {
             this.id = id;
             this.name = name;
             this.host = host;
@@ -526,6 +628,8 @@ public final class WorkspaceActivity extends AppCompatActivity {
             this.path = path;
             this.remotePort = remotePort;
             this.localPort = localPort;
+            this.connectionPolicy = connectionPolicy;
+            this.sessionName = TextUtils.isEmpty(sessionName) ? defaultSessionName(id) : sessionName;
         }
 
         @Override

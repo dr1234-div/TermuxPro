@@ -8,28 +8,47 @@ import com.termux.shared.termux.TermuxConstants;
 /** 为工作区生成完全经过 POSIX Shell 转义的 SSH/tmux 启动命令。 */
 final class WorkspaceCommandBuilder {
 
+    static final String POLICY_SSH_ONLY = "ssh_only";
+    static final String POLICY_LIST_SESSIONS = "list_sessions";
+    static final String POLICY_ATTACH_SESSION = "attach_session";
+    static final String POLICY_CREATE_OR_ATTACH = "create_or_attach";
+
     static final String CONTROL_PATH = TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH + "/termuxpro-%C";
 
     private WorkspaceCommandBuilder() {}
 
     @NonNull
-    static String buildSshCommand(@NonNull String host, int port, @NonNull String path, @Nullable String cli) {
-        String sessionName = cli == null ? "mobile-ai" : "mobile-" + cli;
-        String tmuxCommand = "tmux new-session -A -s " + shellQuote(sessionName);
-        String fallbackCommand = "exec ${SHELL:-sh}";
+    static String buildSshCommand(@NonNull String host, int port, @NonNull String path,
+                                  @Nullable String cli, @NonNull String policy,
+                                  @NonNull String sessionName) {
+        String directCommand = cli == null ? "exec ${SHELL:-sh}" : "exec " + cli;
+        String remoteCommand = "cd -- " + remotePathExpression(path) + " && ";
 
-        if ("claude".equals(cli)) {
-            tmuxCommand += " " + shellQuote("claude --continue || exec claude");
-            fallbackCommand = "exec claude";
-        } else if ("codex".equals(cli)) {
-            tmuxCommand += " " + shellQuote("codex resume --last || exec codex");
-            fallbackCommand = "exec codex";
+        if (POLICY_LIST_SESSIONS.equals(policy)) {
+            remoteCommand += "if command -v tmux >/dev/null 2>&1; then "
+                + "printf '\\n[TermuxPro] Available tmux sessions (not attached):\\n'; "
+                + "tmux list-sessions 2>/dev/null || printf '[TermuxPro] No tmux sessions found.\\n'; "
+                + "else printf '\\n[TermuxPro] Remote tmux is not installed.\\n' >&2; fi; "
+                + directCommand;
+        } else if (POLICY_ATTACH_SESSION.equals(policy)) {
+            remoteCommand += "if ! command -v tmux >/dev/null 2>&1; then "
+                + "printf '\\n[TermuxPro] Remote tmux is not installed; opened a normal shell.\\n' >&2; "
+                + "exec ${SHELL:-sh}; elif tmux has-session -t " + shellQuote(sessionName)
+                + " 2>/dev/null; then exec tmux attach-session -t " + shellQuote(sessionName)
+                + "; else printf '\\n[TermuxPro] Configured tmux session does not exist: %s\\n' "
+                + shellQuote(sessionName) + " >&2; exec ${SHELL:-sh}; fi";
+        } else if (POLICY_CREATE_OR_ATTACH.equals(policy)) {
+            String newSession = "tmux new-session -s " + shellQuote(sessionName);
+            if (cli != null) newSession += " " + shellQuote("exec " + cli);
+            remoteCommand += "if ! command -v tmux >/dev/null 2>&1; then "
+                + "printf '\\n[TermuxPro] Remote tmux is not installed; opened without session recovery.\\n' >&2; "
+                + directCommand + "; elif tmux has-session -t " + shellQuote(sessionName)
+                + " 2>/dev/null; then exec tmux attach-session -t " + shellQuote(sessionName)
+                + "; else exec " + newSession + "; fi";
+        } else {
+            // 安全默认值：只建立 SSH，不探测、不创建、不进入任何 tmux 会话。
+            remoteCommand += directCommand;
         }
-
-        String remoteCommand = "cd -- " + remotePathExpression(path)
-            + " && if command -v tmux >/dev/null 2>&1; then exec " + tmuxCommand
-            + "; else printf '\\n[TermuxPro] Remote tmux is not installed; opened a normal shell without session recovery.\\n' >&2; "
-            + fallbackCommand + "; fi";
 
         return "ssh -t -o ControlMaster=auto -o ControlPersist=600 -o ControlPath="
             + shellQuote(CONTROL_PATH)
