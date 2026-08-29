@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -103,5 +104,55 @@ public class CustomLayoutsSmokeTest {
         assertEquals(LinearLayout.VERTICAL, actions.getOrientation());
         assertNotNull(workspace.findViewById(R.id.workspace_connection_policy_selector));
         assertNotNull(workspace.findViewById(R.id.workspace_session_name_input));
+    }
+
+    @Test
+    public void toolbarNavigationAndActionsStayInsideNarrowScreenAtTwoHundredPercentFont() {
+        Configuration configuration = new Configuration(
+            RuntimeEnvironment.getApplication().getResources().getConfiguration());
+        configuration.fontScale = 2f;
+        Context scaled = RuntimeEnvironment.getApplication().createConfigurationContext(configuration);
+        Context context = new ContextThemeWrapper(scaled, R.style.Theme_TermuxPro_DayNight_NoActionBar);
+        int[] layouts = {
+            R.layout.activity_git_diff,
+            R.layout.activity_remote_files,
+            R.layout.activity_remote_file_preview,
+            R.layout.activity_project_tasks,
+            R.layout.activity_connection_diagnostic,
+            R.layout.activity_task_sessions
+        };
+        int[] backButtons = {
+            R.id.git_diff_back_button,
+            R.id.remote_files_back_button,
+            R.id.remote_file_back_button,
+            R.id.project_tasks_back_button,
+            R.id.connection_diagnostic_back_button,
+            R.id.task_sessions_back_button
+        };
+        int[] actionButtons = {
+            R.id.git_diff_refresh_button,
+            R.id.remote_files_refresh_button,
+            R.id.remote_file_refresh_button,
+            R.id.project_tasks_refresh_button,
+            R.id.connection_diagnostic_refresh_button,
+            R.id.task_sessions_refresh_button
+        };
+        float density = context.getResources().getDisplayMetrics().density;
+        int width = Math.round(205 * density);
+        int height = Math.round(640 * density);
+        for (int index = 0; index < layouts.length; index++) {
+            View page = LayoutInflater.from(context).inflate(
+                layouts[index], new FrameLayout(context), false);
+            page.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY));
+            page.layout(0, 0, width, height);
+            View back = page.findViewById(backButtons[index]);
+            View action = page.findViewById(actionButtons[index]);
+            assertTrue("返回操作不能被超大字体挤出屏幕", back.getLeft() >= 0 && back.getRight() <= width);
+            assertTrue("工具栏操作不能被超大字体挤出屏幕",
+                action.getLeft() >= 0 && action.getRight() <= width);
+            assertEquals(View.VISIBLE, back.getVisibility());
+            assertEquals(View.VISIBLE, action.getVisibility());
+        }
     }
 }
