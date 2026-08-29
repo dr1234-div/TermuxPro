@@ -352,6 +352,15 @@
     <string name="connection_diagnostic_success">Connection succeeded. Available tools are listed below.</string>
     <string name="connection_diagnostic_failed">Unable to diagnose (exit code %1$d). Connect interactively first to confirm the host key and authentication.</string>
     <string name="connection_diagnostic_invalid">The server returned an invalid diagnostic response.</string>
+    <string name="connection_diagnostic_interactive_action">Open interactive connection to authenticate</string>
+    <string name="connection_stage_network">Network and SSH port</string>
+    <string name="connection_stage_host_identity">Server fingerprint</string>
+    <string name="connection_stage_authentication">User authentication</string>
+    <string name="connection_stage_remote_environment">Remote environment</string>
+    <string name="connection_stage_passed">Passed</string>
+    <string name="connection_stage_action_required">Action required in the interactive terminal</string>
+    <string name="connection_stage_failed">Failed</string>
+    <string name="connection_stage_pending">Not verified yet</string>
     <string name="connection_error_ssh_missing">The SSH component is not installed. Return home to install it.</string>
     <string name="connection_error_interrupted">The connection check was cancelled. You can retry it.</string>
     <string name="connection_error_process">Unable to start the local OpenSSH process. Check the TermuxPro environment.</string>
