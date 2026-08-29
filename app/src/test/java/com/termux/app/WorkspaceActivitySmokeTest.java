@@ -64,6 +64,8 @@ public class WorkspaceActivitySmokeTest {
         assertTrue(activity.getTheme().resolveAttribute(attr.textColorPrimary, value, true));
         assertEquals(activity.getColor(R.color.tp_text_primary),
             activity.getColorStateList(value.resourceId).getDefaultColor());
+        assertTrue(activity.getTheme().resolveAttribute(attr.colorAccent, value, true));
+        assertEquals(activity.getColor(R.color.tp_primary), value.data);
         activity.finish();
     }
 

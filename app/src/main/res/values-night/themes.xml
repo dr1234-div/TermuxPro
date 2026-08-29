@@ -44,6 +44,8 @@
         <item name="colorOnPrimary">@color/tp_text_primary</item>
         <item name="colorSecondary">@color/tp_primary</item>
         <item name="colorOnSecondary">@color/tp_on_primary</item>
+        <item name="colorAccent">@color/tp_primary</item>
+        <item name="android:colorAccent">@color/tp_primary</item>
         <item name="android:windowBackground">@color/tp_background</item>
         <item name="android:navigationBarColor">@color/tp_background</item>
         <item name="android:statusBarColor">@color/tp_surface</item>
