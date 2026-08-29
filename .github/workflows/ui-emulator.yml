@@ -1,0 +1,100 @@
+name: TermuxPro Emulator UI
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 2 * * *'
+  pull_request:
+    branches: [dev, master]
+    paths:
+      - 'app/src/main/**'
+      - 'app/src/androidTest/**'
+      - 'app/build.gradle'
+      - '.github/workflows/ui-emulator.yml'
+
+concurrency:
+  group: emulator-ui-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  emulator-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: gradle/actions/wrapper-validation@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - name: 安装模拟器、系统镜像与 NDK
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            'platform-tools' 'emulator' 'platforms;android-36' \
+            'system-images;android-35;google_apis;x86_64' 'ndk;29.0.14206865'
+      - name: 创建并启动隔离模拟器
+        run: |
+          if [[ -e /dev/kvm ]]; then
+            sudo chmod 666 /dev/kvm
+          fi
+          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd \
+            --force --name termuxpro-ci --package 'system-images;android-35;google_apis;x86_64'
+          "$ANDROID_HOME/emulator/emulator" @termuxpro-ci \
+            -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect \
+            -memory 2048 > "$RUNNER_TEMP/termuxpro-emulator.log" 2>&1 &
+          adb wait-for-device
+          for attempt in $(seq 1 90); do
+            if [[ "$(adb shell getprop sys.boot_completed | tr -d '\r')" == "1" ]]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo '模拟器启动超时' >&2
+          cat "$RUNNER_TEMP/termuxpro-emulator.log" >&2
+          exit 1
+      - name: 配置 360dp 深色测试设备
+        run: |
+          adb shell wm size 720x1600
+          adb shell wm density 320
+          adb shell cmd uimode night yes
+          adb shell settings put system font_scale 1.0
+      - name: 默认字体页面截图
+        run: |
+          ./gradlew --no-daemon --max-workers=2 :app:connectedDebugAndroidTest \
+            -Pandroid.testInstrumentationRunnerArguments.screenshotSuffix=default
+          mkdir -p test-artifacts/emulator-ui/default
+          adb pull /sdcard/Android/data/com.termux/files/ui-screenshots/. \
+            test-artifacts/emulator-ui/default/
+      - name: 200% 字体页面截图
+        run: |
+          adb shell settings put system font_scale 2.0
+          adb shell am force-stop com.termux
+          ./gradlew --no-daemon --max-workers=2 :app:connectedDebugAndroidTest \
+            -Pandroid.testInstrumentationRunnerArguments.screenshotSuffix=font200
+          mkdir -p test-artifacts/emulator-ui/font200
+          adb pull /sdcard/Android/data/com.termux/files/ui-screenshots/. \
+            test-artifacts/emulator-ui/font200/
+      - name: 收集截图与 UI 层级
+        if: always()
+        run: |
+          mkdir -p test-artifacts/emulator-ui
+          adb shell uiautomator dump /sdcard/window.xml || true
+          adb pull /sdcard/window.xml test-artifacts/emulator-ui/window.xml || true
+          cp "$RUNNER_TEMP/termuxpro-emulator.log" test-artifacts/emulator-ui/ || true
+      - name: 上传模拟器验收证据
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: termuxpro-emulator-ui-${{ github.run_number }}
+          path: |
+            test-artifacts/emulator-ui/
+            app/build/reports/androidTests/
+          if-no-files-found: error
+          retention-days: 30
+      - name: 关闭模拟器
+        if: always()
+        run: adb emu kill || true
