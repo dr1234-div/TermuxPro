@@ -28,7 +28,7 @@ jobs:
           java-version: '17'
           cache: gradle
       - name: 安装 Android NDK
-        run: sdkmanager 'ndk;29.0.14206865'
+        run: "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'ndk;29.0.14206865'
       - name: 检查仓库秘密边界
         run: |
           if git ls-files | grep -E '(^|/)(\.signing/|.*\.(p12|jks|keystore|key)$|.*\.pass$)'; then
