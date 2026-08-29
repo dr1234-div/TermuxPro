@@ -78,6 +78,10 @@ Android 标准测试位于各模块 `src/test` 和 `src/androidTest`；根目录
 - `master`：只接收通过自动化、Release 校验和三星真机 P0 验收的发布候选。
 - 官方 Termux 更新通过只读 `upstream` 同步，不向上游推送 TermuxPro 代码。
 
+发布闭环固定为：功能 PR 合入 `dev` → `vX.Y.Z-rc.N` Pre-release → 真机验收记录 →
+`dev → master` 发布 PR → `vX.Y.Z` 正式 Release → `dev` 快进对齐 `master`。手动 Actions 构建的
+Artifact 仅用于验证，不视为正式发布。
+
 完整规范见 [贡献指南](CONTRIBUTING.md)、[架构说明](docs/ARCHITECTURE.md)和
 [发布与签名](docs/RELEASE_SIGNING.md)。Codex 与 Claude Code 应加载项目中的
 `termuxpro-development` Skill，按产品 → 架构 → 开发 → 测试 → 验收 → 回归闭环执行。

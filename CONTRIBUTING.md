@@ -7,6 +7,9 @@
 3. 变更必须包含与风险相称的测试，并运行 `./scripts/test-all.sh` 与相关构建。
 4. UI 变更附截图；SSH、签名、路径、授权和后台行为变更附安全说明。
 5. PR 目标为 `dev`。只有版本候选在三星真机通过 P0 清单后才能从 `dev` 合入 `master`。
+6. 候选版本使用 `vX.Y.Z-rc.N` 并自动发布为 Pre-release；真机验收结论必须写入 `test/reports/`。
+7. 稳定版通过 `dev → master` 发布 PR，合并后在 `master` 创建 `vX.Y.Z` 标签，由 Actions 创建正式
+   Release；发布完成后将 `dev` 快进对齐 `master` 并确认 CI 全绿。
 
 禁止提交密钥、密码、Token、真实主机、公司代码、未脱敏日志、Release 私钥或构建缓存。发现安全问题
 请遵循 [SECURITY.md](SECURITY.md)，不要创建公开漏洞 Issue。

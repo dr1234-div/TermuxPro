@@ -45,6 +45,23 @@ description: 迭代、评审、测试或发布 TermuxPro Android 移动 AI 终�
 
 若任一门禁失败，修复后从受影响层开始重新执行测试，不降低验收标准来获得通过。
 
+## 维护与发布闭环
+
+普通迭代必须按以下状态推进，不得把 Actions Artifact 当作 GitHub Release，也不得跳过失败门禁：
+
+1. 同步 `master`、`dev`，从 `dev` 创建英语小驼峰业务分支。
+2. 完成功能、测试、文档和本地验证后提交推送，创建以 `dev` 为目标的 PR。
+3. PR CI 全绿后合入 `dev`；需要设备能力时先发布 `vX.Y.Z-rc.N` 并完成真机回归。
+4. 将真机结论、已知限制和候选 APK SHA-256 写入版本说明及 `test/reports/`，不得补造证据。
+5. 创建 `dev → master` 发布 PR；发布门禁和 CI 全绿后才能合并。
+6. 在 `master` 合并提交创建稳定标签 `vX.Y.Z`。标签流水线必须完成测试、Lint、R8、签名、APK
+   内容校验和 GitHub Release 创建；只运行 `workflow_dispatch` 得到的是临时 Artifact，不算发布。
+7. 核对稳定 Release 非 Draft/Pre-release、附件和 SHA-256 完整、默认分支为 `master`、无遗留 PR；
+   再将 `dev` 快进到 `master` 发布提交，并等待收尾 CI 通过。
+
+稳定版本不得覆盖或移动既有标签。发布失败时保留失败证据，修复工作流或代码后递增候选版本；未经用户
+明确授权，不删除已公开 Release、标签或用户可下载产物。
+
 ## 按需参考
 
 - 产品范围或架构决策：读 `docs/ARCHITECTURE.md`。
