@@ -66,7 +66,7 @@ public final class UiRenderingInstrumentedTest {
         values.put(MediaStore.Images.Media.DISPLAY_NAME, name + "-" + suffix + ".png");
         values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
         values.put(MediaStore.Images.Media.RELATIVE_PATH,
-            Environment.DIRECTORY_DOWNLOADS + "/termuxpro-ui-screenshots");
+            Environment.DIRECTORY_PICTURES + "/termuxpro-ui-screenshots");
         values.put(MediaStore.Images.Media.IS_PENDING, 1);
 
         Uri output = context.getContentResolver().insert(
