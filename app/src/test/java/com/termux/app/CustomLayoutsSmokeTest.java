@@ -102,6 +102,10 @@ public class CustomLayoutsSmokeTest {
         View workspace = inflater.inflate(R.layout.activity_workspace, new FrameLayout(context), false);
         LinearLayout actions = workspace.findViewById(R.id.workspace_management_actions);
         assertEquals(LinearLayout.VERTICAL, actions.getOrientation());
+        View workspaceSelector = workspace.findViewById(R.id.workspace_selector);
+        assertEquals(ViewGroup.LayoutParams.WRAP_CONTENT,
+            workspaceSelector.getLayoutParams().height);
+        assertTrue(workspaceSelector.getMinimumHeight() >= Math.round(52 * density));
         assertNotNull(workspace.findViewById(R.id.workspace_connection_policy_selector));
         assertNotNull(workspace.findViewById(R.id.workspace_session_name_input));
     }
