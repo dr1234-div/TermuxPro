@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -54,10 +55,37 @@ public final class SshKeysActivity extends AppCompatActivity {
         mKeyView = findViewById(R.id.ssh_keys_public_key);
         mCopyButton = findViewById(R.id.ssh_keys_copy_button);
         mInstallButton = findViewById(R.id.ssh_keys_install_button);
+        configureLargeFontActions();
         findViewById(R.id.ssh_keys_back_button).setOnClickListener(view -> finish());
         findViewById(R.id.ssh_keys_generate_button).setOnClickListener(view -> confirmGenerate());
         mCopyButton.setOnClickListener(view -> copyPublicKeys());
         mInstallButton.setOnClickListener(view -> confirmInstall());
+    }
+
+    /** 大字体下并排操作无法容纳完整语义，改为纵向全宽按钮。 */
+    private void configureLargeFontActions() {
+        float fontScale = getResources().getConfiguration().fontScale;
+        if (fontScale < 1.5f) return;
+        LinearLayout actions = findViewById(R.id.ssh_keys_secondary_actions);
+        actions.setOrientation(LinearLayout.VERTICAL);
+        configureStackedAction(mCopyButton, false);
+        configureStackedAction(mInstallButton, true);
+    }
+
+    private void configureStackedAction(@NonNull Button button, boolean addTopMargin) {
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) button.getLayoutParams();
+        params.width = LinearLayout.LayoutParams.MATCH_PARENT;
+        params.height = LinearLayout.LayoutParams.WRAP_CONTENT;
+        params.weight = 0f;
+        params.setMarginStart(0);
+        params.topMargin = addTopMargin ? dp(8) : 0;
+        button.setLayoutParams(params);
+        button.setMinHeight(dp(50));
+        button.setSingleLine(false);
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     @Override

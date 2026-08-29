@@ -30,7 +30,7 @@ public class CustomLayoutsSmokeTest {
     @Test
     public void allCustomActivityLayoutsInflateWithProductionTheme() {
         Context context = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
-            R.style.Theme_TermuxActivity_DayNight_NoActionBar);
+            R.style.Theme_TermuxPro_DayNight_NoActionBar);
         int[] layouts = {
             R.layout.activity_workspace,
             R.layout.activity_git_diff,
@@ -39,8 +39,7 @@ public class CustomLayoutsSmokeTest {
             R.layout.activity_project_tasks,
             R.layout.activity_connection_diagnostic,
             R.layout.activity_ssh_keys,
-            R.layout.activity_task_sessions,
-            R.layout.activity_termux
+            R.layout.activity_task_sessions
         };
         LayoutInflater inflater = LayoutInflater.from(context);
         for (int layout : layouts) {
@@ -48,12 +47,16 @@ public class CustomLayoutsSmokeTest {
             View view = inflater.inflate(layout, parent, false);
             assertNotNull(view);
         }
+        Context terminalContext = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
+            R.style.Theme_TermuxActivity_DayNight_NoActionBar);
+        assertNotNull(LayoutInflater.from(terminalContext).inflate(
+            R.layout.activity_termux, new FrameLayout(terminalContext), false));
     }
 
     @Test
     public void sharedListItemUsesExplicitReadableTextColorAndTouchHeight() {
         Context context = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
-            R.style.Theme_TermuxActivity_DayNight_NoActionBar);
+            R.style.Theme_TermuxPro_DayNight_NoActionBar);
         TextView item = (TextView) LayoutInflater.from(context)
             .inflate(R.layout.item_termuxpro_list, new FrameLayout(context), false);
 
@@ -65,7 +68,7 @@ public class CustomLayoutsSmokeTest {
     @Test
     public void toolbarsAndWorkspaceActionsRemainUsableWithLargeFonts() {
         Context context = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
-            R.style.Theme_TermuxActivity_DayNight_NoActionBar);
+            R.style.Theme_TermuxPro_DayNight_NoActionBar);
         LayoutInflater inflater = LayoutInflater.from(context);
         int[] layouts = {
             R.layout.activity_git_diff,
