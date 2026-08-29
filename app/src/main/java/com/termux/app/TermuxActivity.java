@@ -669,9 +669,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             startActivity(intent);
         });
         findViewById(R.id.terminal_claude_button).setOnClickListener(view ->
-            startAiCli("claude --continue || claude"));
+            showAiLaunchDialog(AiCliLaunchCommand.Tool.CLAUDE));
         findViewById(R.id.terminal_codex_button).setOnClickListener(view ->
-            startAiCli("codex resume --last || codex"));
+            showAiLaunchDialog(AiCliLaunchCommand.Tool.CODEX));
         findViewById(R.id.terminal_prompt_button).setOnClickListener(view -> showPromptComposer());
         findViewById(R.id.terminal_tools_button).setOnClickListener(this::showProjectTools);
     }
@@ -679,6 +679,21 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     private void startAiCli(String command) {
         applyExtraKeysPreset(TermuxTerminalExtraKeys.PRESET_AI, R.string.workspace_keys_ai_applied);
         confirmAndSendCommand(command);
+    }
+
+    private void showAiLaunchDialog(AiCliLaunchCommand.Tool tool) {
+        String[] actions = {
+            getString(R.string.ai_session_new_action),
+            getString(R.string.ai_session_pick_history_action)
+        };
+        new AlertDialog.Builder(this)
+            .setTitle(getString(R.string.ai_session_launch_title,
+                AiCliLaunchCommand.displayName(tool)))
+            .setItems(actions, (dialog, which) -> startAiCli(AiCliLaunchCommand.command(tool,
+                which == 0 ? AiCliLaunchCommand.Mode.NEW_SESSION :
+                    AiCliLaunchCommand.Mode.PICK_HISTORY)))
+            .setNegativeButton(android.R.string.cancel, null)
+            .show();
     }
 
     private void showProjectTools(View anchor) {

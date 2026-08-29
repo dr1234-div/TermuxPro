@@ -102,8 +102,10 @@ public final class WorkspaceActivity extends AppCompatActivity {
         findViewById(R.id.workspace_connect_button).setOnClickListener(view -> launchRemote(null));
         findViewById(R.id.workspace_connection_diagnostic_primary).setOnClickListener(
             view -> openConnectionDiagnostic());
-        findViewById(R.id.workspace_claude_button).setOnClickListener(view -> launchRemote("claude"));
-        findViewById(R.id.workspace_codex_button).setOnClickListener(view -> launchRemote("codex"));
+        findViewById(R.id.workspace_claude_button).setOnClickListener(view ->
+            showAiLaunchDialog(AiCliLaunchCommand.Tool.CLAUDE));
+        findViewById(R.id.workspace_codex_button).setOnClickListener(view ->
+            showAiLaunchDialog(AiCliLaunchCommand.Tool.CODEX));
         findViewById(R.id.workspace_local_terminal_button).setOnClickListener(view -> {
             persistExtraKeysPreset(TermuxTerminalExtraKeys.PRESET_SHELL);
             openTerminal(null);
@@ -385,6 +387,21 @@ public final class WorkspaceActivity extends AppCompatActivity {
         // 远程连接必须进入独立本地终端会话，避免命令被写入正在运行任务的旧 Shell。
         openTerminal(WorkspaceCommandBuilder.buildSshCommand(
             host, port, path, cli, policy, sessionName), true);
+    }
+
+    private void showAiLaunchDialog(AiCliLaunchCommand.Tool tool) {
+        String[] actions = {
+            getString(R.string.ai_session_new_action),
+            getString(R.string.ai_session_pick_history_action)
+        };
+        new AlertDialog.Builder(this)
+            .setTitle(getString(R.string.ai_session_launch_title,
+                AiCliLaunchCommand.displayName(tool)))
+            .setItems(actions, (dialog, which) -> launchRemote(AiCliLaunchCommand.command(tool,
+                which == 0 ? AiCliLaunchCommand.Mode.NEW_SESSION :
+                    AiCliLaunchCommand.Mode.PICK_HISTORY)))
+            .setNegativeButton(android.R.string.cancel, null)
+            .show();
     }
 
     private void updateSessionNameState() {
