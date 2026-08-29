@@ -13,6 +13,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -83,6 +84,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
             R.array.workspace_connection_policy_labels, R.layout.item_workspace_spinner);
         policyAdapter.setDropDownViewResource(R.layout.item_workspace_spinner_dropdown);
         mConnectionPolicySelector.setAdapter(policyAdapter);
+        configureLargeFontLayout();
 
         mConnectionPolicySelector.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -134,6 +136,34 @@ public final class WorkspaceActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQUEST_NOTIFICATIONS);
+        }
+    }
+
+    private void configureLargeFontLayout() {
+        if (getResources().getConfiguration().fontScale < 1.5f) return;
+        stackButtonRow(R.id.workspace_ai_actions);
+        stackButtonRow(R.id.workspace_tools_row_one);
+        stackButtonRow(R.id.workspace_tools_row_two);
+        stackButtonRow(R.id.workspace_tools_row_three);
+    }
+
+    /** 大字体下取消双列，避免按钮文字被横向省略或固定高度裁切。 */
+    private void stackButtonRow(int rowId) {
+        LinearLayout row = findViewById(rowId);
+        row.setOrientation(LinearLayout.VERTICAL);
+        int margin = Math.round(8 * getResources().getDisplayMetrics().density);
+        int visibleIndex = 0;
+        for (int index = 0; index < row.getChildCount(); index++) {
+            View child = row.getChildAt(index);
+            if (!(child instanceof android.widget.Button)) {
+                child.setVisibility(View.GONE);
+                continue;
+            }
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            if (visibleIndex++ > 0) params.topMargin = margin;
+            child.setLayoutParams(params);
+            child.setMinimumHeight(Math.round(56 * getResources().getDisplayMetrics().density));
         }
     }
 

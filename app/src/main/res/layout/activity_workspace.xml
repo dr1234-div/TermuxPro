@@ -169,19 +169,21 @@
             <Spinner
                 android:id="@+id/workspace_connection_policy_selector"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
+                android:minHeight="52dp"
                 android:backgroundTint="#68E0B7"
                 android:contentDescription="@string/workspace_connection_policy_description" />
 
             <EditText
                 android:id="@+id/workspace_session_name_input"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
+                android:layout_height="wrap_content"
                 android:backgroundTint="#45627A"
                 android:hint="@string/workspace_session_name_hint"
                 android:inputType="textNoSuggestions"
                 android:maxLength="64"
+                android:minHeight="52dp"
                 android:singleLine="true"
                 android:textColor="#F5F8FA"
                 android:textColorHint="#71879A" />
@@ -189,8 +191,9 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/workspace_connect_button"
                 android:layout_width="match_parent"
-                android:layout_height="54dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
+                android:minHeight="54dp"
                 android:text="@string/workspace_connect_action"
                 android:textAllCaps="false"
                 android:textColor="#062118"
@@ -208,6 +211,7 @@
             android:textStyle="bold" />
 
         <LinearLayout
+            android:id="@+id/workspace_ai_actions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
@@ -216,8 +220,9 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/workspace_claude_button"
                 android:layout_width="0dp"
-                android:layout_height="56dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:minHeight="56dp"
                 android:text="@string/workspace_start_claude"
                 android:textAllCaps="false"
                 android:textColor="#F5F8FA"
@@ -230,8 +235,9 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/workspace_codex_button"
                 android:layout_width="0dp"
-                android:layout_height="56dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:minHeight="56dp"
                 android:text="@string/workspace_start_codex"
                 android:textAllCaps="false"
                 android:textColor="#F5F8FA"
@@ -262,6 +268,7 @@
                 android:textSize="13sp" />
 
             <LinearLayout
+                android:id="@+id/workspace_tools_row_one"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
@@ -269,9 +276,10 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_review_diff_button"
                     android:layout_width="0dp"
-                    android:layout_height="52dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:minWidth="0dp"
+                    android:minHeight="52dp"
                     android:text="@string/workspace_review_diff_action"
                     android:textAllCaps="false"
                     android:textColor="#D8E4EC"
@@ -280,10 +288,11 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_remote_files_button"
                     android:layout_width="0dp"
-                    android:layout_height="52dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
                     android:minWidth="0dp"
+                    android:minHeight="52dp"
                     android:text="@string/workspace_remote_files_action"
                     android:textAllCaps="false"
                     android:textColor="#D8E4EC"
@@ -292,6 +301,7 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/workspace_tools_row_two"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -299,9 +309,10 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_project_tasks_button"
                     android:layout_width="0dp"
-                    android:layout_height="52dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:minWidth="0dp"
+                    android:minHeight="52dp"
                     android:text="@string/workspace_project_tasks_action"
                     android:textAllCaps="false"
                     android:textColor="#D8E4EC"
@@ -310,10 +321,11 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_task_sessions_button"
                     android:layout_width="0dp"
-                    android:layout_height="52dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
                     android:minWidth="0dp"
+                    android:minHeight="52dp"
                     android:text="@string/workspace_task_sessions_action"
                     android:textAllCaps="false"
                     android:textColor="#D8E4EC"
@@ -322,6 +334,7 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/workspace_tools_row_three"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -329,9 +342,10 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_diagnostic_button"
                     android:layout_width="0dp"
-                    android:layout_height="52dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:minWidth="0dp"
+                    android:minHeight="52dp"
                     android:text="@string/workspace_diagnostic_action"
                     android:textAllCaps="false"
                     android:textColor="#D8E4EC"
@@ -340,10 +354,11 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_ssh_keys_button"
                     android:layout_width="0dp"
-                    android:layout_height="52dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
                     android:minWidth="0dp"
+                    android:minHeight="52dp"
                     android:text="@string/workspace_ssh_keys_action"
                     android:textAllCaps="false"
                     android:textColor="#D8E4EC"
