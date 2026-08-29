@@ -28,7 +28,7 @@ final class WorkspaceCommandBuilder {
 
         String remoteCommand = "cd -- " + remotePathExpression(path)
             + " && if command -v tmux >/dev/null 2>&1; then exec " + tmuxCommand
-            + "; else printf '\\n[AI Terminal] tmux is not installed; session restore is unavailable.\\n' >&2; "
+            + "; else printf '\\n[TermuxPro] Remote tmux is not installed; opened a normal shell without session recovery.\\n' >&2; "
             + fallbackCommand + "; fi";
 
         return "ssh -t -o ControlMaster=auto -o ControlPersist=600 -o ControlPath="

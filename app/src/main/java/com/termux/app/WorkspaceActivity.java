@@ -178,8 +178,8 @@ public final class WorkspaceActivity extends AppCompatActivity {
     private void refreshWorkspaceSelector() {
         mUpdatingSelector = true;
         ArrayAdapter<WorkspaceProfile> adapter = new ArrayAdapter<>(this,
-            android.R.layout.simple_spinner_item, mProfiles);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            R.layout.item_workspace_spinner, mProfiles);
+        adapter.setDropDownViewResource(R.layout.item_workspace_spinner_dropdown);
         mWorkspaceSelector.setAdapter(adapter);
         int selected = findActiveProfileIndex();
         mWorkspaceSelector.setSelection(selected, false);
@@ -308,7 +308,8 @@ public final class WorkspaceActivity extends AppCompatActivity {
 
         persistExtraKeysPreset(cli == null ? TermuxTerminalExtraKeys.PRESET_SHELL :
             TermuxTerminalExtraKeys.PRESET_AI);
-        openTerminal(WorkspaceCommandBuilder.buildSshCommand(host, port, path, cli));
+        // 远程连接必须进入独立本地终端会话，避免命令被写入正在运行任务的旧 Shell。
+        openTerminal(WorkspaceCommandBuilder.buildSshCommand(host, port, path, cli), true);
     }
 
     private void persistExtraKeysPreset(String preset) {

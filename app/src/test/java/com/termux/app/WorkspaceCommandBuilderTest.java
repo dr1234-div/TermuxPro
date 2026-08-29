@@ -23,6 +23,7 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(command.contains("'\\''/srv/my project'\\''"));
         assertTrue(command.contains("tmux new-session -A -s"));
         assertTrue(command.contains("exec ${SHELL:-sh}"));
+        assertTrue(command.contains("opened a normal shell without session recovery"));
     }
 
     @Test
