@@ -5,11 +5,15 @@ import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
 import android.app.UiAutomation;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.ParcelFileDescriptor;
+import android.os.Environment;
+import android.provider.MediaStore;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -19,7 +23,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.OutputStream;
 
 /** 在真实 Android 渲染器中逐页截图，防止厂商主题默认文字色和大字体回归。 */
 @RunWith(AndroidJUnit4.class)
@@ -47,25 +51,33 @@ public final class UiRenderingInstrumentedTest {
             Bitmap screenshot = automation.takeScreenshot();
             assertNotNull("无法截取页面：" + name, screenshot);
             assertTrue(screenshot.getWidth() > 0 && screenshot.getHeight() > 0);
-            writeScreenshot(name);
+            writeScreenshot(context, screenshot, name);
             screenshot.recycle();
         }
     }
 
-    private void writeScreenshot(String name) throws IOException {
+    private void writeScreenshot(Context context, Bitmap screenshot, String name) throws IOException {
+        assertTrue("模拟器截图需要 Android 10 及以上 MediaStore", Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q);
         Bundle arguments = InstrumentationRegistry.getArguments();
         String suffix = arguments.getString("screenshotSuffix", "default")
             .replaceAll("[^a-zA-Z0-9._-]", "_");
-        String directory = "/sdcard/Download/termuxpro-ui-screenshots";
-        String output = directory + "/" + name + "-" + suffix + ".png";
-        UiAutomation automation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
-        String command = "mkdir -p " + directory + " && screencap -p " + output;
-        try (ParcelFileDescriptor descriptor = automation.executeShellCommand(command);
-             InputStream stream = new ParcelFileDescriptor.AutoCloseInputStream(descriptor)) {
-            byte[] buffer = new byte[1024];
-            while (stream.read(buffer) != -1) {
-                // 读取到 EOF，确保 shell 截图命令执行完成后再切换页面。
-            }
+
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, name + "-" + suffix + ".png");
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
+        values.put(MediaStore.Images.Media.RELATIVE_PATH,
+            Environment.DIRECTORY_DOWNLOADS + "/termuxpro-ui-screenshots");
+        values.put(MediaStore.Images.Media.IS_PENDING, 1);
+
+        Uri output = context.getContentResolver().insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+        assertNotNull("无法创建截图媒体文件：" + name, output);
+        try (OutputStream stream = context.getContentResolver().openOutputStream(output)) {
+            assertNotNull("无法打开截图输出流：" + name, stream);
+            assertTrue(screenshot.compress(Bitmap.CompressFormat.PNG, 100, stream));
         }
+        values.clear();
+        values.put(MediaStore.Images.Media.IS_PENDING, 0);
+        assertTrue(context.getContentResolver().update(output, values, null, null) == 1);
     }
 }
