@@ -238,13 +238,22 @@
     <!-- AI workspace home -->
     <string name="workspace_home_eyebrow">Mobile development workspace</string>
     <string name="workspace_home_title">Continue your remote project</string>
-    <string name="workspace_home_subtitle">Continue over SSH. Existing tmux sessions are restored when tmux is installed; otherwise a normal shell opens.</string>
+    <string name="workspace_home_subtitle">Continue over SSH. The safe default only connects; each workspace controls whether an exact tmux session is used.</string>
     <string name="workspace_remote_card_title">Remote workspace</string>
     <string name="workspace_remote_card_description">Only non-sensitive connection metadata is stored here. Passwords and private keys stay in OpenSSH.</string>
     <string name="workspace_name_hint">Workspace name</string>
     <string name="workspace_host_hint">SSH target, for example user@192.168.1.153</string>
     <string name="workspace_port_hint">SSH port (default 22)</string>
     <string name="workspace_path_hint">Remote project path</string>
+    <string name="workspace_connection_policy_description">Connection and tmux policy</string>
+    <string-array name="workspace_connection_policy_labels">
+        <item>SSH only (recommended)</item>
+        <item>List tmux sessions, do not attach</item>
+        <item>Attach specified session only</item>
+        <item>Create or attach specified session</item>
+    </string-array>
+    <string name="workspace_session_name_hint">Exact tmux session name</string>
+    <string name="workspace_error_session_name">Use 1–64 letters, numbers, dots, underscores, or hyphens</string>
     <string name="workspace_connect_action">Connect remote workspace</string>
     <string name="workspace_ai_quick_title">AI CLI quick start</string>
     <string name="workspace_start_claude">Claude Code</string>

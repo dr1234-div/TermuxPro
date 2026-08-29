@@ -165,6 +165,26 @@
                 android:textColor="#F5F8FA"
                 android:textColorHint="#71879A" />
 
+            <Spinner
+                android:id="@+id/workspace_connection_policy_selector"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="#68E0B7"
+                android:contentDescription="@string/workspace_connection_policy_description" />
+
+            <EditText
+                android:id="@+id/workspace_session_name_input"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:backgroundTint="#45627A"
+                android:hint="@string/workspace_session_name_hint"
+                android:inputType="textNoSuggestions"
+                android:maxLength="64"
+                android:singleLine="true"
+                android:textColor="#F5F8FA"
+                android:textColorHint="#71879A" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/workspace_connect_button"
                 android:layout_width="match_parent"
