@@ -110,6 +110,17 @@
                     android:backgroundTint="#24394A" />
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/workspace_copy_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:minHeight="48dp"
+                    android:text="@string/workspace_copy_action"
+                    android:textAllCaps="false"
+                    android:textColor="#D8E4EC"
+                    android:backgroundTint="#24394A" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_delete_button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -120,6 +131,16 @@
                     android:textColor="#FFB4AB"
                     android:backgroundTint="#3B2930" />
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/workspace_unsaved_indicator"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/workspace_unsaved_changes"
+                android:textColor="#FFDDB3"
+                android:textSize="14sp"
+                android:visibility="gone" />
 
             <EditText
                 android:id="@+id/workspace_name_input"
