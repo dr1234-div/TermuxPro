@@ -82,15 +82,16 @@
                 android:contentDescription="@string/workspace_selector_description" />
 
             <LinearLayout
+                android:id="@+id/workspace_management_actions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="vertical">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_new_button"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_weight="1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
                     android:text="@string/workspace_new_action"
                     android:textAllCaps="false"
                     android:textColor="#D8E4EC"
@@ -98,10 +99,10 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_save_button"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_marginStart="6dp"
-                    android:layout_weight="1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:minHeight="48dp"
                     android:text="@string/workspace_save_action"
                     android:textAllCaps="false"
                     android:textColor="#D8E4EC"
@@ -109,10 +110,10 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_delete_button"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_marginStart="6dp"
-                    android:layout_weight="1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:minHeight="48dp"
                     android:text="@string/workspace_delete_action"
                     android:textAllCaps="false"
                     android:textColor="#FFB4AB"
