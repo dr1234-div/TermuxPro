@@ -39,7 +39,18 @@ jobs:
             exit 1
           fi
       - name: 全模块测试
-        run: ./scripts/test-all.sh
+        run: |
+          for attempt in 1 2 3; do
+            echo "全模块测试：第 $attempt 次尝试"
+            if ./scripts/test-all.sh; then
+              exit 0
+            fi
+            if [[ "$attempt" -lt 3 ]]; then
+              echo '构建失败，等待 10 秒后重试，以容忍依赖下载连接重置。'
+              sleep 10
+            fi
+          done
+          exit 1
       - name: Lint 与 Debug APK
         run: ./gradlew --no-daemon --max-workers=2 lint :app:assembleDebug
       - name: 上传测试报告
