@@ -23,6 +23,8 @@ jobs:
   emulator-ui:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    env:
+      ANDROID_AVD_HOME: ${{ runner.temp }}/android-avd
     steps:
       - uses: actions/checkout@v6
       - uses: gradle/actions/wrapper-validation@v6
@@ -42,13 +44,24 @@ jobs:
           if [[ -e /dev/kvm ]]; then
             sudo chmod 666 /dev/kvm
           fi
+          mkdir -p "$ANDROID_AVD_HOME"
           echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd \
             --force --name termuxpro-ci --package 'system-images;android-35;google_apis;x86_64'
           "$ANDROID_HOME/emulator/emulator" @termuxpro-ci \
             -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect \
             -memory 2048 > "$RUNNER_TEMP/termuxpro-emulator.log" 2>&1 &
-          adb wait-for-device
+          emulator_pid=$!
+          if ! timeout 120s adb wait-for-device; then
+            echo '模拟器设备发现超时' >&2
+            cat "$RUNNER_TEMP/termuxpro-emulator.log" >&2
+            exit 1
+          fi
           for attempt in $(seq 1 90); do
+            if ! kill -0 "$emulator_pid" 2>/dev/null; then
+              echo '模拟器进程在启动期间退出' >&2
+              cat "$RUNNER_TEMP/termuxpro-emulator.log" >&2
+              exit 1
+            fi
             if [[ "$(adb shell getprop sys.boot_completed | tr -d '\r')" == "1" ]]; then
               exit 0
             fi
