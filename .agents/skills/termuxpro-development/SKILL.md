@@ -14,7 +14,7 @@ description: 迭代、评审、测试或发布 TermuxPro Android 移动 AI 终�
 
 1. 产品：定义用户问题、范围、交互和可量化验收标准。
 2. 架构：确认与 Termux PTY/bootstrap、`com.termux`、Android 生命周期及安全不变量兼容。
-3. 开发：从 `dev` 创建功能分支，实现最小完整纵向闭环并补测试。
+3. 开发：从 `dev` 创建符合命名规范的功能分支，实现最小完整纵向闭环并补测试。
 4. 测试：执行单元、布局、静态、APK 和适用的真机测试，记录失败证据。
 5. 验收：逐项比对原始需求和发布门禁；未满足时回到产品或开发继续打磨。
 
@@ -28,6 +28,8 @@ description: 迭代、评审、测试或发布 TermuxPro Android 移动 AI 终�
 - 不自动接受 SSH 主机密钥，不自动批准 Claude Code/Codex CLI 权限。
 - 远端命令、目标和路径必须抗选项/命令注入；读取和搜索必须有大小限制且可取消。
 - 不向 `upstream` 推送。日常开发合入 `dev`；只有完整发布门禁通过后才能合入 `master`。
+- 分支业务名必须使用有意义的英语小驼峰：`dev_<englishCamelCase>_<YYYYMMDD>`；缺陷修复使用
+  `hotfix_<englishCamelCase>_<YYYYMMDD>` 或关联 bug ID。禁止中文、空格和无意义编号。
 - 保留 GPLv3、上游版权和衍生项目声明。
 
 ## 完成定义
