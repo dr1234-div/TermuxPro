@@ -48,8 +48,13 @@ TERMUXPRO_OFFLINE=1 ./scripts/build-termuxpro-release.sh
 ```
 
 脚本运行全模块测试、Lint、Release/R8，并验证包名、版本、Launcher、ARM64 ABI、v1/v2 签名和证书。
-产物输出到 `dist/0.1.0/termuxpro-0.1.0-arm64-v8a.apk`，同时生成 SHA-256、签名报告、构建信息、
+版本名、版本号和发布说明路径统一读取根目录 `termuxpro-version.properties`。产物输出到
+`dist/<versionName>/termuxpro-<versionName>-arm64-v8a.apk`，同时生成 SHA-256、签名报告、构建信息、
 发布说明和真机清单。`dist/` 不提交 Git。
+
+发布新版本前先更新 `termuxpro-version.properties` 中的 `versionName`、递增的 `versionCode` 以及对应
+`releaseNotes`。标签必须严格为 `v<versionName>`；Actions 会在接触签名材料和构建前校验，任何不一致
+都会终止发布，避免标签、APK 和 Release 附件版本错位。
 
 ## GitHub Actions 自动正式打包
 
