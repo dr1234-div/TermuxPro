@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -17,9 +18,8 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 /** 在真实 Android 渲染器中逐页截图，防止厂商主题默认文字色和大字体回归。 */
 @RunWith(AndroidJUnit4.class)
@@ -47,22 +47,25 @@ public final class UiRenderingInstrumentedTest {
             Bitmap screenshot = automation.takeScreenshot();
             assertNotNull("无法截取页面：" + name, screenshot);
             assertTrue(screenshot.getWidth() > 0 && screenshot.getHeight() > 0);
-            writeScreenshot(context, screenshot, name);
+            writeScreenshot(name);
             screenshot.recycle();
         }
     }
 
-    private void writeScreenshot(Context context, Bitmap screenshot, String name) throws IOException {
+    private void writeScreenshot(String name) throws IOException {
         Bundle arguments = InstrumentationRegistry.getArguments();
         String suffix = arguments.getString("screenshotSuffix", "default")
             .replaceAll("[^a-zA-Z0-9._-]", "_");
-        File externalDirectory = context.getExternalFilesDir(null);
-        assertNotNull("应用外部文件目录不可用", externalDirectory);
-        File directory = new File(externalDirectory, "ui-screenshots");
-        assertTrue(directory.exists() || directory.mkdirs());
-        File output = new File(directory, name + "-" + suffix + ".png");
-        try (FileOutputStream stream = new FileOutputStream(output)) {
-            assertTrue(screenshot.compress(Bitmap.CompressFormat.PNG, 100, stream));
+        String directory = "/sdcard/Download/termuxpro-ui-screenshots";
+        String output = directory + "/" + name + "-" + suffix + ".png";
+        UiAutomation automation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
+        String command = "mkdir -p " + directory + " && screencap -p " + output;
+        try (ParcelFileDescriptor descriptor = automation.executeShellCommand(command);
+             InputStream stream = new ParcelFileDescriptor.AutoCloseInputStream(descriptor)) {
+            byte[] buffer = new byte[1024];
+            while (stream.read(buffer) != -1) {
+                // 读取到 EOF，确保 shell 截图命令执行完成后再切换页面。
+            }
         }
     }
 }

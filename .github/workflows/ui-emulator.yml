@@ -80,7 +80,7 @@ jobs:
           ./gradlew --no-daemon --max-workers=2 :app:connectedDebugAndroidTest \
             -Pandroid.testInstrumentationRunnerArguments.screenshotSuffix=default
           mkdir -p test-artifacts/emulator-ui/default
-          adb pull /sdcard/Android/data/com.termux/files/ui-screenshots/. \
+          adb pull /sdcard/Download/termuxpro-ui-screenshots/. \
             test-artifacts/emulator-ui/default/
       - name: 200% 字体页面截图
         run: |
@@ -89,7 +89,7 @@ jobs:
           ./gradlew --no-daemon --max-workers=2 :app:connectedDebugAndroidTest \
             -Pandroid.testInstrumentationRunnerArguments.screenshotSuffix=font200
           mkdir -p test-artifacts/emulator-ui/font200
-          adb pull /sdcard/Android/data/com.termux/files/ui-screenshots/. \
+          adb pull /sdcard/Download/termuxpro-ui-screenshots/. \
             test-artifacts/emulator-ui/font200/
       - name: 收集截图与 UI 层级
         if: always()
