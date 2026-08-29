@@ -124,11 +124,12 @@
             <EditText
                 android:id="@+id/workspace_name_input"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:backgroundTint="#45627A"
                 android:hint="@string/workspace_name_hint"
                 android:inputType="textCapSentences"
+                android:minHeight="52dp"
                 android:singleLine="true"
                 android:textColor="#F5F8FA"
                 android:textColorHint="#71879A" />
@@ -136,10 +137,11 @@
             <EditText
                 android:id="@+id/workspace_host_input"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
+                android:layout_height="wrap_content"
                 android:backgroundTint="#45627A"
                 android:hint="@string/workspace_host_hint"
                 android:inputType="textUri"
+                android:minHeight="52dp"
                 android:singleLine="true"
                 android:textColor="#F5F8FA"
                 android:textColorHint="#71879A" />
@@ -147,10 +149,11 @@
             <EditText
                 android:id="@+id/workspace_port_input"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
+                android:layout_height="wrap_content"
                 android:backgroundTint="#45627A"
                 android:hint="@string/workspace_port_hint"
                 android:inputType="number"
+                android:minHeight="52dp"
                 android:singleLine="true"
                 android:textColor="#F5F8FA"
                 android:textColorHint="#71879A" />
@@ -158,10 +161,11 @@
             <EditText
                 android:id="@+id/workspace_path_input"
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
+                android:layout_height="wrap_content"
                 android:backgroundTint="#45627A"
                 android:hint="@string/workspace_path_hint"
                 android:inputType="textUri"
+                android:minHeight="52dp"
                 android:singleLine="true"
                 android:textColor="#F5F8FA"
                 android:textColorHint="#71879A" />
@@ -199,6 +203,29 @@
                 android:textColor="#062118"
                 android:textStyle="bold"
                 android:backgroundTint="#68E0B7" />
+
+            <TextView
+                android:id="@+id/workspace_connection_feedback"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:accessibilityLiveRegion="polite"
+                android:background="#203544"
+                android:padding="14dp"
+                android:text="@string/workspace_connection_guidance"
+                android:textColor="#B8C8D4"
+                android:textSize="14sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/workspace_connection_diagnostic_primary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:minHeight="48dp"
+                android:text="@string/workspace_connection_diagnostic_action"
+                android:textAllCaps="false"
+                android:textColor="#D8E4EC"
+                android:backgroundTint="#24394A" />
         </LinearLayout>
 
         <TextView

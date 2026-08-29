@@ -24,6 +24,8 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(command.contains("'\\''/srv/my project'\\''"));
         assertTrue(!command.contains("tmux"));
         assertTrue(command.contains("exec ${SHELL:-sh}"));
+        assertTrue(command.contains("SSH authenticated; workspace ready"));
+        assertTrue(command.contains("workspace path is unavailable"));
     }
 
     @Test

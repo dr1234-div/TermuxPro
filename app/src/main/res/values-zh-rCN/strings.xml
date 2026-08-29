@@ -137,6 +137,9 @@
     <string name="workspace_session_name_hint">精确的 tmux 会话名称</string>
     <string name="workspace_error_session_name">请输入 1–64 位字母、数字、点、下划线或连字符</string>
     <string name="workspace_connect_action">连接远程工作区</string>
+    <string name="workspace_connection_guidance">首次连接将在安全交互终端中进行：请核对服务器指纹，再输入密码或密钥口令。TermuxPro 不会自动接受指纹，也不会保存凭据。</string>
+    <string name="workspace_connection_terminal_opened">连接终端已打开。请在终端中核对主机指纹并完成认证；只有出现“SSH authenticated”后才表示服务器已认证。</string>
+    <string name="workspace_connection_diagnostic_action">检查已有连接与远端环境</string>
     <string name="workspace_ai_quick_title">AI CLI 快速启动</string>
     <string name="workspace_start_claude">Claude Code</string>
     <string name="workspace_start_codex">Codex CLI</string>
@@ -228,6 +231,17 @@
     <string name="connection_diagnostic_success">连接成功，可用能力如下。</string>
     <string name="connection_diagnostic_failed">诊断失败（退出码 %1$d）。请先交互连接一次，确认主机指纹并完成认证。</string>
     <string name="connection_diagnostic_invalid">服务器返回的诊断信息无效。</string>
+    <string name="connection_error_ssh_missing">尚未安装 SSH 连接组件，请返回首页完成安装。</string>
+    <string name="connection_error_interrupted">连接检查已取消，可以重新检查。</string>
+    <string name="connection_error_process">无法启动本机 OpenSSH，请检查 TermuxPro 环境。</string>
+    <string name="connection_error_dns">找不到服务器，请检查主机名、SSH Config 别名或当前网络。</string>
+    <string name="connection_error_timeout">连接服务器超时。局域网地址请确认手机处于同一网络或 VPN。</string>
+    <string name="connection_error_refused">服务器拒绝连接，请确认 SSH 服务已启动且端口填写正确。</string>
+    <string name="connection_error_no_route">当前网络无法到达服务器，请检查 Wi-Fi、VPN 或路由。</string>
+    <string name="connection_error_host_key_changed">服务器指纹已变化，可能是服务器重装或安全风险。请停止连接并向管理员核对新指纹。</string>
+    <string name="connection_error_host_key_unverified">服务器指纹尚未确认。请先点击“连接远程工作区”，在交互终端中核对并确认指纹。</string>
+    <string name="connection_error_auth">身份验证未完成或失败。请先在连接终端中输入正确的密码、密钥口令或配置公钥。</string>
+    <string name="connection_error_closed">服务器在认证前关闭了连接，请检查 SSH 服务策略或稍后重试。</string>
     <string name="ai_action_confirm_selection">AI：确认当前选项</string>
     <string name="ai_action_reject_or_back">AI：拒绝/返回（Esc）</string>
     <string name="ai_action_confirm_title">确认终端当前选中的选项？</string>

@@ -25,6 +25,8 @@ public class WorkspaceActivitySmokeTest {
         assertEquals("继续远程项目", activity.getString(R.string.workspace_home_title));
         int[] requiredViews = {
             R.id.workspace_connect_button,
+            R.id.workspace_connection_feedback,
+            R.id.workspace_connection_diagnostic_primary,
             R.id.workspace_claude_button,
             R.id.workspace_codex_button,
             R.id.workspace_review_diff_button,

@@ -22,7 +22,11 @@ final class WorkspaceCommandBuilder {
                                   @Nullable String cli, @NonNull String policy,
                                   @NonNull String sessionName) {
         String directCommand = cli == null ? "exec ${SHELL:-sh}" : "exec " + cli;
-        String remoteCommand = "cd -- " + remotePathExpression(path) + " && ";
+        String remoteCommand = "if ! cd -- " + remotePathExpression(path)
+            + "; then printf '\\n[TermuxPro] SSH authenticated, but the workspace path is unavailable: %s\\n' "
+            + shellQuote(path) + " >&2; exec ${SHELL:-sh}; fi; "
+            + "printf '\\n[TermuxPro] SSH authenticated; workspace ready: %s\\n' "
+            + shellQuote(path) + "; ";
 
         if (POLICY_LIST_SESSIONS.equals(policy)) {
             remoteCommand += "if command -v tmux >/dev/null 2>&1; then "

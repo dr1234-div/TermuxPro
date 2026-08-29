@@ -255,6 +255,9 @@
     <string name="workspace_session_name_hint">Exact tmux session name</string>
     <string name="workspace_error_session_name">Use 1–64 letters, numbers, dots, underscores, or hyphens</string>
     <string name="workspace_connect_action">Connect remote workspace</string>
+    <string name="workspace_connection_guidance">The first connection opens a secure interactive terminal. Verify the server fingerprint, then enter your password or key passphrase. TermuxPro never accepts fingerprints automatically or stores credentials.</string>
+    <string name="workspace_connection_terminal_opened">The connection terminal is open. Verify the host fingerprint and authenticate there. The server is authenticated only after “SSH authenticated” appears.</string>
+    <string name="workspace_connection_diagnostic_action">Check active connection and environment</string>
     <string name="workspace_ai_quick_title">AI CLI quick start</string>
     <string name="workspace_start_claude">Claude Code</string>
     <string name="workspace_start_codex">Codex CLI</string>
@@ -346,6 +349,17 @@
     <string name="connection_diagnostic_success">Connection succeeded. Available tools are listed below.</string>
     <string name="connection_diagnostic_failed">Unable to diagnose (exit code %1$d). Connect interactively first to confirm the host key and authentication.</string>
     <string name="connection_diagnostic_invalid">The server returned an invalid diagnostic response.</string>
+    <string name="connection_error_ssh_missing">The SSH component is not installed. Return home to install it.</string>
+    <string name="connection_error_interrupted">The connection check was cancelled. You can retry it.</string>
+    <string name="connection_error_process">Unable to start the local OpenSSH process. Check the TermuxPro environment.</string>
+    <string name="connection_error_dns">The server could not be found. Check the hostname, SSH Config alias, or network.</string>
+    <string name="connection_error_timeout">The connection timed out. For a private address, confirm the phone is on the same network or VPN.</string>
+    <string name="connection_error_refused">The server refused the connection. Check that SSH is running and the port is correct.</string>
+    <string name="connection_error_no_route">The current network cannot reach the server. Check Wi-Fi, VPN, or routing.</string>
+    <string name="connection_error_host_key_changed">The server fingerprint changed. The server may have been reinstalled or this may be a security risk. Stop and verify it with the administrator.</string>
+    <string name="connection_error_host_key_unverified">The server fingerprint is not trusted yet. Connect interactively first and verify the fingerprint.</string>
+    <string name="connection_error_auth">Authentication is incomplete or failed. Use the connection terminal to enter the correct password or key passphrase, or configure a public key.</string>
+    <string name="connection_error_closed">The server closed the connection before authentication. Check its SSH policy or retry later.</string>
     <string name="ai_action_confirm_selection">AI: Confirm selected option</string>
     <string name="ai_action_reject_or_back">AI: Reject / back (Esc)</string>
     <string name="ai_action_confirm_title">Confirm the selected terminal option?</string>
