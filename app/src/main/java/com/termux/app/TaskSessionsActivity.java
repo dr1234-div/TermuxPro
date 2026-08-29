@@ -52,7 +52,7 @@ public final class TaskSessionsActivity extends AppCompatActivity {
         mProgress = findViewById(R.id.task_sessions_progress);
         mStatus = findViewById(R.id.task_sessions_status);
         ListView list = findViewById(R.id.task_sessions_list);
-        mAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, mSessions);
+        mAdapter = new ArrayAdapter<>(this, R.layout.item_termuxpro_list, mSessions);
         list.setAdapter(mAdapter);
         list.setOnItemClickListener((parent, view, position, id) -> showActions(mSessions.get(position)));
         findViewById(R.id.task_sessions_back_button).setOnClickListener(view -> finish());

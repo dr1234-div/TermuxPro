@@ -64,7 +64,7 @@ public final class RemoteFilesActivity extends AppCompatActivity {
         mProgress = findViewById(R.id.remote_files_progress);
         mPathView = findViewById(R.id.remote_files_path);
         ListView list = findViewById(R.id.remote_files_list);
-        mAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, mEntries);
+        mAdapter = new ArrayAdapter<>(this, R.layout.item_termuxpro_list, mEntries);
         list.setAdapter(mAdapter);
         list.setOnItemClickListener((parent, view, position, id) -> openEntry(mEntries.get(position)));
         findViewById(R.id.remote_files_back_button).setOnClickListener(view -> navigateBack());

@@ -61,7 +61,7 @@ public final class ProjectTasksActivity extends AppCompatActivity {
         mProgress = findViewById(R.id.project_tasks_progress);
         mType = findViewById(R.id.project_tasks_type);
         ListView list = findViewById(R.id.project_tasks_list);
-        mAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, mTasks);
+        mAdapter = new ArrayAdapter<>(this, R.layout.item_termuxpro_list, mTasks);
         list.setAdapter(mAdapter);
         list.setOnItemClickListener((parent, view, position, id) -> confirmTask(mTasks.get(position)));
         findViewById(R.id.project_tasks_back_button).setOnClickListener(view -> finish());

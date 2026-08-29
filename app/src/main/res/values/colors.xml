@@ -1,3 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- TermuxPro 深色工作区设计令牌。业务页面不得依赖厂商主题的默认文字色。 -->
+    <color name="tp_background">#08131C</color>
+    <color name="tp_surface">#111E2A</color>
+    <color name="tp_surface_elevated">#182A38</color>
+    <color name="tp_divider">#203444</color>
+    <color name="tp_primary">#68E0B7</color>
+    <color name="tp_on_primary">#062118</color>
+    <color name="tp_text_primary">#F5F8FA</color>
+    <color name="tp_text_secondary">#B4C3CF</color>
+    <color name="tp_text_tertiary">#91A6B7</color>
+    <color name="tp_danger">#FFB4AB</color>
 </resources>
