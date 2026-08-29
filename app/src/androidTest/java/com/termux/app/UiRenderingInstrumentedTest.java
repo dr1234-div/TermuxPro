@@ -46,6 +46,18 @@ public final class UiRenderingInstrumentedTest {
         });
         capture(context, "workspace-connection-guidance", new Intent(context, WorkspaceActivity.class),
             activity -> scrollTo(activity, com.termux.R.id.workspace_connection_feedback));
+        capture(context, "workspace-connection-verified", new Intent(context, WorkspaceActivity.class),
+            activity -> {
+                activity.findViewById(com.termux.R.id.workspace_save_button).performClick();
+                String workspaceId = activity.getSharedPreferences("ai_terminal_workspace", 0)
+                    .getString("active_profile", "");
+                assertTrue("截图工作区必须具有持久化 ID", !workspaceId.isEmpty());
+                new WorkspaceConnectionStateStore(activity).save(workspaceId,
+                    new WorkspaceConnectionState(WorkspaceConnectionState.Status.VERIFIED,
+                        null, 1_700_000_000_000L));
+                ((WorkspaceActivity) activity).onResume();
+                scrollTo(activity, com.termux.R.id.workspace_connection_feedback);
+            });
         capture(context, "ai-session-choice", new Intent(context, WorkspaceActivity.class),
             activity -> activity.findViewById(com.termux.R.id.workspace_claude_button).performClick());
         capture(context, "remote-files",
@@ -53,7 +65,8 @@ public final class UiRenderingInstrumentedTest {
         capture(context, "project-tasks",
             ProjectTasksActivity.newIntent(context, "invalid", 0, "~/project"));
         capture(context, "connection-diagnostic",
-            ConnectionDiagnosticActivity.newIntent(context, "invalid", 0, "~/project"));
+            ConnectionDiagnosticActivity.newIntent(context, "invalid", 0, "~/project",
+                "ui-workspace"));
         capture(context, "task-sessions",
             TaskSessionsActivity.newIntent(context, "invalid", 0));
         capture(context, "git-diff",

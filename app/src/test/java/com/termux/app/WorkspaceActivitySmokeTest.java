@@ -13,11 +13,14 @@ import android.util.TypedValue;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.termux.R;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.shadows.ShadowAlertDialog;
@@ -122,6 +125,24 @@ public class WorkspaceActivitySmokeTest {
         assertEquals(0, selector.getSelectedItemPosition());
         assertEquals("", ((EditText) activity.findViewById(R.id.workspace_host_input))
             .getText().toString());
+        activity.finish();
+    }
+
+    @Test
+    public void connectionFeedbackShowsVerifiedFactsPerWorkspace() throws JSONException {
+        WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
+        activity.findViewById(R.id.workspace_save_button).performClick();
+        String profiles = activity.getSharedPreferences("ai_terminal_workspace", 0)
+            .getString("profiles_v2", "[]");
+        String workspaceId = new JSONArray(profiles).getJSONObject(0).getString("id");
+        new WorkspaceConnectionStateStore(activity).save(workspaceId,
+            new WorkspaceConnectionState(WorkspaceConnectionState.Status.VERIFIED,
+                null, 1_700_000_000_000L));
+
+        activity.onResume();
+        TextView feedback = activity.findViewById(R.id.workspace_connection_feedback);
+        assertTrue(feedback.getText().toString().contains("已验证"));
+        assertTrue(feedback.getText().toString().contains("SSH 身份认证"));
         activity.finish();
     }
 

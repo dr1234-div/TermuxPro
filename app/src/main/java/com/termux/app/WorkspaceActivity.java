@@ -31,7 +31,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -67,6 +69,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
     private boolean mUpdatingSelector;
     private boolean mBindingProfile;
     private boolean mHasUnsavedChanges;
+    private WorkspaceConnectionStateStore mConnectionStateStore;
 
     private static final String INSTALL_SSH_COMMAND = "pkg update -y && pkg install -y openssh";
 
@@ -85,6 +88,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
         mLocalPortInput = findViewById(R.id.workspace_local_port_input);
         mWorkspaceSelector = findViewById(R.id.workspace_selector);
         mConnectionPolicySelector = findViewById(R.id.workspace_connection_policy_selector);
+        mConnectionStateStore = new WorkspaceConnectionStateStore(this);
 
         ArrayAdapter<CharSequence> policyAdapter = ArrayAdapter.createFromResource(this,
             R.array.workspace_connection_policy_labels, R.layout.item_workspace_spinner);
@@ -206,6 +210,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         refreshSetupState();
+        if (!mProfiles.isEmpty()) refreshConnectionState();
     }
 
     @Override
@@ -300,6 +305,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
         mLocalPortInput.setText(profile.localPort);
         mBindingProfile = false;
         setWorkspaceDirty(false);
+        refreshConnectionState();
     }
 
     private void selectWorkspace(int position) {
@@ -399,6 +405,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.workspace_delete_action, (dialog, which) -> {
                 mProfiles.remove(profile);
+                mConnectionStateStore.clear(profile.id);
                 if (mProfiles.isEmpty()) {
                     mProfiles.add(new WorkspaceProfile(UUID.randomUUID().toString(),
                         getString(R.string.workspace_default_name), "", "22", "~/", "5173", "5173",
@@ -475,9 +482,10 @@ public final class WorkspaceActivity extends AppCompatActivity {
         mPortInput.setText(String.valueOf(port));
         saveCurrentWorkspace();
 
-        TextView connectionStatus = findViewById(R.id.workspace_connection_feedback);
-        connectionStatus.setText(R.string.workspace_connection_terminal_opened);
-        connectionStatus.setContentDescription(getString(R.string.workspace_connection_terminal_opened));
+        WorkspaceConnectionState state = WorkspaceConnectionState.terminalOpened(
+            System.currentTimeMillis());
+        mConnectionStateStore.save(mActiveProfileId, state);
+        refreshConnectionState();
 
         persistExtraKeysPreset(cli == null ? TermuxTerminalExtraKeys.PRESET_SHELL :
             TermuxTerminalExtraKeys.PRESET_AI);
@@ -502,6 +510,46 @@ public final class WorkspaceActivity extends AppCompatActivity {
         dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
             .setTextColor(ContextCompat.getColor(this, R.color.tp_primary)));
         dialog.show();
+    }
+
+    private void refreshConnectionState() {
+        TextView feedback = findViewById(R.id.workspace_connection_feedback);
+        WorkspaceConnectionState state = mConnectionStateStore.read(mActiveProfileId);
+        if (state == null) {
+            feedback.setText(R.string.workspace_connection_guidance);
+        } else {
+            String time = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
+                .format(new Date(state.timestamp));
+            switch (state.status) {
+                case TERMINAL_OPENED:
+                    feedback.setText(getString(R.string.workspace_connection_last_opened, time));
+                    break;
+                case VERIFIED:
+                    feedback.setText(getString(R.string.workspace_connection_verified, time));
+                    break;
+                case ACTION_REQUIRED:
+                    feedback.setText(getString(R.string.workspace_connection_action_required, time,
+                        getString(stageLabel(state.stage))));
+                    break;
+                case FAILED:
+                    feedback.setText(getString(R.string.workspace_connection_check_failed, time,
+                        getString(stageLabel(state.stage))));
+                    break;
+                default:
+                    feedback.setText(getString(R.string.workspace_connection_check_unknown, time));
+            }
+        }
+        feedback.setContentDescription(feedback.getText());
+    }
+
+    private int stageLabel(SshDiagnosticStages.Stage stage) {
+        if (stage == null) return R.string.connection_stage_remote_environment;
+        switch (stage) {
+            case NETWORK: return R.string.connection_stage_network;
+            case HOST_IDENTITY: return R.string.connection_stage_host_identity;
+            case AUTHENTICATION: return R.string.connection_stage_authentication;
+            default: return R.string.connection_stage_remote_environment;
+        }
     }
 
     private void updateSessionNameState() {
@@ -662,7 +710,8 @@ public final class WorkspaceActivity extends AppCompatActivity {
             return;
         }
         saveCurrentWorkspace();
-        startActivity(ConnectionDiagnosticActivity.newIntent(this, host, sshPort, path));
+        startActivity(ConnectionDiagnosticActivity.newIntent(this, host, sshPort, path,
+            mActiveProfileId));
     }
 
     private void openSshKeys() {
