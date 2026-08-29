@@ -56,7 +56,7 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
         mProgress = findViewById(R.id.connection_diagnostic_progress);
         mStatus = findViewById(R.id.connection_diagnostic_status);
         ListView list = findViewById(R.id.connection_diagnostic_list);
-        mAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, mItems);
+        mAdapter = new ArrayAdapter<>(this, R.layout.item_termuxpro_list, mItems);
         list.setAdapter(mAdapter);
         findViewById(R.id.connection_diagnostic_back_button).setOnClickListener(view -> finish());
         findViewById(R.id.connection_diagnostic_refresh_button).setOnClickListener(view -> diagnose());

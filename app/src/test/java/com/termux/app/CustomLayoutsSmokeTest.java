@@ -1,5 +1,6 @@
 package com.termux.app;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import android.content.Context;
@@ -7,6 +8,7 @@ import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 
 import com.termux.R;
 
@@ -42,5 +44,17 @@ public class CustomLayoutsSmokeTest {
             View view = inflater.inflate(layout, parent, false);
             assertNotNull(view);
         }
+    }
+
+    @Test
+    public void sharedListItemUsesExplicitReadableTextColorAndTouchHeight() {
+        Context context = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
+            R.style.Theme_TermuxActivity_DayNight_NoActionBar);
+        TextView item = (TextView) LayoutInflater.from(context)
+            .inflate(R.layout.item_termuxpro_list, new FrameLayout(context), false);
+
+        assertEquals(context.getColor(R.color.tp_text_primary), item.getCurrentTextColor());
+        float density = context.getResources().getDisplayMetrics().density;
+        assertEquals(56, Math.round(item.getMinHeight() / density));
     }
 }
