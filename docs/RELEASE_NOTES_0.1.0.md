@@ -1,4 +1,4 @@
-# TermuxPro 0.1.0 测试版发布说明
+# TermuxPro 0.1.0 正式版发布说明
 
 ## 产品定位
 
@@ -35,7 +35,8 @@ TermuxPro 是基于官方 Termux 源码构建的 Android 移动开发终端，�
 - 9 个自定义页面在生产主题和简体中文资源下完成运行时布局膨胀测试。
 - Release Lint、R8、ARM64 构建、包名/版本/Launcher/ABI 闸门通过。
 - APK Signature v1/v2 和项目发布证书指纹验证通过。
-- 当前尚未完成三星 Android 真机上的安装、软键盘、SSH、Claude Code、Codex CLI、
-  锁屏恢复及网络切换回归，因此版本标记为测试版。
+- `v0.1.0-rc.1` 已完成 Android ARM64 真机回归，覆盖安装与启动、软键盘、SSH、tmux、
+  Claude Code、Codex CLI、锁屏恢复和网络切换；项目负责人确认不存在未关闭 P0/P1 缺陷。
+- 正式版仅在候选版基础上更新发布记录和流程，不引入新的应用功能变更。
 
 完整真机步骤见 `DEVICE_ACCEPTANCE.md`。
