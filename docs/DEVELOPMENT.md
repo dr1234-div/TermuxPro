@@ -26,6 +26,14 @@ Tools，请先通过 Android Studio SDK Manager 安装。首次依赖解析需�
 sdkmanager --licenses
 ```
 
+无法稳定访问 Google Maven 的中国网络环境可显式启用腾讯 Maven 代理优先级：
+
+```bash
+export TERMUXPRO_USE_CHINA_MIRROR=1
+```
+
+GitHub Actions 和可直连环境默认优先使用 `google()` 与 Maven Central。
+
 ## 常用命令
 
 ```bash

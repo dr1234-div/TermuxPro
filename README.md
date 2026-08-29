@@ -49,6 +49,7 @@ git clone git@github.com:dr1234-div/TermuxPro.git
 cd TermuxPro
 git switch dev
 export ANDROID_SDK_ROOT=/path/to/android-sdk
+# 中国网络环境按需执行：export TERMUXPRO_USE_CHINA_MIRROR=1
 ./scripts/bootstrap-dev-env.sh
 ./scripts/doctor.sh
 ./scripts/test-all.sh
