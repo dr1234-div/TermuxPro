@@ -176,4 +176,30 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(WorkspaceCommandBuilder.buildListTaskSessionsRemoteCommand().contains("mobile-task-*"));
         assertTrue(WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(first).contains("'" + first + "'"));
     }
+
+    @Test
+    public void tmuxSessionCenterListsAllSessionsWithoutAttachingOrReadingPanes() {
+        String command = WorkspaceCommandBuilder.buildListTmuxSessionsRemoteCommand();
+
+        assertTrue(command.contains("tmux list-sessions"));
+        assertTrue(command.contains("#{session_name}"));
+        assertTrue(command.contains("#{session_windows}"));
+        assertTrue(command.contains("#{session_attached}"));
+        assertTrue(command.contains(TmuxSessionParser.MISSING_MARKER));
+        assertTrue(!command.contains("mobile-task-*"));
+        assertTrue(!command.contains("attach-session"));
+        assertTrue(!command.contains("capture-pane"));
+    }
+
+    @Test
+    public void tmuxSessionActionsQuoteTheExactSelectedSession() {
+        String session = "termuxpro-user'; touch /tmp/unsafe; #";
+        String attach = WorkspaceCommandBuilder.buildAttachTaskSessionCommand(
+            "dev@example.com", 22, session);
+        String stop = WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(session);
+
+        assertTrue(attach.contains("termuxpro-user"));
+        assertTrue(attach.contains("'\\''; touch /tmp/unsafe; #'"));
+        assertTrue(stop.equals("tmux kill-session -t 'termuxpro-user'\\''; touch /tmp/unsafe; #'"));
+    }
 }

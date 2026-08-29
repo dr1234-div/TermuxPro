@@ -177,6 +177,17 @@ final class WorkspaceCommandBuilder {
             + "printf '%s\\0%s\\0%s\\0' \"$s\" \"$w\" \"$a\";; esac; done; fi";
     }
 
+    /** 列出当前远端 Unix 用户的全部 tmux 会话，不读取窗格内容或命令。 */
+    @NonNull
+    static String buildListTmuxSessionsRemoteCommand() {
+        return "if command -v tmux >/dev/null 2>&1; then "
+            + "tmux list-sessions -F '#{session_name}' 2>/dev/null | while IFS= read -r s; do "
+            + "w=$(tmux display-message -p -t \"$s\" '#{session_windows}'); "
+            + "a=$(tmux display-message -p -t \"$s\" '#{session_attached}'); "
+            + "printf '%s\\0%s\\0%s\\0' \"$s\" \"$w\" \"$a\"; done; "
+            + "else printf '" + TmuxSessionParser.MISSING_MARKER + "\\0\\0\\0'; fi";
+    }
+
     @NonNull
     static String buildAttachTaskSessionCommand(@NonNull String host, int port,
                                                  @NonNull String sessionName) {
