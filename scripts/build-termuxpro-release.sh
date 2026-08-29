@@ -10,13 +10,17 @@ if [[ -x "$bundled_jdk/bin/java" ]]; then
     export PATH="$JAVA_HOME/bin:$PATH"
 fi
 
-if [[ ! -f .signing/ai-terminal-release.p12 || ! -f .signing/ai-terminal-release.pass ]]; then
+if [[ ! -f .signing/termuxpro-release.p12 || ! -f .signing/termuxpro-release.pass ]]; then
     echo "缺少 Release 签名文件，请阅读 docs/RELEASE_SIGNING.md。" >&2
     exit 1
 fi
 
 export TERMUX_SPLIT_APKS_FOR_RELEASE_BUILDS=1
-./gradlew --offline --no-daemon --max-workers=2 :app:testDebugUnitTest :app:assembleRelease
+gradle_args=(--no-daemon --max-workers=2)
+if [[ "${TERMUXPRO_OFFLINE:-0}" == "1" ]]; then
+    gradle_args+=(--offline)
+fi
+./gradlew "${gradle_args[@]}" test lint :app:assembleRelease
 
 apk="app/build/outputs/apk/release/termux-app_apt-android-7-release_arm64-v8a.apk"
 if [[ ! -f "$apk" ]]; then
@@ -31,7 +35,7 @@ if [[ ! -x "$build_tools/apksigner" || ! -x "$build_tools/aapt" ]]; then
     exit 3
 fi
 
-expected_certificate="6f064ddfd91997f637cbcd6338c3f12657f4c36434a367b630809a1d86c7c035"
+expected_certificate="10c820d392d5bd9672317067a5d11fc1250217824166961df7b385128d4b49cd"
 badging="$($build_tools/aapt dump badging "$apk")"
 signature="$($build_tools/apksigner verify --verbose --print-certs "$apk")"
 
@@ -55,7 +59,7 @@ if [[ "$signature" != *"Verified using v1 scheme (JAR signing): true"* ||
 fi
 
 dist_dir="$project_dir/dist/0.1.0"
-dist_apk="$dist_dir/ai-terminal-0.1.0-arm64-v8a.apk"
+dist_apk="$dist_dir/termuxpro-0.1.0-arm64-v8a.apk"
 mkdir -p "$dist_dir"
 cp "$apk" "$dist_apk"
 cp "$project_dir/docs/RELEASE_NOTES_0.1.0.md" "$dist_dir/RELEASE_NOTES.md"
@@ -63,7 +67,7 @@ cp "$project_dir/docs/DEVICE_ACCEPTANCE.md" "$dist_dir/DEVICE_ACCEPTANCE.md"
 sha256sum "$dist_apk" > "$dist_dir/SHA256SUMS"
 printf '%s\n' "$signature" > "$dist_dir/APK_SIGNATURE.txt"
 {
-    echo "产品：AI 终端"
+    echo "产品：TermuxPro"
     echo "版本：0.1.0 (10000)"
     echo "包名：com.termux"
     echo "架构：arm64-v8a"

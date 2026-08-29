@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#08131C"
@@ -19,7 +20,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/git_diff_back"
             android:src="@drawable/ic_arrow_back"
-            android:tint="#AFC1CF" />
+            app:tint="#AFC1CF" />
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"

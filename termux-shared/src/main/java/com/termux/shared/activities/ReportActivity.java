@@ -1,5 +1,6 @@
 package com.termux.shared.activities;
 
+import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
@@ -204,6 +205,7 @@ public class ReportActivity extends AppCompatActivity {
     }
 
     @Override
+    @SuppressLint("MissingSuperCall") // 返回键需要从最近任务中移除报告页，不能调用默认返回实现。
     public void onBackPressed() {
         // Remove activity from recents menu on back button press
         finishAndRemoveTask();

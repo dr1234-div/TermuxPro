@@ -4,6 +4,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.Typeface;
+import android.os.Build;
 
 import com.termux.terminal.TerminalBuffer;
 import com.termux.terminal.TerminalEmulator;
@@ -233,7 +234,14 @@ public final class TerminalRenderer {
             mTextPaint.setColor(foreColor);
 
             // The text alignment is the default Paint.Align.LEFT.
-            canvas.drawTextRun(text, startCharIndex, runWidthChars, startCharIndex, runWidthChars, left, y - mFontLineSpacingAndAscent, false, mTextPaint);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                canvas.drawTextRun(text, startCharIndex, runWidthChars, startCharIndex, runWidthChars,
+                    left, y - mFontLineSpacingAndAscent, false, mTextPaint);
+            } else {
+                // Android 5.x 没有 drawTextRun；使用同一字符区间的兼容绘制路径。
+                canvas.drawText(text, startCharIndex, runWidthChars, left,
+                    y - mFontLineSpacingAndAscent, mTextPaint);
+            }
         }
 
         if (savedMatrix) canvas.restore();

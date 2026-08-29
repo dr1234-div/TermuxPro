@@ -18,7 +18,7 @@ public class WorkspaceCommandBuilderTest {
             "developer@example.com", 2222, "/srv/my project", null);
 
         assertTrue(command.startsWith("ssh -t -o ControlMaster=auto -o ControlPersist=600"));
-        assertTrue(command.contains("ai-terminal-%C"));
+        assertTrue(command.contains("termuxpro-%C"));
         assertTrue(command.contains("-p 2222 -- 'developer@example.com'"));
         assertTrue(command.contains("'\\''/srv/my project'\\''"));
         assertTrue(command.contains("tmux new-session -A -s"));

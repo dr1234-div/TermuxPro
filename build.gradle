@@ -1,6 +1,8 @@
 buildscript {
     repositories {
-        // 当前共享构建机无法直连 Google Maven，镜像仅作为依赖代理，版本仍由上游锁定。
+        google()
+        mavenCentral()
+        // 中国网络环境的回退代理；依赖版本仍由工程锁定。
         maven { url "https://mirrors.cloud.tencent.com/nexus/repository/maven-public/" }
     }
     dependencies {
@@ -10,6 +12,8 @@ buildscript {
 
 allprojects {
     repositories {
+        google()
+        mavenCentral()
         maven { url "https://mirrors.cloud.tencent.com/nexus/repository/maven-public/" }
         maven { url "https://jitpack.io" }
     }

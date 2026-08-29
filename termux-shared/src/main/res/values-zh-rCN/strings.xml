@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE resources [
-    <!ENTITY TERMUX_APP_NAME "AI 终端">
+    <!ENTITY TERMUX_APP_NAME "TermuxPro">
     <!ENTITY TERMUX_PREFIX_DIR_PATH "/data/data/com.termux/files/usr">
 ]>
 <resources>

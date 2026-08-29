@@ -1,0 +1,55 @@
+name: TermuxPro CI
+
+on:
+  push:
+    branches: [dev, master]
+  pull_request:
+    branches: [dev, master]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gradle/actions/wrapper-validation@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - name: 安装 Android NDK
+        run: sdkmanager 'ndk;29.0.14206865'
+      - name: 检查仓库秘密边界
+        run: |
+          if git ls-files | grep -E '(^|/)(\.signing/|.*\.(p12|jks|keystore|key)$|.*\.pass$)'; then
+            echo '仓库包含禁止提交的签名秘密' >&2
+            exit 1
+          fi
+      - name: 全模块测试
+        run: ./scripts/test-all.sh
+      - name: Lint 与 Debug APK
+        run: ./gradlew --no-daemon --max-workers=2 lint :app:assembleDebug
+      - name: 上传测试报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: termuxpro-test-reports
+          path: |
+            **/build/reports/tests/
+            **/build/reports/lint-results-*.html
+          if-no-files-found: ignore
+      - name: 上传 Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: termuxpro-debug-apk
+          path: app/build/outputs/apk/debug/*.apk

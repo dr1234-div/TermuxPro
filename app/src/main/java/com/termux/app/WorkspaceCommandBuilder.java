@@ -8,7 +8,7 @@ import com.termux.shared.termux.TermuxConstants;
 /** 为工作区生成完全经过 POSIX Shell 转义的 SSH/tmux 启动命令。 */
 final class WorkspaceCommandBuilder {
 
-    static final String CONTROL_PATH = TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH + "/ai-terminal-%C";
+    static final String CONTROL_PATH = TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH + "/termuxpro-%C";
 
     private WorkspaceCommandBuilder() {}
 

@@ -1,5 +1,6 @@
 package com.termux.app;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -140,6 +141,7 @@ public final class RemoteFilesActivity extends AppCompatActivity {
     }
 
     @Override
+    @SuppressLint("MissingSuperCall") // 返回键优先进入远端父目录，根目录时由 navigateBack 结束页面。
     public void onBackPressed() {
         navigateBack();
     }

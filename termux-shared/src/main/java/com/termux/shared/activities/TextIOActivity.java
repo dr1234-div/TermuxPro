@@ -233,6 +233,7 @@ public class TextIOActivity extends AppCompatActivity {
     }
 
     @Override
+    @SuppressLint("MissingSuperCall") // 返回键在该编辑器中代表确认输入，不能调用默认返回实现。
     public void onBackPressed() {
         confirm();
     }

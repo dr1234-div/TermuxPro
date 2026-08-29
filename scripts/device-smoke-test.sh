@@ -45,7 +45,7 @@ if [[ "${TOP_ACTIVITY}" != *"${PACKAGE}/${LAUNCHER}"* ]]; then
     exit 5
 fi
 
-CRASHES="$("${ADB}" -s "${SERIAL}" logcat -d -t 400 AndroidRuntime:E '*:S' || true)"
+CRASHES="$("${ADB}" -s "${SERIAL}" logcat -d --pid="${PID}" AndroidRuntime:E '*:S' || true)"
 if [[ "${CRASHES}" == *"FATAL EXCEPTION"* && "${CRASHES}" == *"${PACKAGE}"* ]]; then
     echo "错误：检测到应用崩溃。" >&2
     echo "${CRASHES}" >&2

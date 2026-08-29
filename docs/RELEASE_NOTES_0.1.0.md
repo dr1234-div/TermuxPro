@@ -1,8 +1,8 @@
-# AI 终端 0.1.0 测试版发布说明
+# TermuxPro 0.1.0 测试版发布说明
 
 ## 产品定位
 
-基于官方 Termux 源码构建的 Android 移动开发终端，第一阶段聚焦 SSH 连接远程开发机，
+TermuxPro 是基于官方 Termux 源码构建的 Android 移动开发终端，第一阶段聚焦 SSH 连接远程开发机，
 优化 Claude Code、Codex CLI、tmux 和软键盘工作流。
 
 ## 本版功能

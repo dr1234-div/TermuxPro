@@ -21,8 +21,8 @@ android {
     def apkVersionTag = System.getenv("TERMUX_APK_VERSION_TAG") ?: ""
     def splitAPKsForDebugBuilds = System.getenv("TERMUX_SPLIT_APKS_FOR_DEBUG_BUILDS") ?: "1"
     def splitAPKsForReleaseBuilds = System.getenv("TERMUX_SPLIT_APKS_FOR_RELEASE_BUILDS") ?: "0" // F-Droid does not support split APKs #1904
-    def releaseKeystore = rootProject.file(".signing/ai-terminal-release.p12")
-    def releasePasswordFile = rootProject.file(".signing/ai-terminal-release.pass")
+    def releaseKeystore = rootProject.file(".signing/termuxpro-release.p12")
+    def releasePasswordFile = rootProject.file(".signing/termuxpro-release.pass")
     def releaseRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }
     if (releaseRequested && (!releaseKeystore.exists() || !releasePasswordFile.exists())) {
         throw new GradleException("Release signing files are missing. See docs/RELEASE_SIGNING.md")
@@ -59,7 +59,7 @@ android {
 
         manifestPlaceholders.TERMUX_PACKAGE_NAME = "com.termux"
         // 保留 com.termux 包名以兼容官方 bootstrap 与软件仓库，但使用独立品牌避免冒充上游。
-        manifestPlaceholders.TERMUX_APP_NAME = "AI 终端"
+        manifestPlaceholders.TERMUX_APP_NAME = "TermuxPro"
         manifestPlaceholders.TERMUX_API_APP_NAME = "Termux:API"
         manifestPlaceholders.TERMUX_BOOT_APP_NAME = "Termux:Boot"
         manifestPlaceholders.TERMUX_FLOAT_APP_NAME = "Termux:Float"
@@ -95,7 +95,7 @@ android {
             release {
                 storeFile releaseKeystore
                 storePassword releasePasswordFile.text.trim()
-                keyAlias "ai-terminal"
+                keyAlias "termuxpro"
                 keyPassword releasePasswordFile.text.trim()
                 storeType "PKCS12"
             }
@@ -165,7 +165,7 @@ android {
 dependencies {
     testImplementation "junit:junit:4.13.2"
     testImplementation "org.robolectric:robolectric:4.10"
-    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:1.1.5"
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.2"
 }
 
 task versionName {

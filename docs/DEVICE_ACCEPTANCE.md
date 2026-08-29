@@ -1,4 +1,4 @@
-# Android 真机验收清单
+# TermuxPro Android 真机验收清单
 
 ## 测试前提
 
