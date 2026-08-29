@@ -29,14 +29,18 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:minHeight="56dp"
+            android:minWidth="0dp"
             android:layout_weight="1"
             android:gravity="center_vertical"
             android:orientation="vertical"
             android:paddingHorizontal="8dp">
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:minWidth="0dp"
                 android:text="@string/remote_files_title"
                 android:textColor="#F5F8FA"
                 android:textSize="17sp"
