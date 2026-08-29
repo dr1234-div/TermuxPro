@@ -36,6 +36,7 @@ jobs:
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
             'platform-tools' 'emulator' 'platforms;android-36' \
             'system-images;android-35;google_apis;x86_64' 'ndk;29.0.14206865'
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
       - name: 创建并启动隔离模拟器
         run: |
           if [[ -e /dev/kvm ]]; then
