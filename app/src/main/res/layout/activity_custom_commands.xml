@@ -29,10 +29,18 @@
                 android:textColor="#B8C8D4" />
 
             <TextView
+                android:id="@+id/custom_commands_title"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
+                android:autoSizeMaxTextSize="22sp"
+                android:autoSizeMinTextSize="14sp"
+                android:autoSizeStepGranularity="1sp"
+                android:autoSizeTextType="uniform"
+                android:ellipsize="end"
+                android:gravity="center_vertical"
+                android:maxLines="1"
                 android:text="@string/custom_commands_title"
                 android:textColor="#F5F8FA"
                 android:textSize="22sp"
