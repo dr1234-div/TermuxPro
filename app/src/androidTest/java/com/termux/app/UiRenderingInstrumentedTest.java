@@ -4,6 +4,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
+import android.app.LocaleManager;
 import android.app.UiAutomation;
 import android.content.ContentValues;
 import android.content.Context;
@@ -15,6 +16,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.LocaleList;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ScrollView;
@@ -102,6 +104,12 @@ public final class UiRenderingInstrumentedTest {
     private void forceSimplifiedChinese(Context context) {
         Locale locale = Locale.SIMPLIFIED_CHINESE;
         Locale.setDefault(locale);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            LocaleManager localeManager = context.getSystemService(LocaleManager.class);
+            if (localeManager != null) {
+                localeManager.setApplicationLocales(LocaleList.forLanguageTags("zh-CN"));
+            }
+        }
         Configuration configuration = new Configuration(context.getResources().getConfiguration());
         configuration.setLocale(locale);
         context.getResources().updateConfiguration(configuration,

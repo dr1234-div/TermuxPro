@@ -210,6 +210,10 @@ public final class WorkspaceActivity extends AppCompatActivity {
 
     private void configureLargeFontLayout() {
         if (getResources().getConfiguration().fontScale < 1.5f) return;
+        findViewById(R.id.workspace_eyebrow).setVisibility(View.GONE);
+        findViewById(R.id.workspace_subtitle).setVisibility(View.GONE);
+        findViewById(R.id.workspace_remote_description).setVisibility(View.GONE);
+        findViewById(R.id.workspace_security_footer).setVisibility(View.GONE);
         stackButtonRow(R.id.workspace_ai_actions);
         stackButtonRow(R.id.workspace_tools_row_one);
         stackButtonRow(R.id.workspace_tools_row_two);
@@ -660,6 +664,10 @@ public final class WorkspaceActivity extends AppCompatActivity {
             configured && !showEditor && !verified ? View.VISIBLE : View.GONE);
         findViewById(R.id.workspace_connection_diagnostic_primary).setVisibility(
             configured && !showEditor && !verified ? View.VISIBLE : View.GONE);
+        if (getResources().getConfiguration().fontScale < 1.5f) {
+            findViewById(R.id.workspace_security_footer).setVisibility(
+                configured ? View.GONE : View.VISIBLE);
+        }
         findViewById(R.id.workspace_connect_button).setVisibility(
             configured && showEditor ? View.GONE : View.VISIBLE);
         findViewById(R.id.workspace_ai_title).setVisibility(
