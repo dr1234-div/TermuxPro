@@ -9,6 +9,7 @@ source "$project_dir/scripts/resolve-jdk17.sh"
 ./test/version-metadata-test.sh
 ./test/skill-validator-bootstrap-test.sh
 ./test/ui-screenshot-manifest-test.sh
+./test/release-apk-device-smoke-test.sh
 ./scripts/validate-skills.sh
 
 gradle_args=(--no-daemon --max-workers=2)
