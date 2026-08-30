@@ -190,16 +190,15 @@ public final class WorkspaceActivity extends AppCompatActivity {
         });
     }
 
-    /** Spinner 在部分 Android 实现中异步派发选择事件，因此同步与下一帧都恢复一次。 */
+    /** 重建轻量选择器适配器，避免 Spinner 在选择回调返回后覆盖恢复位置。 */
     private void restoreWorkspaceSelection(int position) {
         mUpdatingSelector = true;
+        ArrayAdapter<WorkspaceProfile> adapter = new ArrayAdapter<>(this,
+            R.layout.item_workspace_spinner, mProfiles);
+        adapter.setDropDownViewResource(R.layout.item_workspace_spinner_dropdown);
+        mWorkspaceSelector.setAdapter(adapter);
         mWorkspaceSelector.setSelection(position, false);
         mUpdatingSelector = false;
-        mWorkspaceSelector.post(() -> {
-            mUpdatingSelector = true;
-            mWorkspaceSelector.setSelection(position, false);
-            mUpdatingSelector = false;
-        });
     }
 
     private void requestNotificationPermissionIfNeeded() {
