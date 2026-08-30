@@ -82,6 +82,29 @@ public class CustomLayoutsSmokeTest {
     }
 
     @Test
+    public void terminalNavigationUsesPersistentLabelsAndAccessibleTargets() {
+        Context context = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
+            R.style.Theme_TermuxActivity_DayNight_NoActionBar);
+        View page = LayoutInflater.from(context).inflate(
+            R.layout.activity_termux, new FrameLayout(context), false);
+        TextView workbench = page.findViewById(R.id.workspace_home_button);
+        TextView sessions = page.findViewById(R.id.workspace_drawer_button);
+        ImageButton settings = page.findViewById(R.id.settings_button);
+        float density = context.getResources().getDisplayMetrics().density;
+
+        assertEquals(context.getString(R.string.workspace_open_workbench),
+            workbench.getText().toString());
+        assertEquals(context.getString(R.string.workspace_open_workbench_description),
+            workbench.getContentDescription().toString());
+        assertEquals(context.getString(R.string.workspace_open_sessions),
+            sessions.getContentDescription().toString());
+        assertEquals(context.getString(R.string.workspace_sessions_short),
+            sessions.getText().toString());
+        assertTrue(settings.getLayoutParams().width >= Math.round(48 * density));
+        assertTrue(settings.getLayoutParams().height >= Math.round(48 * density));
+    }
+
+    @Test
     public void toolbarsAndWorkspaceActionsRemainUsableWithLargeFonts() {
         Context context = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
             R.style.Theme_TermuxPro_DayNight_NoActionBar);
