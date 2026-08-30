@@ -29,7 +29,6 @@ import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 import com.termux.R;
 import com.termux.app.api.file.FileReceiverActivity;
@@ -54,6 +53,7 @@ import com.termux.app.terminal.TermuxTerminalViewClient;
 import com.termux.shared.termux.extrakeys.ExtraKeysView;
 import com.termux.shared.termux.interact.TextInputDialogUtils;
 import com.termux.shared.logger.Logger;
+import com.termux.shared.logger.ForegroundFeedbackHost;
 import com.termux.shared.termux.TermuxUtils;
 import com.termux.shared.termux.settings.properties.TermuxAppSharedProperties;
 import com.termux.shared.termux.theme.TermuxThemeUtils;
@@ -83,7 +83,8 @@ import java.util.Arrays;
  * </ul>
  * about memory leaks.
  */
-public final class TermuxActivity extends AppCompatActivity implements ServiceConnection {
+public final class TermuxActivity extends AppCompatActivity implements ServiceConnection,
+    ForegroundFeedbackHost {
 
     private static final int TOOL_GIT_STATUS = 1;
     private static final int TOOL_GIT_DIFF = 2;
@@ -171,10 +172,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
      */
     private final BroadcastReceiver mTermuxActivityBroadcastReceiver = new TermuxActivityBroadcastReceiver();
 
-    /**
-     * The last toast shown, used cancel current toast before showing new in {@link #showToast(String, boolean)}.
-     */
-    Toast mLastToast;
+    /** 应用内反馈由显式配色的横幅呈现，避免厂商 Toast 主题产生白底白字。 */
+    TextView mFeedbackBanner;
+    TerminalFeedbackController mFeedbackController;
 
     /**
      * If between onResume() and onStop(). Note that only one session is in the foreground of the terminal view at the
@@ -256,6 +256,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
         mTermuxActivityRootView = findViewById(R.id.activity_termux_root_view);
         mTermuxActivityRootView.setActivity(this);
+        mFeedbackBanner = findViewById(R.id.terminal_feedback_banner);
+        mFeedbackController = new TerminalFeedbackController(mFeedbackBanner);
         mTermuxActivityBottomSpaceView = findViewById(R.id.activity_termux_bottom_space_view);
         mTermuxActivityRootView.setOnApplyWindowInsetsListener(new TermuxActivityRootView.WindowInsetsListener());
 
@@ -296,9 +298,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 throw new RuntimeException("bindService() failed");
         } catch (Exception e) {
             Logger.logStackTraceWithMessage(LOG_TAG,"TermuxActivity failed to start TermuxService", e);
-            Logger.showToast(this,
-                getString(e.getMessage() != null && e.getMessage().contains("app is in background") ?
-                    R.string.error_termux_service_start_failed_bg : R.string.error_termux_service_start_failed_general),
+            showToast(getString(e.getMessage() != null && e.getMessage().contains("app is in background") ?
+                R.string.error_termux_service_start_failed_bg : R.string.error_termux_service_start_failed_general),
                 true);
             mIsInvalidState = true;
             return;
@@ -361,6 +362,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         if (mIsInvalidState) return;
 
         mIsVisible = false;
+        if (mFeedbackController != null) mFeedbackController.hide();
 
         if (mTermuxTerminalSessionActivityClient != null)
             mTermuxTerminalSessionActivityClient.onStop();
@@ -610,7 +612,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         if (terminalToolbarViewPager == null) return;
 
         final boolean showNow = mPreferences.toogleShowTerminalToolbar();
-        Logger.showToast(this, (showNow ? getString(R.string.msg_enabling_terminal_toolbar) : getString(R.string.msg_disabling_terminal_toolbar)), true);
+        showToast(showNow ? getString(R.string.msg_enabling_terminal_toolbar) :
+            getString(R.string.msg_disabling_terminal_toolbar), true);
         terminalToolbarViewPager.setVisibility(showNow ? View.VISIBLE : View.GONE);
         if (showNow && isTerminalToolbarTextInputViewSelected()) {
             // Focus the text input view if just revealed.
@@ -924,13 +927,21 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         }
     }
 
-    /** Show a toast and dismiss the last one if still visible. */
+    /**
+     * 在终端页面内显示可读、可无障碍播报的反馈。系统 Toast 在部分厂商深色主题下会出现白底白字，
+     * 因此终端会话切换等前台反馈不再交给系统样式渲染。
+     */
     public void showToast(String text, boolean longDuration) {
-        if (text == null || text.isEmpty()) return;
-        if (mLastToast != null) mLastToast.cancel();
-        mLastToast = Toast.makeText(TermuxActivity.this, text, longDuration ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT);
-        mLastToast.setGravity(Gravity.TOP, 0, 0);
-        mLastToast.show();
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            runOnUiThread(() -> showToast(text, longDuration));
+            return;
+        }
+        if (mFeedbackController != null) mFeedbackController.show(text, longDuration);
+    }
+
+    @Override
+    public void showForegroundFeedback(String text, boolean longDuration) {
+        showToast(text, longDuration);
     }
 
 
@@ -1084,15 +1095,21 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 // If permission is granted, then also setup storage symlinks.
                 if(PermissionUtils.checkAndRequestLegacyOrManageExternalStoragePermission(
                     TermuxActivity.this, requestCode, !isPermissionCallback)) {
-                    if (isPermissionCallback)
-                        Logger.logInfoAndShowToast(TermuxActivity.this, LOG_TAG,
-                            getString(com.termux.shared.R.string.msg_storage_permission_granted_on_request));
+                    if (isPermissionCallback) {
+                        String message = getString(
+                            com.termux.shared.R.string.msg_storage_permission_granted_on_request);
+                        Logger.logInfo(LOG_TAG, message);
+                        showToast(message, true);
+                    }
 
                     TermuxInstaller.setupStorageSymlinks(TermuxActivity.this);
                 } else {
-                    if (isPermissionCallback)
-                        Logger.logInfoAndShowToast(TermuxActivity.this, LOG_TAG,
-                            getString(com.termux.shared.R.string.msg_storage_permission_not_granted_on_request));
+                    if (isPermissionCallback) {
+                        String message = getString(
+                            com.termux.shared.R.string.msg_storage_permission_not_granted_on_request);
+                        Logger.logInfo(LOG_TAG, message);
+                        showToast(message, true);
+                    }
                 }
             }
         }.start();

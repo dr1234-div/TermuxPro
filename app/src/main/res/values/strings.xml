@@ -422,6 +422,7 @@
     <string name="terminal_search_results_title">“%1$s” · %2$d matches</string>
     <string name="terminal_search_empty">No match was found in the available terminal history.</string>
     <string name="terminal_search_truncated">Results are bounded to the latest 1 MB and 100 matches.</string>
+    <string name="terminal_session_switched">Switched to session: %1$s</string>
     <string name="task_sessions_title">tmux sessions</string>
     <string name="task_sessions_loading">Loading remote tmux sessions…</string>
     <string name="task_sessions_ready">Tap to explicitly attach. Only TermuxPro-created sessions can be stopped here.</string>

@@ -67,6 +67,21 @@ public class CustomLayoutsSmokeTest {
     }
 
     @Test
+    public void terminalFeedbackUsesExplicitReadableColorsAndStartsHidden() {
+        Context context = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
+            R.style.Theme_TermuxActivity_DayNight_NoActionBar);
+        View page = LayoutInflater.from(context).inflate(
+            R.layout.activity_termux, new FrameLayout(context), false);
+        TextView feedback = page.findViewById(R.id.terminal_feedback_banner);
+
+        assertNotNull(feedback.getBackground());
+        assertEquals(context.getColor(R.color.tp_text_primary), feedback.getCurrentTextColor());
+        assertEquals(View.GONE, feedback.getVisibility());
+        assertEquals(View.ACCESSIBILITY_LIVE_REGION_POLITE,
+            feedback.getAccessibilityLiveRegion());
+    }
+
+    @Test
     public void toolbarsAndWorkspaceActionsRemainUsableWithLargeFonts() {
         Context context = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
             R.style.Theme_TermuxPro_DayNight_NoActionBar);

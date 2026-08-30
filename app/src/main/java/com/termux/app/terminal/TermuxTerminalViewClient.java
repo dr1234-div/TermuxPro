@@ -741,7 +741,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
     }
 
     private void reportIssueFromTranscript(String transcriptText, boolean addTermuxDebugInfo) {
-        Logger.showToast(mActivity, mActivity.getString(R.string.msg_generating_report), true);
+        mActivity.showToast(mActivity.getString(R.string.msg_generating_report), true);
 
         new Thread() {
             @Override
