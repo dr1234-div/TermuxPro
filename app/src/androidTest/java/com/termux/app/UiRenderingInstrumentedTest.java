@@ -177,6 +177,32 @@ public final class UiRenderingInstrumentedTest {
                 assertTrue(activity.findViewById(com.termux.R.id.git_overview_scroll)
                     .getVisibility() == View.VISIBLE);
             });
+        context.getSharedPreferences(WorkspaceTargetStore.PREFERENCES_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(WorkspaceTargetStore.KEY_PROFILES,
+                "[{\"id\":\"ui-commands\",\"name\":\"移动端项目\","
+                    + "\"host\":\"hdr@192.168.1.153\",\"port\":\"22\","
+                    + "\"path\":\"~/project\"}]")
+            .putString(WorkspaceTargetStore.KEY_ACTIVE_PROFILE, "ui-commands")
+            .commit();
+        CustomCommandStore customCommands = new CustomCommandStore(context);
+        customCommands.clear("ui-commands");
+        customCommands.save("ui-commands", new CustomCommand("ui-git-status", "查看 Git 状态",
+            "git status --short --branch", "", "Git", true,
+            CustomCommand.Confirmation.ALWAYS));
+        customCommands.save("ui-frontend-test", new CustomCommand("ui-test", "运行前端测试",
+            "pnpm test", "~/project/web", "测试", true,
+            CustomCommand.Confirmation.DANGEROUS_ONLY));
+        capture(context, "custom-commands", new Intent(context, CustomCommandsActivity.class),
+            activity -> {
+                assertToolbarActionsVisible(activity, com.termux.R.id.custom_commands_back,
+                    com.termux.R.id.custom_commands_add);
+                assertTrue(((android.widget.LinearLayout) activity.findViewById(
+                    com.termux.R.id.custom_commands_list)).getChildCount() == 2);
+            });
+        capture(context, "custom-command-editor",
+            new Intent(context, CustomCommandsActivity.class), activity ->
+                activity.findViewById(com.termux.R.id.custom_commands_add).performClick());
         capture(context, "remote-file-preview",
             RemoteFilePreviewActivity.newIntent(context, "invalid", 0, "~/project", "README.md"),
             activity -> assertReadableRecoveryState(activity,
