@@ -5,31 +5,73 @@ import androidx.annotation.Nullable;
 
 import com.termux.shared.termux.TermuxConstants;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 /** 为工作区生成完全经过 POSIX Shell 转义的 SSH/tmux 启动命令。 */
 final class WorkspaceCommandBuilder {
+
+    static final String POLICY_SSH_ONLY = "ssh_only";
+    static final String POLICY_LIST_SESSIONS = "list_sessions";
+    static final String POLICY_ATTACH_SESSION = "attach_session";
+    static final String POLICY_CREATE_OR_ATTACH = "create_or_attach";
+    static final String TMUX_OWNER_OPTION = "@termuxpro_owner";
+    static final String TMUX_WORKSPACE_OPTION = "@termuxpro_workspace";
 
     static final String CONTROL_PATH = TermuxConstants.TERMUX_TMP_PREFIX_DIR_PATH + "/termuxpro-%C";
 
     private WorkspaceCommandBuilder() {}
 
     @NonNull
-    static String buildSshCommand(@NonNull String host, int port, @NonNull String path, @Nullable String cli) {
-        String sessionName = cli == null ? "mobile-ai" : "mobile-" + cli;
-        String tmuxCommand = "tmux new-session -A -s " + shellQuote(sessionName);
-        String fallbackCommand = "exec ${SHELL:-sh}";
-
-        if ("claude".equals(cli)) {
-            tmuxCommand += " " + shellQuote("claude --continue || exec claude");
-            fallbackCommand = "exec claude";
-        } else if ("codex".equals(cli)) {
-            tmuxCommand += " " + shellQuote("codex resume --last || exec codex");
-            fallbackCommand = "exec codex";
+    static String buildSshCommand(@NonNull String host, int port, @NonNull String path,
+                                  @Nullable String cli, @NonNull String policy,
+                                  @NonNull String sessionName) {
+        if (POLICY_CREATE_OR_ATTACH.equals(policy)) {
+            throw new IllegalArgumentException("Managed tmux policy requires a workspace owner token");
         }
+        return buildSshCommand(host, port, path, cli, policy, sessionName, "");
+    }
 
-        String remoteCommand = "cd -- " + remotePathExpression(path)
-            + " && if command -v tmux >/dev/null 2>&1; then exec " + tmuxCommand
-            + "; else printf '\\n[TermuxPro] Remote tmux is not installed; opened a normal shell without session recovery.\\n' >&2; "
-            + fallbackCommand + "; fi";
+    @NonNull
+    static String buildSshCommand(@NonNull String host, int port, @NonNull String path,
+                                  @Nullable String cli, @NonNull String policy,
+                                  @NonNull String sessionName, @NonNull String ownerToken) {
+        if (POLICY_CREATE_OR_ATTACH.equals(policy)) requireOwnerToken(ownerToken);
+        String directCommand = cli == null ? "exec ${SHELL:-sh}" : "exec " + cli;
+        String remoteCommand = "if ! cd -- " + remotePathExpression(path)
+            + "; then printf '\\n[TermuxPro] SSH authenticated, but the workspace path is unavailable: %s\\n' "
+            + shellQuote(path) + " >&2; exec ${SHELL:-sh}; fi; "
+            + "printf '\\n[TermuxPro] SSH authenticated; workspace ready: %s\\n' "
+            + shellQuote(path) + "; ";
+
+        if (POLICY_LIST_SESSIONS.equals(policy)) {
+            remoteCommand += "if command -v tmux >/dev/null 2>&1; then "
+                + "printf '\\n[TermuxPro] Available tmux sessions (not attached):\\n'; "
+                + "tmux list-sessions 2>/dev/null || printf '[TermuxPro] No tmux sessions found.\\n'; "
+                + "else printf '\\n[TermuxPro] Remote tmux is not installed.\\n' >&2; fi; "
+                + directCommand;
+        } else if (POLICY_ATTACH_SESSION.equals(policy)) {
+            String target = exactTmuxTarget(sessionName);
+            remoteCommand += "if ! command -v tmux >/dev/null 2>&1; then "
+                + "printf '\\n[TermuxPro] Remote tmux is not installed; opened a normal shell.\\n' >&2; "
+                + "exec ${SHELL:-sh}; elif tmux has-session -t " + shellQuote(target)
+                + " 2>/dev/null; then exec tmux attach-session -t " + shellQuote(target)
+                + "; else printf '\\n[TermuxPro] Configured tmux session does not exist: %s\\n' "
+                + shellQuote(sessionName) + " >&2; exec ${SHELL:-sh}; fi";
+        } else if (POLICY_CREATE_OR_ATTACH.equals(policy)) {
+            String fingerprint = workspaceFingerprint(host, port, path);
+            String attachOwned = managedSessionAction("attach-session", ownerToken, fingerprint);
+            String newSession = buildCreateManagedTmuxSessionCommand(
+                sessionName, cli == null ? null : "exec " + cli, ownerToken, fingerprint);
+            remoteCommand += "if ! command -v tmux >/dev/null 2>&1; then "
+                + "printf '\\n[TermuxPro] Remote tmux is not installed; opened without session recovery.\\n' >&2; "
+                + directCommand + "; else " + resolveTmuxSessionHandle(sessionName)
+                + " if [ -n \"$sid\" ]; then " + attachOwned + "; else " + newSession + "; fi; fi";
+        } else {
+            // 安全默认值：只建立 SSH，不探测、不创建、不进入任何 tmux 会话。
+            remoteCommand += directCommand;
+        }
 
         return "ssh -t -o ControlMaster=auto -o ControlPersist=600 -o ControlPath="
             + shellQuote(CONTROL_PATH)
@@ -126,11 +168,17 @@ final class WorkspaceCommandBuilder {
     /** 在单独的远端 tmux 任务会话运行经过结构化生成的项目命令。 */
     @NonNull
     static String buildSshTaskCommand(@NonNull String host, int port, @NonNull String projectPath,
-                                      @NonNull String safeTaskCommand) {
-        String tmux = "tmux new-session -A -s " + shellQuote(taskSessionName(safeTaskCommand))
-            + " " + shellQuote(safeTaskCommand);
+                                      @NonNull String safeTaskCommand, @NonNull String ownerToken) {
+        requireOwnerToken(ownerToken);
+        String fingerprint = workspaceFingerprint(host, port, projectPath);
+        String sessionName = taskSessionName(projectPath, safeTaskCommand, ownerToken);
+        String attachOwned = managedSessionAction("attach-session", ownerToken, fingerprint);
+        String create = buildCreateManagedTmuxSessionCommand(
+            sessionName, "exec " + safeTaskCommand, ownerToken, fingerprint);
+        String tmux = resolveTmuxSessionHandle(sessionName) + " if [ -n \"$sid\" ]; then "
+            + attachOwned + "; else " + create + "; fi";
         String remote = "cd -- " + remotePathExpression(projectPath)
-            + " && if command -v tmux >/dev/null 2>&1; then exec " + tmux
+            + " && if command -v tmux >/dev/null 2>&1; then " + tmux
             + "; else exec ${SHELL:-sh} -lc " + shellQuote(safeTaskCommand) + "; fi";
         return "ssh -t -o ControlMaster=auto -o ControlPersist=600 -o ControlPath="
             + shellQuote(CONTROL_PATH) + " -o ServerAliveInterval=15 -o ServerAliveCountMax=3 "
@@ -139,33 +187,148 @@ final class WorkspaceCommandBuilder {
 
     /** 同一任务恢复原会话，不同任务允许并行运行。 */
     @NonNull
-    static String taskSessionName(@NonNull String safeTaskCommand) {
-        return "mobile-task-" + String.format("%08x", safeTaskCommand.hashCode());
+    static String taskSessionName(@NonNull String projectPath, @NonNull String safeTaskCommand,
+                                  @NonNull String ownerToken) {
+        requireOwnerToken(ownerToken);
+        return "mobile-task-" + sha256(ownerToken).substring(0, 12) + "-"
+            + sha256(ownerToken + "\0" + projectPath.trim() + "\0" + safeTaskCommand).substring(0, 24);
     }
 
     /** 列出应用创建的项目任务会话，不包含普通 tmux 或 AI CLI 会话。 */
     @NonNull
-    static String buildListTaskSessionsRemoteCommand() {
+    static String buildListTaskSessionsRemoteCommand(@NonNull String ownerToken) {
+        requireOwnerToken(ownerToken);
         return "if command -v tmux >/dev/null 2>&1; then "
-            + "tmux list-sessions -F '#{session_name}' 2>/dev/null | while IFS= read -r s; do "
+            + "tmux list-sessions -F '#{session_id}:#{session_name}' 2>/dev/null | "
+            + "while IFS=: read -r sid s; do "
             + "case \"$s\" in mobile-task-*) "
-            + "w=$(tmux display-message -p -t \"$s\" '#{session_windows}'); "
-            + "a=$(tmux display-message -p -t \"$s\" '#{session_attached}'); "
-            + "printf '%s\\0%s\\0%s\\0' \"$s\" \"$w\" \"$a\";; esac; done; fi";
+            + "w=$(tmux display-message -p -t \"$sid\" '#{session_windows}'); "
+            + "a=$(tmux display-message -p -t \"$sid\" '#{session_attached}'); "
+            + "o=$(tmux show-options -v -t \"$sid\" " + TMUX_OWNER_OPTION + " 2>/dev/null || true); "
+            + "f=$(tmux show-options -v -t \"$sid\" " + TMUX_WORKSPACE_OPTION + " 2>/dev/null || true); "
+            + "[ \"$o\" = " + shellQuote(ownerToken)
+            + " ] && printf '%s\\0%s\\0%s\\0%s\\0%s\\0' \"$s\" \"$w\" \"$a\" \"$o\" \"$f\";; esac; done; fi";
+    }
+
+    /** 列出当前远端 Unix 用户的全部 tmux 会话，不读取窗格内容或命令。 */
+    @NonNull
+    static String buildListTmuxSessionsRemoteCommand() {
+        return "if command -v tmux >/dev/null 2>&1; then "
+            + "tmux list-sessions -F '#{session_id}:#{session_name}' 2>/dev/null | "
+            + "while IFS=: read -r sid s; do "
+            + "w=$(tmux display-message -p -t \"$sid\" '#{session_windows}'); "
+            + "a=$(tmux display-message -p -t \"$sid\" '#{session_attached}'); "
+            + "o=$(tmux show-options -v -t \"$sid\" " + TMUX_OWNER_OPTION + " 2>/dev/null || true); "
+            + "f=$(tmux show-options -v -t \"$sid\" " + TMUX_WORKSPACE_OPTION + " 2>/dev/null || true); "
+            + "printf '%s\\0%s\\0%s\\0%s\\0%s\\0' \"$s\" \"$w\" \"$a\" \"$o\" \"$f\"; done; "
+            + "else printf '" + TmuxSessionParser.MISSING_MARKER + "\\0\\0\\0\\0\\0'; fi";
     }
 
     @NonNull
     static String buildAttachTaskSessionCommand(@NonNull String host, int port,
-                                                 @NonNull String sessionName) {
-        String remote = "exec tmux attach-session -t " + shellQuote(sessionName);
+                                                 @NonNull String sessionName,
+                                                 @Nullable String expectedOwnerToken,
+                                                 @NonNull String projectPath) {
+        String target = exactTmuxTarget(sessionName);
+        String remote;
+        if (expectedOwnerToken == null) {
+            // 用户已显式选择未知会话；精确附着，但不宣称它属于当前工作区。
+            remote = "exec tmux attach-session -t " + shellQuote(target);
+        } else {
+            requireOwnerToken(expectedOwnerToken);
+            remote = resolveTmuxSessionHandle(sessionName) + " [ -n \"$sid\" ] || exit 72; "
+                + managedSessionAction("attach-session", expectedOwnerToken,
+                workspaceFingerprint(host, port, projectPath));
+        }
         return "ssh -t -o ControlMaster=auto -o ControlPersist=600 -o ControlPath="
             + shellQuote(CONTROL_PATH) + " -o ServerAliveInterval=15 -o ServerAliveCountMax=3 "
             + "-o TCPKeepAlive=yes -p " + port + " -- " + shellQuote(host) + " " + shellQuote(remote);
     }
 
     @NonNull
-    static String buildStopTaskSessionRemoteCommand(@NonNull String sessionName) {
-        return "tmux kill-session -t " + shellQuote(sessionName);
+    static String buildStopTaskSessionRemoteCommand(@NonNull String sessionName,
+                                                     @NonNull String expectedOwnerToken,
+                                                     @NonNull String host,
+                                                     int port,
+                                                     @NonNull String projectPath) {
+        requireOwnerToken(expectedOwnerToken);
+        return resolveTmuxSessionHandle(sessionName) + " [ -n \"$sid\" ] || exit 72; "
+            + managedSessionAction("kill-session", expectedOwnerToken,
+            workspaceFingerprint(host, port, projectPath));
+    }
+
+    @NonNull
+    private static String managedSessionAction(@NonNull String tmuxAction, @NonNull String ownerToken,
+                                                @NonNull String workspaceFingerprint) {
+        String identity = "#{&&:#{==:#{pid},$server_pid},#{==:#{session_created},$created}}";
+        String ownership = "#{&&:#{==:#{" + TMUX_OWNER_OPTION + "}," + ownerToken
+            + "},#{==:#{" + TMUX_WORKSPACE_OPTION + "}," + workspaceFingerprint + "}}";
+        String condition = "#{&&:" + identity + "," + ownership + "}";
+        String success = tmuxAction + " -t '$sid'";
+        String failure = "run-shell \"printf '[TermuxPro] Refused: session ownership changed.\\n' "
+            + ">&2; exit 73\"";
+        return "exec tmux if-shell -F -t \"$sid\" \"" + condition + "\" \""
+            + success + "\" " + shellQuote(failure);
+    }
+
+    @NonNull
+    static String buildCreateManagedTmuxSessionCommand(@NonNull String sessionName,
+                                                        @Nullable String paneCommand,
+                                                        @NonNull String ownerToken,
+                                                        @NonNull String workspaceFingerprint) {
+        requireOwnerToken(ownerToken);
+        StringBuilder command = new StringBuilder("exec tmux new-session -d -s ")
+            .append(shellQuote(sessionName))
+            .append(" \\; set-option -t ").append(shellQuote(sessionName)).append(" ")
+            .append(TMUX_OWNER_OPTION).append(" ").append(shellQuote(ownerToken))
+            .append(" \\; set-option -t ").append(shellQuote(sessionName)).append(" ")
+            .append(TMUX_WORKSPACE_OPTION).append(" ").append(shellQuote(workspaceFingerprint));
+        if (paneCommand != null) {
+            command.append(" \\; respawn-pane -k -t ").append(shellQuote(sessionName + ":0.0"))
+                .append(" ").append(shellQuote(paneCommand));
+        }
+        return command.append(" \\; attach-session -t ").append(shellQuote(sessionName)).toString();
+    }
+
+    private static void requireOwnerToken(@NonNull String ownerToken) {
+        if (!WorkspaceOwnershipStore.isValid(ownerToken)) {
+            throw new IllegalArgumentException("Invalid workspace owner token");
+        }
+    }
+
+    @NonNull
+    private static String resolveTmuxSessionHandle(@NonNull String sessionName) {
+        return "handle=$(tmux list-sessions -F '#{pid}:#{session_id}:#{session_created}:#{session_name}' "
+            + "2>/dev/null | "
+            + "while IFS=: read -r candidate_pid candidate_sid candidate_created candidate_name; do "
+            + "if [ \"$candidate_name\" = " + shellQuote(sessionName)
+            + " ]; then printf '%s' \"$candidate_pid:$candidate_sid:$candidate_created\"; break; fi; done); "
+            + "server_pid=${handle%%:*}; remainder=${handle#*:}; sid=${remainder%%:*}; "
+            + "remainder=${remainder#*:}; created=${remainder%%:*}; ";
+    }
+
+    @NonNull
+    static String workspaceFingerprint(@NonNull String host, int port, @NonNull String projectPath) {
+        if (port < 1 || port > 65535) throw new IllegalArgumentException("Invalid SSH port");
+        return sha256(host.trim() + "\0" + port + "\0" + projectPath.trim());
+    }
+
+    @NonNull
+    private static String sha256(@NonNull String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                .digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(digest.length * 2);
+            for (byte item : digest) hex.append(String.format("%02x", item & 0xff));
+            return hex.toString();
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException("SHA-256 unavailable", impossible);
+        }
+    }
+
+    @NonNull
+    private static String exactTmuxTarget(@NonNull String sessionName) {
+        return "=" + sessionName;
     }
 
     /** 仅允许开头的 ~/ 展开为远端 HOME，其余内容仍按普通参数转义。 */

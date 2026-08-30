@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -27,6 +28,7 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
     private static final String EXTRA_HOST = "host";
     private static final String EXTRA_PORT = "port";
     private static final String EXTRA_PROJECT_PATH = "project_path";
+    private static final String EXTRA_WORKSPACE_ID = "workspace_id";
     private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
     private final Handler mMainHandler = new Handler(Looper.getMainLooper());
     private final RemoteCommandRunner mRunner = new RemoteCommandRunner();
@@ -34,16 +36,20 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
     private String mHost;
     private int mPort;
     private String mProjectPath;
+    private String mWorkspaceId;
+    private WorkspaceConnectionStateStore mConnectionStateStore;
     private ProgressBar mProgress;
     private TextView mStatus;
+    private Button mInteractiveConnection;
+    private Button mReturnWorkspace;
     private ArrayAdapter<ConnectionDiagnosticReport.Item> mAdapter;
 
     @NonNull
     static Intent newIntent(@NonNull Context context, @NonNull String host, int port,
-                            @NonNull String projectPath) {
+                            @NonNull String projectPath, @NonNull String workspaceId) {
         return new Intent(context, ConnectionDiagnosticActivity.class)
             .putExtra(EXTRA_HOST, host).putExtra(EXTRA_PORT, port)
-            .putExtra(EXTRA_PROJECT_PATH, projectPath);
+            .putExtra(EXTRA_PROJECT_PATH, projectPath).putExtra(EXTRA_WORKSPACE_ID, workspaceId);
     }
 
     @Override
@@ -53,14 +59,25 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
         mHost = getIntent().getStringExtra(EXTRA_HOST);
         mPort = getIntent().getIntExtra(EXTRA_PORT, 22);
         mProjectPath = getIntent().getStringExtra(EXTRA_PROJECT_PATH);
+        mWorkspaceId = getIntent().getStringExtra(EXTRA_WORKSPACE_ID);
+        mConnectionStateStore = new WorkspaceConnectionStateStore(this);
         mProgress = findViewById(R.id.connection_diagnostic_progress);
         mStatus = findViewById(R.id.connection_diagnostic_status);
+        mInteractiveConnection = findViewById(R.id.connection_diagnostic_interactive_button);
+        mReturnWorkspace = findViewById(R.id.connection_diagnostic_return_workspace_button);
         ListView list = findViewById(R.id.connection_diagnostic_list);
-        mAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, mItems);
+        mAdapter = new ArrayAdapter<>(this, R.layout.item_termuxpro_list, mItems);
         list.setAdapter(mAdapter);
         findViewById(R.id.connection_diagnostic_back_button).setOnClickListener(view -> finish());
         findViewById(R.id.connection_diagnostic_refresh_button).setOnClickListener(view -> diagnose());
-        diagnose();
+        mInteractiveConnection.setOnClickListener(view -> openInteractiveConnection());
+        mReturnWorkspace.setOnClickListener(view -> WorkspaceNavigation.returnToWorkspace(this));
+        if (mHost == null || mHost.trim().isEmpty() || mProjectPath == null ||
+            mPort < 1 || mPort > 65535) {
+            showInvalidWorkspace();
+        } else {
+            diagnose();
+        }
     }
 
     private void diagnose() {
@@ -68,6 +85,8 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
         mItems.clear();
         mAdapter.notifyDataSetChanged();
         mProgress.setVisibility(View.VISIBLE);
+        mInteractiveConnection.setVisibility(View.GONE);
+        mReturnWorkspace.setVisibility(View.GONE);
         mStatus.setText(R.string.connection_diagnostic_running);
         mExecutor.execute(() -> {
             RemoteCommandRunner.Result result = mRunner.run(mHost, mPort,
@@ -80,13 +99,99 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
         if (isFinishing() || isDestroyed()) return;
         mProgress.setVisibility(View.GONE);
         if (result.exitCode != 0) {
-            mStatus.setText(getString(R.string.connection_diagnostic_failed, result.exitCode));
+            SshFailureClassifier.Reason reason = SshFailureClassifier.classify(result);
+            List<SshDiagnosticStages.Item> stages = SshDiagnosticStages.failure(reason);
+            addStages(stages);
+            saveConnectionState(stages);
+            mAdapter.notifyDataSetChanged();
+            mInteractiveConnection.setVisibility(
+                SshDiagnosticStages.canOpenInteractiveConnection(reason) ? View.VISIBLE : View.GONE);
+            mReturnWorkspace.setVisibility(
+                SshDiagnosticStages.canOpenInteractiveConnection(reason) ? View.GONE : View.VISIBLE);
+            mStatus.setText(messageForFailure(reason));
             return;
         }
-        mItems.addAll(ConnectionDiagnosticReport.parse(result.output));
+        List<ConnectionDiagnosticReport.Item> remoteItems =
+            ConnectionDiagnosticReport.parse(result.output);
+        if (remoteItems.isEmpty()) {
+            List<SshDiagnosticStages.Item> stages = SshDiagnosticStages.invalidRemoteEnvironment();
+            addStages(stages);
+            saveConnectionState(stages);
+            mAdapter.notifyDataSetChanged();
+            mStatus.setText(R.string.connection_diagnostic_invalid);
+            mReturnWorkspace.setVisibility(View.VISIBLE);
+            return;
+        }
+        List<SshDiagnosticStages.Item> stages = SshDiagnosticStages.success();
+        addStages(stages);
+        saveConnectionState(stages);
+        mItems.addAll(remoteItems);
         mAdapter.notifyDataSetChanged();
-        mStatus.setText(mItems.isEmpty() ? R.string.connection_diagnostic_invalid :
-            R.string.connection_diagnostic_success);
+        mStatus.setText(R.string.connection_diagnostic_success);
+    }
+
+    private void saveConnectionState(List<SshDiagnosticStages.Item> stages) {
+        if (mWorkspaceId == null || mWorkspaceId.isEmpty()) return;
+        mConnectionStateStore.save(mWorkspaceId,
+            WorkspaceConnectionState.fromStages(stages, System.currentTimeMillis()));
+    }
+
+    private void addStages(List<SshDiagnosticStages.Item> stages) {
+        for (SshDiagnosticStages.Item stage : stages) {
+            mItems.add(new ConnectionDiagnosticReport.Item(
+                getString(stageLabel(stage.stage)), getString(stageState(stage.state)),
+                stage.state == SshDiagnosticStages.State.PASSED));
+        }
+    }
+
+    private int stageLabel(SshDiagnosticStages.Stage stage) {
+        switch (stage) {
+            case NETWORK: return R.string.connection_stage_network;
+            case HOST_IDENTITY: return R.string.connection_stage_host_identity;
+            case AUTHENTICATION: return R.string.connection_stage_authentication;
+            default: return R.string.connection_stage_remote_environment;
+        }
+    }
+
+    private int stageState(SshDiagnosticStages.State state) {
+        switch (state) {
+            case PASSED: return R.string.connection_stage_passed;
+            case ACTION_REQUIRED: return R.string.connection_stage_action_required;
+            case FAILED: return R.string.connection_stage_failed;
+            default: return R.string.connection_stage_pending;
+        }
+    }
+
+    private void openInteractiveConnection() {
+        String command = WorkspaceCommandBuilder.buildSshCommand(mHost, mPort, mProjectPath, null,
+            WorkspaceCommandBuilder.POLICY_SSH_ONLY, "");
+        startActivity(new Intent(this, TermuxActivity.class)
+            .putExtra(TermuxActivity.EXTRA_STARTUP_COMMAND, command)
+            .putExtra(TermuxActivity.EXTRA_NEW_SESSION, true));
+    }
+
+    private void showInvalidWorkspace() {
+        mProgress.setVisibility(View.GONE);
+        mStatus.setText(R.string.connection_diagnostic_invalid_workspace);
+        mInteractiveConnection.setVisibility(View.GONE);
+        mReturnWorkspace.setVisibility(View.VISIBLE);
+    }
+
+    private String messageForFailure(SshFailureClassifier.Reason reason) {
+        switch (reason) {
+            case SSH_MISSING: return getString(R.string.connection_error_ssh_missing);
+            case INTERRUPTED: return getString(R.string.connection_error_interrupted);
+            case PROCESS_ERROR: return getString(R.string.connection_error_process);
+            case DNS_FAILED: return getString(R.string.connection_error_dns);
+            case TIMEOUT: return getString(R.string.connection_error_timeout);
+            case REFUSED: return getString(R.string.connection_error_refused);
+            case NO_ROUTE: return getString(R.string.connection_error_no_route);
+            case HOST_KEY_CHANGED: return getString(R.string.connection_error_host_key_changed);
+            case HOST_KEY_UNVERIFIED: return getString(R.string.connection_error_host_key_unverified);
+            case AUTH_FAILED: return getString(R.string.connection_error_auth);
+            case CONNECTION_CLOSED: return getString(R.string.connection_error_closed);
+            default: return getString(R.string.connection_diagnostic_failed);
+        }
     }
 
     @Override

@@ -27,6 +27,18 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
+      - name: 校验唯一版本源与标签
+        id: version
+        run: |
+          version_name="$(./scripts/termuxpro-version.sh name)"
+          version_code="$(./scripts/termuxpro-version.sh code)"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            ./scripts/termuxpro-version.sh tag "$GITHUB_REF_NAME" >/dev/null
+            echo "TERMUXPRO_RELEASE_TAG=$GITHUB_REF_NAME" >> "$GITHUB_ENV"
+          fi
+          echo "name=$version_name" >> "$GITHUB_OUTPUT"
+          echo "code=$version_code" >> "$GITHUB_OUTPUT"
+          echo "dist=dist/$version_name" >> "$GITHUB_OUTPUT"
       - name: 安装 Android NDK
         run: |
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'ndk;29.0.14206865'
@@ -59,8 +71,8 @@ jobs:
       - name: 上传正式 APK 与校验报告
         uses: actions/upload-artifact@v7
         with:
-          name: termuxpro-release-${{ github.run_number }}
-          path: dist/0.1.0/
+          name: termuxpro-${{ steps.version.outputs.name }}-${{ github.run_number }}
+          path: ${{ steps.version.outputs.dist }}/
           if-no-files-found: error
           retention-days: 30
       - name: 创建 GitHub Release
@@ -73,10 +85,10 @@ jobs:
             *-alpha.*|*-beta.*|*-rc.*) release_flags+=(--prerelease) ;;
           esac
           gh release create "$GITHUB_REF_NAME" \
-            dist/0.1.0/termuxpro-0.1.0-arm64-v8a.apk \
-            dist/0.1.0/SHA256SUMS \
-            dist/0.1.0/APK_SIGNATURE.txt \
+            "${{ steps.version.outputs.dist }}/termuxpro-${{ steps.version.outputs.name }}-arm64-v8a.apk" \
+            "${{ steps.version.outputs.dist }}/SHA256SUMS" \
+            "${{ steps.version.outputs.dist }}/APK_SIGNATURE.txt" \
             --verify-tag \
             --title "TermuxPro $GITHUB_REF_NAME" \
-            --notes-file dist/0.1.0/RELEASE_NOTES.md \
+            --notes-file "${{ steps.version.outputs.dist }}/RELEASE_NOTES.md" \
             "${release_flags[@]}"

@@ -32,7 +32,11 @@ public final class GitDiffActivity extends AppCompatActivity {
     private final Handler mMainHandler = new Handler(Looper.getMainLooper());
     private final RemoteCommandRunner mRunner = new RemoteCommandRunner();
     private TextView mContent;
+    private TextView mStatusMessage;
     private ProgressBar mProgress;
+    private View mContentScroll;
+    private View mStatusState;
+    private View mReturnWorkspace;
 
     @NonNull
     public static Intent newIntent(@NonNull Context context, @NonNull String host, int port,
@@ -48,9 +52,14 @@ public final class GitDiffActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_git_diff);
         mContent = findViewById(R.id.git_diff_content);
+        mContentScroll = findViewById(R.id.git_diff_scroll);
+        mStatusState = findViewById(R.id.git_diff_status_state);
+        mStatusMessage = findViewById(R.id.git_diff_status_message);
+        mReturnWorkspace = findViewById(R.id.git_diff_return_workspace_button);
         mProgress = findViewById(R.id.git_diff_progress);
         findViewById(R.id.git_diff_back_button).setOnClickListener(view -> finish());
         findViewById(R.id.git_diff_refresh_button).setOnClickListener(view -> loadDiff());
+        mReturnWorkspace.setOnClickListener(view -> WorkspaceNavigation.returnToWorkspace(this));
         loadDiff();
     }
 
@@ -59,13 +68,13 @@ public final class GitDiffActivity extends AppCompatActivity {
         String path = getIntent().getStringExtra(EXTRA_PATH);
         int port = getIntent().getIntExtra(EXTRA_PORT, 22);
         if (host == null || path == null || port < 1 || port > 65535) {
-            showResult(new CommandResult(-1, getString(R.string.git_diff_invalid_workspace), false));
+            showResult(new CommandResult(-1, getString(R.string.git_diff_invalid_workspace), false, true));
             return;
         }
 
         mRunner.cancel();
         mProgress.setVisibility(View.VISIBLE);
-        mContent.setText(R.string.git_diff_loading);
+        showStatus(getString(R.string.git_diff_loading), false);
         mExecutor.execute(() -> showResultOnMain(runGitDiff(host, port, path)));
     }
 
@@ -74,16 +83,16 @@ public final class GitDiffActivity extends AppCompatActivity {
         RemoteCommandRunner.Result result = mRunner.run(host, port,
             WorkspaceCommandBuilder.buildGitDiffRemoteCommand(path), MAX_OUTPUT_BYTES);
         if (result.exitCode == RemoteCommandRunner.ERROR_SSH_MISSING) {
-            return new CommandResult(-1, getString(R.string.git_diff_ssh_missing), false);
+            return new CommandResult(-1, getString(R.string.git_diff_ssh_missing), false, true);
         }
         if (result.exitCode == RemoteCommandRunner.ERROR_INTERRUPTED) {
-            return new CommandResult(-1, getString(R.string.git_diff_cancelled), false);
+            return new CommandResult(-1, getString(R.string.git_diff_cancelled), false, false);
         }
         if (result.exitCode == RemoteCommandRunner.ERROR_PROCESS) {
             return new CommandResult(-1, getString(R.string.git_diff_connection_error,
-                result.errorType == null ? "Process" : result.errorType), false);
+                result.errorType == null ? "Process" : result.errorType), false, true);
         }
-        return new CommandResult(result.exitCode, result.output, result.truncated);
+        return new CommandResult(result.exitCode, result.output, result.truncated, result.exitCode != 0);
     }
 
     private void showResultOnMain(@NonNull CommandResult result) {
@@ -96,12 +105,24 @@ public final class GitDiffActivity extends AppCompatActivity {
         mProgress.setVisibility(View.GONE);
         String output = result.output;
         if (result.exitCode != 0) {
-            output = getString(R.string.git_diff_failed, result.exitCode) + "\n\n" + output;
+            showStatus(result.exitCode == -1 && !output.trim().isEmpty()
+                ? output : getString(R.string.git_diff_failed), result.recoverable);
+            return;
         } else if (output.trim().isEmpty()) {
-            output = getString(R.string.git_diff_clean);
+            showStatus(getString(R.string.git_diff_clean), false);
+            return;
         }
         if (result.truncated) output += "\n\n" + getString(R.string.git_diff_truncated);
+        mStatusState.setVisibility(View.GONE);
+        mContentScroll.setVisibility(View.VISIBLE);
         mContent.setText(colorize(output));
+    }
+
+    private void showStatus(@NonNull String message, boolean recoverable) {
+        mContentScroll.setVisibility(View.GONE);
+        mStatusState.setVisibility(View.VISIBLE);
+        mStatusMessage.setText(message);
+        mReturnWorkspace.setVisibility(recoverable ? View.VISIBLE : View.GONE);
     }
 
     @NonNull
@@ -138,11 +159,13 @@ public final class GitDiffActivity extends AppCompatActivity {
         final int exitCode;
         final String output;
         final boolean truncated;
+        final boolean recoverable;
 
-        CommandResult(int exitCode, @NonNull String output, boolean truncated) {
+        CommandResult(int exitCode, @NonNull String output, boolean truncated, boolean recoverable) {
             this.exitCode = exitCode;
             this.output = output;
             this.truncated = truncated;
+            this.recoverable = recoverable;
         }
     }
 }

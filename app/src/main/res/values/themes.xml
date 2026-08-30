@@ -14,6 +14,27 @@
     <!-- TermuxApp DayNight NoActionBar theme. -->
     <style name="Theme.TermuxApp.DayNight.NoActionBar" parent="Theme.BaseActivity.DayNight.NoActionBar"/>
 
+    <!--
+      TermuxPro 可视化工作区使用不透明系统栏。终端主题需要透明系统栏扩展可用面积，
+      但复用到普通页面会让大字体标题进入状态栏，并继承厂商主题的黑色默认文字。
+    -->
+    <style name="Theme.TermuxPro.DayNight.NoActionBar" parent="Theme.TermuxApp.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/tp_surface</item>
+        <item name="colorPrimaryVariant">@color/tp_background</item>
+        <item name="colorOnPrimary">@color/tp_text_primary</item>
+        <item name="colorSecondary">@color/tp_primary</item>
+        <item name="colorOnSecondary">@color/tp_on_primary</item>
+        <item name="colorAccent">@color/tp_primary</item>
+        <item name="android:colorAccent">@color/tp_primary</item>
+        <item name="android:windowBackground">@color/tp_background</item>
+        <item name="android:navigationBarColor">@color/tp_background</item>
+        <item name="android:statusBarColor">@color/tp_surface</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:textColorPrimary">@color/tp_text_primary</item>
+        <item name="android:textColorSecondary">@color/tp_text_secondary</item>
+    </style>
+
 
     <!-- TermuxActivity DayNight NoActionBar theme. -->
     <style name="Theme.TermuxActivity.DayNight.NoActionBar" parent="Theme.TermuxApp.DayNight.NoActionBar">

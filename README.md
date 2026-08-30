@@ -10,11 +10,11 @@ TermuxPro 是面向 Android 手机的移动 AI 开发终端。它以官方
 
 ## 当前版本
 
-`0.1.0` 是 ARM64 测试版，面向 Android 7 及以上设备，优先验证 Android 14–16。第一阶段聚焦：
+`0.2.0` 是 ARM64 正式版，面向 Android 7 及以上设备，优先验证 Android 14–16。当前阶段聚焦：
 
 - 中文工作区与多 SSH 项目配置
-- Claude Code `--continue` 和 Codex CLI `resume --last` 快速恢复
-- 持久化 tmux 会话、后台任务和二次确认停止
+- Claude Code 与 Codex CLI 安全新建上下文，历史会话必须由用户显式选择
+- 工作区级 SSH/tmux 策略、指定会话隔离、后台任务和二次确认停止
 - Shell、AI、Vim 软键盘快捷键与 AI 确认/拒绝/中断安全操作
 - 远端只读文件浏览、文件预览、Git Diff 和项目任务识别
 - SSH 连接诊断、公钥生成/复制/安装以及安全目标校验
@@ -22,7 +22,7 @@ TermuxPro 是面向 Android 手机的移动 AI 开发终端。它以官方
 - 最近 1 MB 终端输出搜索，最多返回 100 条且不落盘
 - 完整本地 Termux Linux 环境
 
-远端文件写入、Mosh、增强远端代理以及应用内模型调用尚未作为 `0.1.0` 稳定能力承诺。
+远端文件写入、Mosh、增强远端代理以及应用内模型调用尚未作为 `0.2.0` 稳定能力承诺。
 
 ## 安装与使用
 
@@ -32,7 +32,9 @@ TermuxPro 是面向 Android 手机的移动 AI 开发终端。它以官方
 首次启动点击“安装 SSH 连接组件”，等待 bootstrap 与 OpenSSH 安装完成。创建工作区时填写 SSH
 主机/IP/`user@host`/`~/.ssh/config` 别名和远端项目目录。建议远端提前安装 OpenSSH、tmux、Git、
 Claude Code 和 Codex CLI。工作区内的 Claude、Codex、Git、文件、任务与诊断入口复用同一 SSH 配置。
-应用不保存 SSH 密码，不读取私钥，也不会自动确认 AI CLI 的危险授权。
+默认策略只建立普通 SSH，不探测、创建或进入任何 tmux 会话；可按工作区选择只查看列表、仅进入指定
+会话，或创建/进入指定会话。应用不保存 SSH 密码，不读取私钥，不会跨项目自动续接 AI 历史，也不会
+自动确认 AI CLI 的危险授权。
 
 ## 开发环境
 
@@ -40,12 +42,12 @@ Claude Code 和 Codex CLI。工作区内的 Claude、Codex、Git、文件、任�
 - Git 2.40+、JDK 17
 - Android SDK Platform 36、Build Tools 35.0.0
 - Android NDK `29.0.14206865`
-- ARM64 Android 真机用于最终验收
+- Android API/屏幕/字体模拟器矩阵；触发厂商或硬件相关风险时使用 ARM64 实体设备或云真机
 
 Gradle Wrapper 已提交，无需单独安装 Gradle：
 
 ```bash
-git clone git@github.com:dr1234-div/TermuxPro.git
+git clone git@github.com:heydarey/TermuxPro.git
 cd TermuxPro
 git switch dev
 export ANDROID_SDK_ROOT=/path/to/android-sdk
@@ -75,8 +77,17 @@ Android 标准测试位于各模块 `src/test` 和 `src/androidTest`；根目录
 - `dev`：日常产品开发和集成分支。
 - 功能分支从 `dev` 创建，使用 `dev_<englishCamelCase>_<YYYYMMDD>` 命名，完成后通过 PR 合回
   `dev`；紧急修复使用 `hotfix_<englishCamelCase>_<YYYYMMDD>` 或关联 bug ID。
-- `master`：只接收通过自动化、Release 校验和三星真机 P0 验收的发布候选。
+- `master`：只接收通过自动化、Release 校验和风险匹配的 Android 运行时验收的发布候选。
 - 官方 Termux 更新通过只读 `upstream` 同步，不向上游推送 TermuxPro 代码。
+
+发布闭环固定为：功能 PR 合入 `dev` → `vX.Y.Z-rc.N` Pre-release → 真机验收记录 →
+`dev → master` 发布 PR → `vX.Y.Z` 正式 Release → `dev` 快进对齐 `master`。手动 Actions 构建的
+Artifact 仅用于验证，不视为正式发布。
+
+项目每天迭代，但稳定版不按提交逐个发布：每个通过自动化与 UI 验收、可独立体验的纵向切片都会生成
+候选 Release；每个自然周至少进行一次发布评审。每个发布列车默认只有一个 `rc.1`，仅 P0/P1、门禁
+失败或产物不可安装才递增候选编号。发布范围冻结后，新 P2 需求进入下一版本；候选版全部门禁通过且
+没有 P0/P1 后，在同一维护周期合入 `master` 并创建稳定 Release，失败则记录 HOLD 原因和解除条件。
 
 完整规范见 [贡献指南](CONTRIBUTING.md)、[架构说明](docs/ARCHITECTURE.md)和
 [发布与签名](docs/RELEASE_SIGNING.md)。Codex 与 Claude Code 应加载项目中的

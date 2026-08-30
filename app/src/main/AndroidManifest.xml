@@ -73,8 +73,8 @@
         <activity
             android:name=".app.WorkspaceActivity"
             android:exported="true"
-            android:label="@string/workspace_home_title"
-            android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar">
+            android:label="@string/application_name"
+            android:theme="@style/Theme.TermuxPro.DayNight.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -86,43 +86,43 @@
             android:name=".app.GitDiffActivity"
             android:exported="false"
             android:label="@string/git_diff_title"
-            android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar" />
+            android:theme="@style/Theme.TermuxPro.DayNight.NoActionBar" />
 
         <activity
             android:name=".app.RemoteFilesActivity"
             android:exported="false"
             android:label="@string/remote_files_title"
-            android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar" />
+            android:theme="@style/Theme.TermuxPro.DayNight.NoActionBar" />
 
         <activity
             android:name=".app.RemoteFilePreviewActivity"
             android:exported="false"
             android:label="@string/remote_file_preview_title"
-            android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar" />
+            android:theme="@style/Theme.TermuxPro.DayNight.NoActionBar" />
 
         <activity
             android:name=".app.ProjectTasksActivity"
             android:exported="false"
             android:label="@string/project_tasks_title"
-            android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar" />
+            android:theme="@style/Theme.TermuxPro.DayNight.NoActionBar" />
 
         <activity
             android:name=".app.ConnectionDiagnosticActivity"
             android:exported="false"
             android:label="@string/connection_diagnostic_title"
-            android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar" />
+            android:theme="@style/Theme.TermuxPro.DayNight.NoActionBar" />
 
         <activity
             android:name=".app.SshKeysActivity"
             android:exported="false"
             android:label="@string/ssh_keys_title"
-            android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar" />
+            android:theme="@style/Theme.TermuxPro.DayNight.NoActionBar" />
 
         <activity
             android:name=".app.TaskSessionsActivity"
             android:exported="false"
             android:label="@string/task_sessions_title"
-            android:theme="@style/Theme.TermuxActivity.DayNight.NoActionBar" />
+            android:theme="@style/Theme.TermuxPro.DayNight.NoActionBar" />
 
         <activity-alias
             android:name=".HomeActivity"

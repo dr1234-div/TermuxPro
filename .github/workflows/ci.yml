@@ -38,6 +38,8 @@ jobs:
             printf '%s\n' "$forbidden_files" >&2
             exit 1
           fi
+      - name: 启动隔离 SSH 与 tmux fixture
+        run: ./scripts/start-ssh-fixture.sh
       - name: 全模块测试
         run: |
           for attempt in 1 2 3; do

@@ -9,7 +9,8 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="wrap_content"
+        android:minHeight="56dp"
         android:background="#111E2A"
         android:gravity="center_vertical"
         android:orientation="horizontal"
@@ -26,15 +27,20 @@
 
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:minWidth="0dp"
             android:layout_weight="1"
             android:gravity="center_vertical"
             android:orientation="vertical"
             android:paddingHorizontal="8dp">
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:minWidth="0dp"
                 android:text="@string/remote_files_title"
                 android:textColor="#F5F8FA"
                 android:textSize="17sp"
@@ -50,15 +56,14 @@
                 android:textSize="11sp" />
         </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
+        <ImageButton
             android:id="@+id/remote_files_refresh_button"
-            android:layout_width="wrap_content"
-            android:layout_height="42dp"
-            android:minWidth="0dp"
-            android:text="@string/git_diff_refresh"
-            android:textAllCaps="false"
-            android:textColor="#062118"
-            android:backgroundTint="#68E0B7" />
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/git_diff_refresh"
+            android:src="@drawable/ic_refresh"
+            app:tint="#68E0B7" />
     </LinearLayout>
 
     <ProgressBar
@@ -68,12 +73,48 @@
         android:layout_height="3dp"
         android:indeterminate="true" />
 
-    <ListView
-        android:id="@+id/remote_files_list"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:divider="#203444"
-        android:dividerHeight="1dp"
-        android:paddingHorizontal="8dp" />
+        android:layout_weight="1">
+
+        <ListView
+            android:id="@+id/remote_files_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:divider="#203444"
+            android:dividerHeight="1dp"
+            android:paddingHorizontal="8dp" />
+
+        <LinearLayout
+            android:id="@+id/remote_files_status_state"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/remote_files_status_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:lineSpacingExtra="4dp"
+                android:textColor="#D8E4EC"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/remote_files_return_workspace_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:backgroundTint="#68E0B7"
+                android:minHeight="48dp"
+                android:text="@string/return_to_workspace"
+                android:textColor="#06231B"
+                android:textStyle="bold"
+                android:visibility="gone" />
+        </LinearLayout>
+    </FrameLayout>
 </LinearLayout>

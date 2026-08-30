@@ -4,6 +4,13 @@ set -euo pipefail
 project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$project_dir"
 
+version_name="$(./scripts/termuxpro-version.sh name)"
+version_code="$(./scripts/termuxpro-version.sh code)"
+release_notes="$(./scripts/termuxpro-version.sh notes)"
+if [[ -n "${TERMUXPRO_RELEASE_TAG:-}" ]]; then
+    ./scripts/termuxpro-version.sh tag "$TERMUXPRO_RELEASE_TAG" >/dev/null
+fi
+
 bundled_jdk="$project_dir/.tooling/jdk-deb/full/usr/lib/jvm/java-17-openjdk-amd64"
 if [[ -x "$bundled_jdk/bin/java" ]]; then
     export JAVA_HOME="$bundled_jdk"
@@ -39,8 +46,8 @@ expected_certificate="10c820d392d5bd9672317067a5d11fc1250217824166961df7b385128d
 badging="$($build_tools/aapt dump badging "$apk")"
 signature="$($build_tools/apksigner verify --verbose --print-certs "$apk")"
 
-if [[ "$badging" != *"package: name='com.termux' versionCode='10000' versionName='0.1.0'"* ]]; then
-    echo "APK 包名或版本不符合 0.1.0 发布约束。" >&2
+if [[ "$badging" != *"package: name='com.termux' versionCode='$version_code' versionName='$version_name'"* ]]; then
+    echo "APK 包名或版本与唯一版本源不一致：$version_name ($version_code)。" >&2
     exit 4
 fi
 if [[ "$badging" != *"application-label:'TermuxPro'"* ]]; then
@@ -62,17 +69,17 @@ if [[ "$signature" != *"Verified using v1 scheme (JAR signing): true"* ||
     exit 8
 fi
 
-dist_dir="$project_dir/dist/0.1.0"
-dist_apk="$dist_dir/termuxpro-0.1.0-arm64-v8a.apk"
+dist_dir="$project_dir/dist/$version_name"
+dist_apk="$dist_dir/termuxpro-$version_name-arm64-v8a.apk"
 mkdir -p "$dist_dir"
 cp "$apk" "$dist_apk"
-cp "$project_dir/docs/RELEASE_NOTES_0.1.0.md" "$dist_dir/RELEASE_NOTES.md"
+cp "$project_dir/$release_notes" "$dist_dir/RELEASE_NOTES.md"
 cp "$project_dir/docs/DEVICE_ACCEPTANCE.md" "$dist_dir/DEVICE_ACCEPTANCE.md"
-sha256sum "$dist_apk" > "$dist_dir/SHA256SUMS"
+(cd "$dist_dir" && sha256sum "$(basename "$dist_apk")" > SHA256SUMS)
 printf '%s\n' "$signature" > "$dist_dir/APK_SIGNATURE.txt"
 {
     echo "产品：TermuxPro"
-    echo "版本：0.1.0 (10000)"
+    echo "版本：$version_name ($version_code)"
     echo "包名：com.termux"
     echo "架构：arm64-v8a"
     echo "Git：$(git rev-parse --short HEAD)$(git diff --quiet && git diff --cached --quiet || printf '%s' '-dirty')"

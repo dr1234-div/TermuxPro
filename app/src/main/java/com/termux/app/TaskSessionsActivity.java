@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -22,25 +23,33 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** 管理应用创建的远端项目任务 tmux 会话。 */
+/** 查看当前远端用户的全部 tmux 会话，并安全进入或管理 TermuxPro 自有会话。 */
 public final class TaskSessionsActivity extends AppCompatActivity {
 
     private static final String EXTRA_HOST = "host";
     private static final String EXTRA_PORT = "port";
+    private static final String EXTRA_PROJECT_PATH = "project_path";
+    private static final String EXTRA_OWNER_TOKEN = "owner_token";
     private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
     private final Handler mMainHandler = new Handler(Looper.getMainLooper());
     private final RemoteCommandRunner mRunner = new RemoteCommandRunner();
-    private final List<TaskSession> mSessions = new ArrayList<>();
+    private final List<TmuxSessionInfo> mSessions = new ArrayList<>();
     private String mHost;
     private int mPort;
+    private String mProjectPath;
+    private String mOwnerToken;
     private ProgressBar mProgress;
     private TextView mStatus;
-    private ArrayAdapter<TaskSession> mAdapter;
+    private Button mRecovery;
+    private ArrayAdapter<TmuxSessionInfo> mAdapter;
+    private View mRefresh;
 
     @NonNull
-    static Intent newIntent(@NonNull Context context, @NonNull String host, int port) {
+    static Intent newIntent(@NonNull Context context, @NonNull String host, int port,
+                            @NonNull String projectPath, @NonNull String ownerToken) {
         return new Intent(context, TaskSessionsActivity.class)
-            .putExtra(EXTRA_HOST, host).putExtra(EXTRA_PORT, port);
+            .putExtra(EXTRA_HOST, host).putExtra(EXTRA_PORT, port)
+            .putExtra(EXTRA_PROJECT_PATH, projectPath).putExtra(EXTRA_OWNER_TOKEN, ownerToken);
     }
 
     @Override
@@ -49,15 +58,36 @@ public final class TaskSessionsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_task_sessions);
         mHost = getIntent().getStringExtra(EXTRA_HOST);
         mPort = getIntent().getIntExtra(EXTRA_PORT, 22);
+        mProjectPath = getIntent().getStringExtra(EXTRA_PROJECT_PATH);
+        mOwnerToken = getIntent().getStringExtra(EXTRA_OWNER_TOKEN);
         mProgress = findViewById(R.id.task_sessions_progress);
         mStatus = findViewById(R.id.task_sessions_status);
+        mRecovery = findViewById(R.id.task_sessions_recovery_button);
         ListView list = findViewById(R.id.task_sessions_list);
-        mAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, mSessions);
+        mAdapter = new ArrayAdapter<TmuxSessionInfo>(this, R.layout.item_termuxpro_list, mSessions) {
+            @NonNull
+            @Override
+            public View getView(int position, View convertView, @NonNull android.view.ViewGroup parent) {
+                TextView view = (TextView) super.getView(position, convertView, parent);
+                TmuxSessionInfo session = getItem(position);
+                if (session != null) view.setText(sessionRow(session));
+                return view;
+            }
+        };
         list.setAdapter(mAdapter);
         list.setOnItemClickListener((parent, view, position, id) -> showActions(mSessions.get(position)));
         findViewById(R.id.task_sessions_back_button).setOnClickListener(view -> finish());
-        findViewById(R.id.task_sessions_refresh_button).setOnClickListener(view -> loadSessions());
-        loadSessions();
+        mRefresh = findViewById(R.id.task_sessions_refresh_button);
+        mRefresh.setOnClickListener(view -> loadSessions());
+        configureReturnToWorkspace();
+        if (mHost == null || mHost.trim().isEmpty() || mProjectPath == null || mProjectPath.trim().isEmpty() ||
+            !WorkspaceOwnershipStore.isValid(mOwnerToken) ||
+            mPort < 1 || mPort > 65535) {
+            mRefresh.setEnabled(false);
+            showFailure(R.string.task_sessions_invalid_workspace);
+        } else {
+            loadSessions();
+        }
     }
 
     private void loadSessions() {
@@ -65,10 +95,12 @@ public final class TaskSessionsActivity extends AppCompatActivity {
         mSessions.clear();
         mAdapter.notifyDataSetChanged();
         mProgress.setVisibility(View.VISIBLE);
+        configureReturnToWorkspace();
+        mRecovery.setVisibility(View.GONE);
         mStatus.setText(R.string.task_sessions_loading);
         mExecutor.execute(() -> {
             RemoteCommandRunner.Result result = mRunner.run(mHost, mPort,
-                WorkspaceCommandBuilder.buildListTaskSessionsRemoteCommand(), 128_000);
+                WorkspaceCommandBuilder.buildListTmuxSessionsRemoteCommand(), 128_000);
             mMainHandler.post(() -> showResult(result));
         });
     }
@@ -77,40 +109,77 @@ public final class TaskSessionsActivity extends AppCompatActivity {
         if (isFinishing() || isDestroyed()) return;
         mProgress.setVisibility(View.GONE);
         if (result.exitCode != 0) {
-            mStatus.setText(getString(R.string.task_sessions_failed, result.exitCode));
+            showFailure(R.string.task_sessions_failed);
             return;
         }
-        String[] fields = result.output.split("\u0000", -1);
-        for (int index = 0; index + 2 < fields.length; index += 3) {
-            if (!fields[index].startsWith("mobile-task-")) continue;
-            String state = "0".equals(fields[index + 2]) ?
-                getString(R.string.task_sessions_background) : getString(R.string.task_sessions_attached);
-            String display = getString(R.string.task_sessions_row, fields[index], fields[index + 1], state);
-            mSessions.add(new TaskSession(fields[index], display));
+        if (TmuxSessionParser.reportsMissingTmux(result.output)) {
+            showMissingTmux();
+            return;
         }
+        mSessions.addAll(TmuxSessionParser.parse(result.output, mOwnerToken,
+            WorkspaceCommandBuilder.workspaceFingerprint(mHost, mPort, mProjectPath)));
         mAdapter.notifyDataSetChanged();
         mStatus.setText(mSessions.isEmpty() ? R.string.task_sessions_empty : R.string.task_sessions_ready);
     }
 
-    private void showActions(TaskSession session) {
-        new AlertDialog.Builder(this)
-            .setTitle(session.name)
-            .setItems(new String[]{getString(R.string.task_sessions_attach),
-                getString(R.string.task_sessions_stop)}, (dialog, which) -> {
-                if (which == 0) attach(session);
-                else confirmStop(session);
-            })
-            .show();
+    private void showFailure(int message) {
+        mProgress.setVisibility(View.GONE);
+        mStatus.setText(message);
+        mRecovery.setVisibility(View.VISIBLE);
     }
 
-    private void attach(TaskSession session) {
-        String command = WorkspaceCommandBuilder.buildAttachTaskSessionCommand(mHost, mPort, session.name);
+    private void showMissingTmux() {
+        mProgress.setVisibility(View.GONE);
+        mStatus.setText(R.string.task_sessions_tmux_missing);
+        mRecovery.setText(R.string.task_sessions_open_plain_ssh);
+        mRecovery.setOnClickListener(view -> openPlainSsh());
+        mRecovery.setVisibility(View.VISIBLE);
+    }
+
+    private void configureReturnToWorkspace() {
+        mRecovery.setText(R.string.return_to_workspace);
+        mRecovery.setOnClickListener(view -> WorkspaceNavigation.returnToWorkspace(this));
+    }
+
+    private void openPlainSsh() {
+        String command = WorkspaceCommandBuilder.buildSshCommand(mHost, mPort, mProjectPath, null,
+            WorkspaceCommandBuilder.POLICY_SSH_ONLY, "");
         startActivity(new Intent(this, TermuxActivity.class)
             .putExtra(TermuxActivity.EXTRA_STARTUP_COMMAND, command)
             .putExtra(TermuxActivity.EXTRA_NEW_SESSION, true));
     }
 
-    private void confirmStop(TaskSession session) {
+    private String sessionRow(TmuxSessionInfo session) {
+        String state = session.attached ? getString(R.string.task_sessions_attached) :
+            getString(R.string.task_sessions_background);
+        String ownership = session.managedByTermuxPro ?
+            getString(R.string.task_sessions_owned) : getString(R.string.task_sessions_unknown_owner);
+        return getString(R.string.task_sessions_row, session.name, session.windows, state, ownership);
+    }
+
+    private void showActions(TmuxSessionInfo session) {
+        String[] actions = session.managedByTermuxPro ? new String[]{
+            getString(R.string.task_sessions_attach), getString(R.string.task_sessions_stop)
+        } : new String[]{getString(R.string.task_sessions_attach)};
+        AlertDialog.Builder builder = new AlertDialog.Builder(this).setTitle(session.name);
+        if (!session.managedByTermuxPro) {
+            builder.setMessage(R.string.task_sessions_unknown_owner_warning);
+        }
+        builder.setItems(actions, (dialog, which) -> {
+            if (which == 0) attach(session);
+            else confirmStop(session);
+        }).setNegativeButton(android.R.string.cancel, null).show();
+    }
+
+    private void attach(TmuxSessionInfo session) {
+        String command = WorkspaceCommandBuilder.buildAttachTaskSessionCommand(mHost, mPort, session.name,
+            session.managedByTermuxPro ? mOwnerToken : null, mProjectPath);
+        startActivity(new Intent(this, TermuxActivity.class)
+            .putExtra(TermuxActivity.EXTRA_STARTUP_COMMAND, command)
+            .putExtra(TermuxActivity.EXTRA_NEW_SESSION, true));
+    }
+
+    private void confirmStop(TmuxSessionInfo session) {
         new AlertDialog.Builder(this)
             .setTitle(R.string.task_sessions_stop_title)
             .setMessage(getString(R.string.task_sessions_stop_message, session.name))
@@ -119,16 +188,16 @@ public final class TaskSessionsActivity extends AppCompatActivity {
             .show();
     }
 
-    private void stop(TaskSession session) {
+    private void stop(TmuxSessionInfo session) {
         mProgress.setVisibility(View.VISIBLE);
         mExecutor.execute(() -> {
             RemoteCommandRunner.Result result = mRunner.run(mHost, mPort,
-                WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(session.name), 32_000);
+                WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(
+                    session.name, mOwnerToken, mHost, mPort, mProjectPath), 32_000);
             mMainHandler.post(() -> {
                 if (result.exitCode == 0) loadSessions();
                 else {
-                    mProgress.setVisibility(View.GONE);
-                    mStatus.setText(getString(R.string.task_sessions_failed, result.exitCode));
+                    showFailure(R.string.task_sessions_stop_failed);
                 }
             });
         });
@@ -141,19 +210,4 @@ public final class TaskSessionsActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    private static final class TaskSession {
-        final String name;
-        final String display;
-
-        TaskSession(String name, String display) {
-            this.name = name;
-            this.display = display;
-        }
-
-        @NonNull
-        @Override
-        public String toString() {
-            return display;
-        }
-    }
 }
