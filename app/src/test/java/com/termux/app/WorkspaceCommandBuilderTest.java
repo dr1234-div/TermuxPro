@@ -8,9 +8,12 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class WorkspaceCommandBuilderTest {
     private static final String OWNER = "11111111-2222-3333-4444-555555555555";
@@ -245,9 +248,14 @@ public class WorkspaceCommandBuilderTest {
     @Test
     public void realTmuxRejectsWrongMarkerAndStopsMatchingSession() throws Exception {
         Assume.assumeTrue(new File("/usr/bin/tmux").canExecute());
-        File tmuxRoot = Files.createTempDirectory("termuxpro-tmux-test").toFile();
+        String socketName = "termuxpro-test-" + UUID.randomUUID().toString().replace("-", "");
+        Path shimDirectory = Files.createTempDirectory("termuxpro-tmux-shim");
+        Path tmuxShim = shimDirectory.resolve("tmux");
+        Files.write(tmuxShim, ("#!/bin/sh\nexec /usr/bin/tmux -L " + socketName
+            + " \"$@\"\n").getBytes(StandardCharsets.UTF_8));
+        Assume.assumeTrue("无法创建隔离 tmux 测试入口", tmuxShim.toFile().setExecutable(true));
         Map<String, String> environment = new HashMap<>();
-        environment.put("TMUX_TMPDIR", tmuxRoot.getAbsolutePath());
+        environment.put("TERMUXPRO_TMUX_TEST_BIN", shimDirectory.toString());
         String fingerprint = WorkspaceCommandBuilder.workspaceFingerprint("fixture-host", 22, "~/repo");
         try {
             int setup = runShell("tmux new-session -d -s termuxpro-guard 'sleep 30'; "
@@ -276,7 +284,10 @@ public class WorkspaceCommandBuilderTest {
             assertEquals(0, runShell("test \"$(tmux show-options -v -t termuxpro-created "
                 + WorkspaceCommandBuilder.TMUX_WORKSPACE_OPTION + ")\" = '" + fingerprint + "'", environment));
         } finally {
-            runShell("tmux kill-server 2>/dev/null || true", environment);
+            runShell("/usr/bin/tmux -L " + WorkspaceCommandBuilder.shellQuote(socketName)
+                + " kill-server 2>/dev/null || true", new HashMap<>());
+            Files.deleteIfExists(tmuxShim);
+            Files.deleteIfExists(shimDirectory);
         }
     }
 
@@ -294,6 +305,10 @@ public class WorkspaceCommandBuilderTest {
         // TMUX 比 TMUX_TMPDIR 优先级更高；不清除会让隔离测试误连并终止父级 tmux 服务器。
         processEnvironment.remove("TMUX");
         processEnvironment.putAll(environment);
+        String testBin = environment.get("TERMUXPRO_TMUX_TEST_BIN");
+        if (testBin != null) {
+            processEnvironment.put("PATH", testBin + File.pathSeparator + processEnvironment.get("PATH"));
+        }
         Process process = builder.redirectErrorStream(true).start();
         while (process.getInputStream().read() != -1) {
             // 消费有限测试输出，避免子进程因管道写满而阻塞。
