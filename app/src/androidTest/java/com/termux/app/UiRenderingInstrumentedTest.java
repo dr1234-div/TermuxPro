@@ -20,6 +20,7 @@ import android.os.LocaleList;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ScrollView;
+import android.widget.TextView;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -83,7 +84,10 @@ public final class UiRenderingInstrumentedTest {
             activity.findViewById(com.termux.R.id.workspace_claude_button).performClick();
         });
         capture(context, "remote-files",
-            RemoteFilesActivity.newIntent(context, "invalid", 0, "~/project"));
+            RemoteFilesActivity.newIntent(context, "invalid", 0, "~/project"), activity ->
+                assertReadableRecoveryState(activity, com.termux.R.id.remote_files_status_state,
+                    com.termux.R.id.remote_files_status_message,
+                    com.termux.R.id.remote_files_return_workspace_button));
         capture(context, "project-tasks",
             ProjectTasksActivity.newIntent(context, "invalid", 0, "~/project"));
         capture(context, "connection-diagnostic",
@@ -92,9 +96,16 @@ public final class UiRenderingInstrumentedTest {
         capture(context, "task-sessions",
             TaskSessionsActivity.newIntent(context, "invalid", 0));
         capture(context, "git-diff",
-            GitDiffActivity.newIntent(context, "invalid", 0, "~/project"));
+            GitDiffActivity.newIntent(context, "invalid", 0, "~/project"), activity ->
+                assertReadableRecoveryState(activity, com.termux.R.id.git_diff_status_state,
+                    com.termux.R.id.git_diff_status_message,
+                    com.termux.R.id.git_diff_return_workspace_button));
         capture(context, "remote-file-preview",
-            RemoteFilePreviewActivity.newIntent(context, "invalid", 0, "~/project", "README.md"));
+            RemoteFilePreviewActivity.newIntent(context, "invalid", 0, "~/project", "README.md"),
+            activity -> assertReadableRecoveryState(activity,
+                com.termux.R.id.remote_file_status_state,
+                com.termux.R.id.remote_file_status_message,
+                com.termux.R.id.remote_file_return_workspace_button));
         capture(context, "ssh-keys",
             SshKeysActivity.newIntent(context, "invalid", 0));
     }
@@ -126,6 +137,15 @@ public final class UiRenderingInstrumentedTest {
         target.getDrawingRect(bounds);
         scroll.offsetDescendantRectToMyCoords(target, bounds);
         scroll.scrollTo(0, Math.max(0, bounds.top - 80));
+    }
+
+    private void assertReadableRecoveryState(Activity activity, int stateId, int messageId,
+                                             int actionId) {
+        assertTrue(activity.findViewById(stateId).getVisibility() == View.VISIBLE);
+        TextView message = activity.findViewById(messageId);
+        assertTrue(!message.getText().toString().isEmpty());
+        assertTrue(!message.getText().toString().contains("退出码"));
+        assertTrue(activity.findViewById(actionId).getVisibility() == View.VISIBLE);
     }
 
     private void capture(Context context, String name, Intent intent) throws Exception {
