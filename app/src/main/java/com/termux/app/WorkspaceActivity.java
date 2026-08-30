@@ -12,10 +12,12 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.View;
+import android.view.Menu;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -46,6 +48,9 @@ import java.util.UUID;
 public final class WorkspaceActivity extends AppCompatActivity {
 
     private static final int REQUEST_NOTIFICATIONS = 1001;
+    private static final int MANAGE_NEW = 1;
+    private static final int MANAGE_COPY = 2;
+    private static final int MANAGE_DELETE = 3;
 
     private static final String PREFERENCES_NAME = "ai_terminal_workspace";
     private static final String KEY_NAME = "name";
@@ -138,6 +143,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
         findViewById(R.id.workspace_setup_button).setOnClickListener(view -> installSshClient());
         findViewById(R.id.workspace_new_button).setOnClickListener(view ->
             runAfterDiscardConfirmation(this::createWorkspace));
+        findViewById(R.id.workspace_manage_button).setOnClickListener(this::showWorkspaceManagement);
         findViewById(R.id.workspace_save_button).setOnClickListener(view -> saveCurrentWorkspace());
         findViewById(R.id.workspace_copy_button).setOnClickListener(view -> copyCurrentWorkspace());
         findViewById(R.id.workspace_delete_button).setOnClickListener(view -> confirmDeleteWorkspace());
@@ -334,6 +340,27 @@ public final class WorkspaceActivity extends AppCompatActivity {
     private void setWorkspaceDirty(boolean dirty) {
         mHasUnsavedChanges = dirty;
         findViewById(R.id.workspace_unsaved_indicator).setVisibility(dirty ? View.VISIBLE : View.GONE);
+        findViewById(R.id.workspace_save_button).setVisibility(dirty ? View.VISIBLE : View.GONE);
+    }
+
+    private void showWorkspaceManagement(View anchor) {
+        PopupMenu popup = new PopupMenu(this, anchor);
+        popup.getMenu().add(Menu.NONE, MANAGE_NEW, Menu.NONE, R.string.workspace_new_action);
+        popup.getMenu().add(Menu.NONE, MANAGE_COPY, Menu.NONE, R.string.workspace_copy_action);
+        popup.getMenu().add(Menu.NONE, MANAGE_DELETE, Menu.NONE, R.string.workspace_delete_action);
+        popup.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == MANAGE_NEW) {
+                runAfterDiscardConfirmation(this::createWorkspace);
+            } else if (item.getItemId() == MANAGE_COPY) {
+                copyCurrentWorkspace();
+            } else if (item.getItemId() == MANAGE_DELETE) {
+                confirmDeleteWorkspace();
+            } else {
+                return false;
+            }
+            return true;
+        });
+        popup.show();
     }
 
     private void runAfterDiscardConfirmation(Runnable action) {
@@ -515,6 +542,9 @@ public final class WorkspaceActivity extends AppCompatActivity {
     private void refreshConnectionState() {
         TextView feedback = findViewById(R.id.workspace_connection_feedback);
         WorkspaceConnectionState state = mConnectionStateStore.read(mActiveProfileId);
+        boolean verified = state != null && state.status == WorkspaceConnectionState.Status.VERIFIED;
+        findViewById(R.id.workspace_ai_title).setVisibility(verified ? View.VISIBLE : View.GONE);
+        findViewById(R.id.workspace_ai_actions).setVisibility(verified ? View.VISIBLE : View.GONE);
         if (state == null) {
             feedback.setText(R.string.workspace_connection_guidance);
         } else {

@@ -32,32 +32,34 @@ import org.robolectric.annotation.Config;
 public class WorkspaceActivitySmokeTest {
 
     @Test
-    public void launcherInflatesWithAllPrimaryMobileActions() {
+    public void launcherKeepsOnlyConnectionActionsVisibleBeforeVerification() {
         WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
 
         assertEquals("TermuxPro", activity.getTitle());
         assertEquals("继续远程项目", activity.getString(R.string.workspace_home_title));
-        int[] requiredViews = {
+        int[] visibleViews = {
             R.id.workspace_connect_button,
             R.id.workspace_connection_feedback,
             R.id.workspace_connection_diagnostic_primary,
-            R.id.workspace_claude_button,
-            R.id.workspace_codex_button,
-            R.id.workspace_review_diff_button,
-            R.id.workspace_remote_files_button,
-            R.id.workspace_project_tasks_button,
-            R.id.workspace_task_sessions_button,
-            R.id.workspace_diagnostic_button,
-            R.id.workspace_ssh_keys_button,
-            R.id.workspace_start_preview_button,
-            R.id.workspace_open_preview_button,
-            R.id.workspace_local_terminal_button,
-            R.id.workspace_copy_button
+            R.id.workspace_manage_button
         };
-        for (int id : requiredViews) {
+        for (int id : visibleViews) {
             View view = activity.findViewById(id);
             assertNotNull(view);
             assertEquals(View.VISIBLE, view.getVisibility());
+        }
+        int[] hiddenViews = {
+            R.id.workspace_ai_actions,
+            R.id.workspace_development_tools_card,
+            R.id.workspace_preview_card,
+            R.id.workspace_local_terminal_button,
+            R.id.workspace_new_button,
+            R.id.workspace_save_button,
+            R.id.workspace_copy_button,
+            R.id.workspace_delete_button
+        };
+        for (int id : hiddenViews) {
+            assertEquals(View.GONE, activity.findViewById(id).getVisibility());
         }
         activity.finish();
     }
@@ -144,6 +146,8 @@ public class WorkspaceActivitySmokeTest {
         TextView feedback = activity.findViewById(R.id.workspace_connection_feedback);
         assertTrue(feedback.getText().toString().contains("已验证"));
         assertTrue(feedback.getText().toString().contains("SSH 身份认证"));
+        assertEquals(View.VISIBLE,
+            activity.findViewById(R.id.workspace_ai_actions).getVisibility());
         activity.finish();
     }
 

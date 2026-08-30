@@ -288,6 +288,7 @@
     <string name="workspace_setup_ready">SSH component is ready</string>
     <string name="workspace_selector_description">Saved workspaces</string>
     <string name="workspace_new_action">New</string>
+    <string name="workspace_manage_action">Manage workspace</string>
     <string name="workspace_save_action">Save</string>
     <string name="workspace_copy_action">Copy</string>
     <string name="workspace_delete_action">Delete</string>

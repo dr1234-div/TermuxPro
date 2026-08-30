@@ -52,6 +52,7 @@
             android:backgroundTint="#24394A" />
 
         <LinearLayout
+            android:id="@+id/workspace_remote_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
@@ -90,6 +91,16 @@
                 android:orientation="vertical">
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/workspace_manage_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:text="@string/workspace_manage_action"
+                    android:textAllCaps="false"
+                    android:textColor="#D8E4EC"
+                    android:backgroundTint="#24394A" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_new_button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -97,7 +108,8 @@
                     android:text="@string/workspace_new_action"
                     android:textAllCaps="false"
                     android:textColor="#D8E4EC"
-                    android:backgroundTint="#24394A" />
+                    android:backgroundTint="#24394A"
+                    android:visibility="gone" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_save_button"
@@ -108,7 +120,8 @@
                     android:text="@string/workspace_save_action"
                     android:textAllCaps="false"
                     android:textColor="#D8E4EC"
-                    android:backgroundTint="#24394A" />
+                    android:backgroundTint="#24394A"
+                    android:visibility="gone" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_copy_button"
@@ -119,7 +132,8 @@
                     android:text="@string/workspace_copy_action"
                     android:textAllCaps="false"
                     android:textColor="#D8E4EC"
-                    android:backgroundTint="#24394A" />
+                    android:backgroundTint="#24394A"
+                    android:visibility="gone" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_delete_button"
@@ -130,7 +144,8 @@
                     android:text="@string/workspace_delete_action"
                     android:textAllCaps="false"
                     android:textColor="#FFB4AB"
-                    android:backgroundTint="#3B2930" />
+                    android:backgroundTint="#3B2930"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <TextView
@@ -251,6 +266,7 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/workspace_ai_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="26dp"
@@ -294,11 +310,13 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/workspace_development_tools_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
             android:background="@drawable/workspace_card_background"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -417,11 +435,13 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/workspace_preview_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
             android:background="@drawable/workspace_card_background"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -506,7 +526,8 @@
             android:text="@string/workspace_open_local_terminal"
             android:textAllCaps="false"
             android:textColor="#AFC1CF"
-            android:backgroundTint="#162533" />
+            android:backgroundTint="#162533"
+            android:visibility="gone" />
 
         <TextView
             android:layout_width="match_parent"

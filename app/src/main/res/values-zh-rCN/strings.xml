@@ -170,6 +170,7 @@
     <string name="workspace_setup_ready">SSH 连接组件已就绪</string>
     <string name="workspace_selector_description">已保存的工作区</string>
     <string name="workspace_new_action">新建</string>
+    <string name="workspace_manage_action">管理工作区</string>
     <string name="workspace_save_action">保存</string>
     <string name="workspace_copy_action">复制</string>
     <string name="workspace_delete_action">删除</string>
