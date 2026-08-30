@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -27,20 +28,25 @@ public final class TaskSessionsActivity extends AppCompatActivity {
 
     private static final String EXTRA_HOST = "host";
     private static final String EXTRA_PORT = "port";
+    private static final String EXTRA_PROJECT_PATH = "project_path";
     private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
     private final Handler mMainHandler = new Handler(Looper.getMainLooper());
     private final RemoteCommandRunner mRunner = new RemoteCommandRunner();
     private final List<TmuxSessionInfo> mSessions = new ArrayList<>();
     private String mHost;
     private int mPort;
+    private String mProjectPath;
     private ProgressBar mProgress;
     private TextView mStatus;
+    private Button mRecovery;
     private ArrayAdapter<TmuxSessionInfo> mAdapter;
 
     @NonNull
-    static Intent newIntent(@NonNull Context context, @NonNull String host, int port) {
+    static Intent newIntent(@NonNull Context context, @NonNull String host, int port,
+                            @NonNull String projectPath) {
         return new Intent(context, TaskSessionsActivity.class)
-            .putExtra(EXTRA_HOST, host).putExtra(EXTRA_PORT, port);
+            .putExtra(EXTRA_HOST, host).putExtra(EXTRA_PORT, port)
+            .putExtra(EXTRA_PROJECT_PATH, projectPath);
     }
 
     @Override
@@ -49,8 +55,10 @@ public final class TaskSessionsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_task_sessions);
         mHost = getIntent().getStringExtra(EXTRA_HOST);
         mPort = getIntent().getIntExtra(EXTRA_PORT, 22);
+        mProjectPath = getIntent().getStringExtra(EXTRA_PROJECT_PATH);
         mProgress = findViewById(R.id.task_sessions_progress);
         mStatus = findViewById(R.id.task_sessions_status);
+        mRecovery = findViewById(R.id.task_sessions_recovery_button);
         ListView list = findViewById(R.id.task_sessions_list);
         mAdapter = new ArrayAdapter<TmuxSessionInfo>(this, R.layout.item_termuxpro_list, mSessions) {
             @NonNull
@@ -66,7 +74,13 @@ public final class TaskSessionsActivity extends AppCompatActivity {
         list.setOnItemClickListener((parent, view, position, id) -> showActions(mSessions.get(position)));
         findViewById(R.id.task_sessions_back_button).setOnClickListener(view -> finish());
         findViewById(R.id.task_sessions_refresh_button).setOnClickListener(view -> loadSessions());
-        loadSessions();
+        configureReturnToWorkspace();
+        if (mHost == null || mHost.trim().isEmpty() || mProjectPath == null ||
+            mPort < 1 || mPort > 65535) {
+            showFailure(R.string.task_sessions_invalid_workspace);
+        } else {
+            loadSessions();
+        }
     }
 
     private void loadSessions() {
@@ -74,6 +88,8 @@ public final class TaskSessionsActivity extends AppCompatActivity {
         mSessions.clear();
         mAdapter.notifyDataSetChanged();
         mProgress.setVisibility(View.VISIBLE);
+        configureReturnToWorkspace();
+        mRecovery.setVisibility(View.GONE);
         mStatus.setText(R.string.task_sessions_loading);
         mExecutor.execute(() -> {
             RemoteCommandRunner.Result result = mRunner.run(mHost, mPort,
@@ -86,16 +102,43 @@ public final class TaskSessionsActivity extends AppCompatActivity {
         if (isFinishing() || isDestroyed()) return;
         mProgress.setVisibility(View.GONE);
         if (result.exitCode != 0) {
-            mStatus.setText(getString(R.string.task_sessions_failed, result.exitCode));
+            showFailure(R.string.task_sessions_failed);
             return;
         }
         if (TmuxSessionParser.reportsMissingTmux(result.output)) {
-            mStatus.setText(R.string.task_sessions_tmux_missing);
+            showMissingTmux();
             return;
         }
         mSessions.addAll(TmuxSessionParser.parse(result.output));
         mAdapter.notifyDataSetChanged();
         mStatus.setText(mSessions.isEmpty() ? R.string.task_sessions_empty : R.string.task_sessions_ready);
+    }
+
+    private void showFailure(int message) {
+        mProgress.setVisibility(View.GONE);
+        mStatus.setText(message);
+        mRecovery.setVisibility(View.VISIBLE);
+    }
+
+    private void showMissingTmux() {
+        mProgress.setVisibility(View.GONE);
+        mStatus.setText(R.string.task_sessions_tmux_missing);
+        mRecovery.setText(R.string.task_sessions_open_plain_ssh);
+        mRecovery.setOnClickListener(view -> openPlainSsh());
+        mRecovery.setVisibility(View.VISIBLE);
+    }
+
+    private void configureReturnToWorkspace() {
+        mRecovery.setText(R.string.return_to_workspace);
+        mRecovery.setOnClickListener(view -> WorkspaceNavigation.returnToWorkspace(this));
+    }
+
+    private void openPlainSsh() {
+        String command = WorkspaceCommandBuilder.buildSshCommand(mHost, mPort, mProjectPath, null,
+            WorkspaceCommandBuilder.POLICY_SSH_ONLY, "");
+        startActivity(new Intent(this, TermuxActivity.class)
+            .putExtra(TermuxActivity.EXTRA_STARTUP_COMMAND, command)
+            .putExtra(TermuxActivity.EXTRA_NEW_SESSION, true));
     }
 
     private String sessionRow(TmuxSessionInfo session) {
@@ -144,8 +187,7 @@ public final class TaskSessionsActivity extends AppCompatActivity {
             mMainHandler.post(() -> {
                 if (result.exitCode == 0) loadSessions();
                 else {
-                    mProgress.setVisibility(View.GONE);
-                    mStatus.setText(getString(R.string.task_sessions_failed, result.exitCode));
+                    showFailure(R.string.task_sessions_stop_failed);
                 }
             });
         });

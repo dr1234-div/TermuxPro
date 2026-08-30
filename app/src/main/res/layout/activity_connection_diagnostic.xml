@@ -7,13 +7,11 @@
     android:fitsSystemWindows="true"
     android:orientation="vertical">
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="56dp"
         android:background="#111E2A"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
         android:paddingHorizontal="10dp">
         <ImageButton
             android:id="@+id/connection_diagnostic_back_button"
@@ -21,29 +19,42 @@
             android:layout_height="44dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/git_diff_back"
+            android:layout_gravity="start|center_vertical"
             android:src="@drawable/ic_arrow_back"
             app:tint="#AFC1CF" />
-        <TextView
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:ellipsize="end"
-            android:maxLines="1"
+            android:layout_gravity="center_vertical"
+            android:layout_marginHorizontal="48dp"
+            android:gravity="center_vertical"
+            android:minHeight="56dp"
             android:minWidth="0dp"
+            android:orientation="vertical"
             android:paddingHorizontal="8dp"
-            android:text="@string/connection_diagnostic_title"
-            android:textColor="#F5F8FA"
-            android:textSize="17sp"
-            android:textStyle="bold" />
+            >
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="1"
+                android:minWidth="0dp"
+                android:text="@string/connection_diagnostic_title"
+                android:textColor="#F5F8FA"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+        </LinearLayout>
         <ImageButton
             android:id="@+id/connection_diagnostic_refresh_button"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/git_diff_refresh"
+            android:layout_gravity="end|center_vertical"
             android:src="@drawable/ic_refresh"
             app:tint="#68E0B7" />
-    </LinearLayout>
+    </FrameLayout>
     <ProgressBar
         android:id="@+id/connection_diagnostic_progress"
         style="?android:attr/progressBarStyleHorizontal"
@@ -65,6 +76,18 @@
         android:layout_marginBottom="8dp"
         android:minHeight="48dp"
         android:text="@string/connection_diagnostic_interactive_action"
+        android:textAllCaps="false"
+        android:textColor="#08131C"
+        android:visibility="gone"
+        app:backgroundTint="#68E0B7" />
+    <Button
+        android:id="@+id/connection_diagnostic_return_workspace_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        android:minHeight="48dp"
+        android:text="@string/return_to_workspace"
         android:textAllCaps="false"
         android:textColor="#08131C"
         android:visibility="gone"

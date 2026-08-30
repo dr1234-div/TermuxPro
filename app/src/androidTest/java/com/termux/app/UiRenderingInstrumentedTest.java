@@ -89,12 +89,34 @@ public final class UiRenderingInstrumentedTest {
                     com.termux.R.id.remote_files_status_message,
                     com.termux.R.id.remote_files_return_workspace_button));
         capture(context, "project-tasks",
-            ProjectTasksActivity.newIntent(context, "invalid", 0, "~/project"));
+            ProjectTasksActivity.newIntent(context, "invalid", 0, "~/project"), activity ->
+                {
+                assertToolbarActionsVisible(activity,
+                    com.termux.R.id.project_tasks_back_button,
+                    com.termux.R.id.project_tasks_refresh_button);
+                assertReadableRecoveryMessage(activity,
+                    com.termux.R.id.project_tasks_status,
+                    com.termux.R.id.project_tasks_recovery_button);
+                });
         capture(context, "connection-diagnostic",
             ConnectionDiagnosticActivity.newIntent(context, "invalid", 0, "~/project",
-                "ui-workspace"));
+                "ui-workspace"), activity -> {
+                assertToolbarActionsVisible(activity,
+                    com.termux.R.id.connection_diagnostic_back_button,
+                    com.termux.R.id.connection_diagnostic_refresh_button);
+                assertReadableRecoveryMessage(activity,
+                    com.termux.R.id.connection_diagnostic_status,
+                    com.termux.R.id.connection_diagnostic_return_workspace_button);
+                });
         capture(context, "task-sessions",
-            TaskSessionsActivity.newIntent(context, "invalid", 0));
+            TaskSessionsActivity.newIntent(context, "invalid", 0, "~/project"), activity -> {
+                assertToolbarActionsVisible(activity,
+                    com.termux.R.id.task_sessions_back_button,
+                    com.termux.R.id.task_sessions_refresh_button);
+                assertReadableRecoveryMessage(activity,
+                    com.termux.R.id.task_sessions_status,
+                    com.termux.R.id.task_sessions_recovery_button);
+                });
         capture(context, "git-diff",
             GitDiffActivity.newIntent(context, "invalid", 0, "~/project"), activity ->
                 assertReadableRecoveryState(activity, com.termux.R.id.git_diff_status_state,
@@ -146,6 +168,27 @@ public final class UiRenderingInstrumentedTest {
         assertTrue(!message.getText().toString().isEmpty());
         assertTrue(!message.getText().toString().contains("退出码"));
         assertTrue(activity.findViewById(actionId).getVisibility() == View.VISIBLE);
+    }
+
+    private void assertReadableRecoveryMessage(Activity activity, int messageId, int actionId) {
+        TextView message = activity.findViewById(messageId);
+        assertTrue(message.getVisibility() == View.VISIBLE);
+        assertTrue(!message.getText().toString().isEmpty());
+        assertTrue(!message.getText().toString().contains("退出码"));
+        assertTrue(activity.findViewById(actionId).getVisibility() == View.VISIBLE);
+    }
+
+    private void assertToolbarActionsVisible(Activity activity, int backId, int refreshId) {
+        assertViewHasVisibleBounds(activity.findViewById(backId));
+        assertViewHasVisibleBounds(activity.findViewById(refreshId));
+    }
+
+    private void assertViewHasVisibleBounds(View view) {
+        Rect bounds = new Rect();
+        assertTrue(view.isShown());
+        assertTrue(view.getGlobalVisibleRect(bounds));
+        assertTrue(bounds.width() >= view.getWidth() / 2);
+        assertTrue(bounds.height() >= view.getHeight() / 2);
     }
 
     private void capture(Context context, String name, Intent intent) throws Exception {

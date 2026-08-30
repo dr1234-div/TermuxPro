@@ -359,7 +359,8 @@
     <string name="project_tasks_detecting">Detecting project type…</string>
     <string name="project_tasks_type">Detected: %1$s</string>
     <string name="project_tasks_invalid_workspace">The workspace connection information is invalid.</string>
-    <string name="project_tasks_failed">Unable to detect the project. Connect to the workspace first.</string>
+    <string name="project_tasks_failed">This project is temporarily unavailable. Return to the workspace, reconnect, then retry.</string>
+    <string name="project_tasks_unavailable">Temporarily unavailable</string>
     <string name="project_tasks_invalid_metadata">The project metadata is invalid or too large.</string>
     <string name="project_tasks_empty">No supported tasks were found.</string>
     <string name="project_tasks_confirm_title">Run %1$s?</string>
@@ -369,7 +370,8 @@
     <string name="connection_diagnostic_title">Connection diagnostics</string>
     <string name="connection_diagnostic_running">Checking the active SSH connection and remote tools…</string>
     <string name="connection_diagnostic_success">Connection succeeded. Available tools are listed below.</string>
-    <string name="connection_diagnostic_failed">Unable to diagnose (exit code %1$d). Connect interactively first to confirm the host key and authentication.</string>
+    <string name="connection_diagnostic_failed">Connection diagnostics could not finish. Return to the workspace, check the connection, then retry.</string>
+    <string name="connection_diagnostic_invalid_workspace">The workspace connection information is invalid.</string>
     <string name="connection_diagnostic_invalid">The server returned an invalid diagnostic response.</string>
     <string name="connection_diagnostic_interactive_action">Open interactive connection to authenticate</string>
     <string name="connection_stage_network">Network and SSH port</string>
@@ -422,8 +424,11 @@
     <string name="task_sessions_loading">Loading remote tmux sessions…</string>
     <string name="task_sessions_ready">Tap to explicitly attach. Only TermuxPro-created sessions can be stopped here.</string>
     <string name="task_sessions_empty">This remote user has no tmux sessions.</string>
-    <string name="task_sessions_failed">Unable to read tmux sessions (exit code %1$d). Connect to the workspace first.</string>
+    <string name="task_sessions_invalid_workspace">The workspace connection information is invalid.</string>
+    <string name="task_sessions_failed">tmux sessions are temporarily unavailable. Return to the workspace, reconnect, then retry.</string>
+    <string name="task_sessions_stop_failed">The session could not be stopped. It may have already ended; return to the workspace and check the connection.</string>
     <string name="task_sessions_tmux_missing">tmux is not installed remotely. A normal SSH terminal is still available.</string>
+    <string name="task_sessions_open_plain_ssh">Open plain SSH terminal</string>
     <string name="task_sessions_attach">Attach</string>
     <string name="task_sessions_stop">Stop session</string>
     <string name="task_sessions_stop_title">Stop this TermuxPro session?</string>
