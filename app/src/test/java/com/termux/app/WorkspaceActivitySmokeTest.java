@@ -236,6 +236,7 @@ public class WorkspaceActivitySmokeTest {
         assertEquals("选择历史会话", dialog.getListView().getAdapter().getItem(1));
         assertEquals(2,
             ((android.widget.TextView) dialog.getListView().getChildAt(0)).getMaxLines());
+        assertTrue(((android.widget.TextView) dialog.getListView().getChildAt(0)).getPaddingEnd() > 0);
         assertEquals(activity.getColor(R.color.tp_primary),
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE).getCurrentTextColor());
         dialog.dismiss();

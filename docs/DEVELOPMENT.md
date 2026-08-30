@@ -36,6 +36,17 @@ GitHub Actions 和可直连环境默认优先使用 `google()` 与 Maven Central
 
 ## 常用命令
 
+项目 Skill 使用仓库内一键校验入口。首次运行会在被忽略的
+`.tooling/skill-validator-venv` 创建项目级虚拟环境，并按 `requirements-tools.txt` 安装锁定版 PyYAML；
+它不依赖系统 Python 包，也不会修改全局环境：
+
+```bash
+./scripts/validate-skills.sh
+```
+
+GitHub API 操作使用 `./scripts/github-cli.sh <gh 参数>`；该入口会自动选择系统 `gh` 或仓库内
+`.tooling/gh/bin/gh`，不依赖交互 shell 的 `PATH`。
+
 ```bash
 ./scripts/test-all.sh
 ./gradlew --no-daemon --max-workers=2 :app:assembleDebug
