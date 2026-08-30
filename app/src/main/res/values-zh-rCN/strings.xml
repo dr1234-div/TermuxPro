@@ -157,7 +157,12 @@
     <string name="workspace_error_host">请输入有效的 SSH 别名、主机或“用户名@主机”。</string>
     <string name="workspace_error_port">SSH 端口必须在 1 到 65535 之间。</string>
     <string name="workspace_error_path">请输入远程项目路径。</string>
-    <string name="workspace_open_sessions">打开会话抽屉</string>
+    <string name="workspace_open_sessions">打开终端会话列表</string>
+    <string name="workspace_sessions_short">会话</string>
+    <string name="workspace_open_workbench">工作台</string>
+    <string name="workspace_open_workbench_description">打开移动开发工作台</string>
+    <string name="terminal_sessions_title">终端会话</string>
+    <string name="terminal_sessions_hint">点击切换会话，长按可重命名</string>
     <string name="workspace_command_confirm_title">发送命令到当前会话？</string>
     <string name="workspace_command_confirm_message">以下命令将输入当前终端：\n\n%1$s</string>
     <string name="workspace_command_confirm_action">发送命令</string>

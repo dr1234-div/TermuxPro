@@ -19,6 +19,8 @@ import android.os.Environment;
 import android.os.LocaleList;
 import android.provider.MediaStore;
 import android.view.Gravity;
+import android.view.ContextThemeWrapper;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ScrollView;
@@ -113,6 +115,21 @@ public final class UiRenderingInstrumentedTest {
             new TerminalFeedbackController(feedback).show("已切换到会话：TermuxPro 日常迭代", true);
             assertTrue(feedback.getVisibility() == View.VISIBLE);
             assertTrue(!feedback.getText().toString().isEmpty());
+        });
+        capture(context, "terminal-navigation", new Intent(workspaceIntent), activity -> {
+            Context terminalContext = new ContextThemeWrapper(activity,
+                com.termux.R.style.Theme_TermuxActivity_DayNight_NoActionBar);
+            View terminal = LayoutInflater.from(terminalContext).inflate(
+                com.termux.R.layout.activity_termux, null, false);
+            activity.addContentView(terminal, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+            androidx.drawerlayout.widget.DrawerLayout drawer = terminal.findViewById(
+                com.termux.R.id.drawer_layout);
+            drawer.openDrawer(Gravity.LEFT, false);
+            TextView workbench = terminal.findViewById(com.termux.R.id.workspace_home_button);
+            assertTrue(workbench.getText().toString().contains("工作台"));
+            assertTrue(!terminal.findViewById(com.termux.R.id.workspace_drawer_button)
+                .getContentDescription().toString().isEmpty());
         });
         capture(context, "remote-files",
             RemoteFilesActivity.newIntent(context, "invalid", 0, "~/project"), activity ->

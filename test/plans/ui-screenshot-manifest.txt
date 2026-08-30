@@ -8,6 +8,7 @@ remote-files
 ssh-keys
 task-sessions
 terminal-feedback
+terminal-navigation
 workspace
 workspace-connection-expired
 workspace-connection-guidance
