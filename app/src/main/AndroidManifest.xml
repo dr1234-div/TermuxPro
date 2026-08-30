@@ -89,6 +89,12 @@
             android:theme="@style/Theme.TermuxPro.DayNight.NoActionBar" />
 
         <activity
+            android:name=".app.CustomCommandsActivity"
+            android:exported="false"
+            android:label="@string/custom_commands_title"
+            android:theme="@style/Theme.TermuxPro.DayNight.NoActionBar" />
+
+        <activity
             android:name=".app.RemoteFilesActivity"
             android:exported="false"
             android:label="@string/remote_files_title"
