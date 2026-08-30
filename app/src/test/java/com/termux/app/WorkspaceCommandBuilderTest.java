@@ -3,9 +3,20 @@ package com.termux.app;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.Assume;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 public class WorkspaceCommandBuilderTest {
+    private static final String OWNER = "11111111-2222-3333-4444-555555555555";
 
     @Test
     public void shellQuoteEscapesSingleQuotes() {
@@ -81,11 +92,14 @@ public class WorkspaceCommandBuilderTest {
     public void createPolicyCreatesOnlyConfiguredSessionWithFreshAiContext() {
         String command = WorkspaceCommandBuilder.buildSshCommand(
             "dev@example.com", 22, "~/repo", "claude",
-            WorkspaceCommandBuilder.POLICY_CREATE_OR_ATTACH, "termuxpro-mine");
+            WorkspaceCommandBuilder.POLICY_CREATE_OR_ATTACH, "termuxpro-mine", OWNER);
 
-        assertTrue(command.contains("tmux has-session -t"));
-        assertTrue(command.contains("tmux new-session -s"));
+        assertTrue(command.contains("tmux list-sessions -F"));
+        assertTrue(command.contains("tmux new-session -d -s"));
         assertTrue(command.contains("termuxpro-mine"));
+        assertTrue(command.contains(WorkspaceCommandBuilder.TMUX_OWNER_OPTION));
+        assertTrue(command.contains(OWNER));
+        assertTrue(command.contains("session ownership changed"));
         assertTrue(command.contains("exec claude"));
         assertTrue(!command.contains("--continue"));
         assertTrue(!command.contains("new-session -A"));
@@ -137,7 +151,7 @@ public class WorkspaceCommandBuilderTest {
     public void taskCommandKeepsScriptNameQuotedInsideRemoteSession() {
         String safeTask = "pnpm run " + WorkspaceCommandBuilder.shellQuote("test; touch /tmp/nope");
         String command = WorkspaceCommandBuilder.buildSshTaskCommand(
-            "dev@example.com", 22, "~/repo", safeTask);
+            "dev@example.com", 22, "~/repo", safeTask, OWNER);
 
         assertTrue(command.contains("mobile-task-"));
         assertTrue(command.contains("test; touch /tmp/nope"));
@@ -166,15 +180,26 @@ public class WorkspaceCommandBuilderTest {
 
     @Test
     public void projectTasksUseStableIndependentSessions() {
-        String first = WorkspaceCommandBuilder.taskSessionName("pnpm run 'dev'");
-        String same = WorkspaceCommandBuilder.taskSessionName("pnpm run 'dev'");
-        String other = WorkspaceCommandBuilder.taskSessionName("pnpm run 'test'");
+        String first = WorkspaceCommandBuilder.taskSessionName("~/repo", "pnpm run 'dev'", OWNER);
+        String same = WorkspaceCommandBuilder.taskSessionName("~/repo", "pnpm run 'dev'", OWNER);
+        String other = WorkspaceCommandBuilder.taskSessionName("~/repo", "pnpm run 'test'", OWNER);
+        String otherProject = WorkspaceCommandBuilder.taskSessionName("~/other", "pnpm run 'dev'", OWNER);
+        String javaCollision = WorkspaceCommandBuilder.taskSessionName("~/repo", "pnpm run 'BB'", OWNER);
+        String javaCollisionPeer = WorkspaceCommandBuilder.taskSessionName("~/repo", "pnpm run 'Aa'", OWNER);
 
         assertEquals(first, same);
         assertTrue(first.startsWith("mobile-task-"));
         assertTrue(!first.equals(other));
-        assertTrue(WorkspaceCommandBuilder.buildListTaskSessionsRemoteCommand().contains("mobile-task-*"));
-        assertTrue(WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(first).contains("'" + first + "'"));
+        assertTrue(!first.equals(otherProject));
+        assertTrue(!javaCollision.equals(javaCollisionPeer));
+        assertTrue(WorkspaceCommandBuilder.buildListTaskSessionsRemoteCommand(OWNER).contains("mobile-task-*"));
+        String stop = WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(
+            first, OWNER, "dev@example.com", 22, "~/repo");
+        assertTrue(stop.contains(WorkspaceCommandBuilder.TMUX_OWNER_OPTION));
+        assertTrue(stop.contains(OWNER));
+        assertTrue(stop.contains("#{pid}:#{session_id}:#{session_created}:#{session_name}"));
+        assertTrue(stop.contains("if-shell -F -t \"$sid\""));
+        assertTrue(stop.contains("kill-session"));
     }
 
     @Test
@@ -195,11 +220,99 @@ public class WorkspaceCommandBuilderTest {
     public void tmuxSessionActionsQuoteTheExactSelectedSession() {
         String session = "termuxpro-user'; touch /tmp/unsafe; #";
         String attach = WorkspaceCommandBuilder.buildAttachTaskSessionCommand(
-            "dev@example.com", 22, session);
-        String stop = WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(session);
+            "dev@example.com", 22, session, null, "~/repo");
+        String stop = WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(
+            session, OWNER, "dev@example.com", 22, "~/repo");
 
         assertTrue(attach.contains("termuxpro-user"));
         assertTrue(attach.contains("'\\''; touch /tmp/unsafe; #'"));
-        assertTrue(stop.equals("tmux kill-session -t 'termuxpro-user'\\''; touch /tmp/unsafe; #'"));
+        assertTrue(stop.contains("'termuxpro-user'\\''; touch /tmp/unsafe; #'"));
+        assertTrue(stop.contains(OWNER));
+        assertTrue(stop.contains("#{pid}:#{session_id}:#{session_created}:#{session_name}"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void managedPolicyRejectsMissingOwnerToken() {
+        WorkspaceCommandBuilder.buildSshCommand("dev@example.com", 22, "~/repo", null,
+            WorkspaceCommandBuilder.POLICY_CREATE_OR_ATTACH, "termuxpro-work");
+    }
+
+    @Test
+    public void workspaceFingerprintChangesWithHostOrPath() {
+        String first = WorkspaceCommandBuilder.workspaceFingerprint("dev@example.com", 22, "~/repo");
+        assertTrue(!first.equals(WorkspaceCommandBuilder.workspaceFingerprint("dev@example.com", 22, "~/other")));
+        assertTrue(!first.equals(WorkspaceCommandBuilder.workspaceFingerprint("other@example.com", 22, "~/repo")));
+        assertTrue(!first.equals(WorkspaceCommandBuilder.workspaceFingerprint("dev@example.com", 2222, "~/repo")));
+    }
+
+    @Test
+    public void realTmuxRejectsWrongMarkerAndStopsMatchingSession() throws Exception {
+        Assume.assumeTrue(new File("/usr/bin/tmux").canExecute());
+        String socketName = "termuxpro-test-" + UUID.randomUUID().toString().replace("-", "");
+        Path shimDirectory = Files.createTempDirectory("termuxpro-tmux-shim");
+        Path tmuxShim = shimDirectory.resolve("tmux");
+        Files.write(tmuxShim, ("#!/bin/sh\nexec /usr/bin/tmux -L " + socketName
+            + " \"$@\"\n").getBytes(StandardCharsets.UTF_8));
+        Assume.assumeTrue("无法创建隔离 tmux 测试入口", tmuxShim.toFile().setExecutable(true));
+        Map<String, String> environment = new HashMap<>();
+        environment.put("TERMUXPRO_TMUX_TEST_BIN", shimDirectory.toString());
+        String fingerprint = WorkspaceCommandBuilder.workspaceFingerprint("fixture-host", 22, "~/repo");
+        try {
+            int setup = runShell("tmux new-session -d -s termuxpro-guard 'sleep 30'; "
+                + "tmux set-option -t termuxpro-guard " + WorkspaceCommandBuilder.TMUX_OWNER_OPTION
+                + " wrong-owner; tmux set-option -t termuxpro-guard "
+                + WorkspaceCommandBuilder.TMUX_WORKSPACE_OPTION + " '" + fingerprint + "'", environment);
+            // 某些 Codex 沙箱禁止 Unix socket；CI 的 SSH fixture 仍会强制执行真实 tmux 门禁。
+            Assume.assumeTrue("当前执行环境不允许创建隔离 tmux socket", setup == 0);
+
+            String stop = WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(
+                "termuxpro-guard", OWNER, "fixture-host", 22, "~/repo");
+            assertEquals(73, runShell(stop, environment));
+            assertEquals(0, runShell("tmux has-session -t termuxpro-guard", environment));
+
+            assertEquals(0, runShell("tmux set-option -t termuxpro-guard "
+                + WorkspaceCommandBuilder.TMUX_OWNER_OPTION + " '" + OWNER + "'", environment));
+            assertEquals(0, runShell(stop, environment));
+            assertTrue(runShell("tmux has-session -t termuxpro-guard", environment) != 0);
+
+            String create = WorkspaceCommandBuilder.buildCreateManagedTmuxSessionCommand(
+                "termuxpro-created", null, OWNER, fingerprint);
+            // attach 会等待终端；超时只终止客户端，之前同一服务端命令队列写入的标记必须已经生效。
+            runShell("timeout 2 /bin/sh -c " + WorkspaceCommandBuilder.shellQuote(create), environment);
+            assertEquals(0, runShell("test \"$(tmux show-options -v -t termuxpro-created "
+                + WorkspaceCommandBuilder.TMUX_OWNER_OPTION + ")\" = '" + OWNER + "'", environment));
+            assertEquals(0, runShell("test \"$(tmux show-options -v -t termuxpro-created "
+                + WorkspaceCommandBuilder.TMUX_WORKSPACE_OPTION + ")\" = '" + fingerprint + "'", environment));
+        } finally {
+            runShell("/usr/bin/tmux -L " + WorkspaceCommandBuilder.shellQuote(socketName)
+                + " kill-server 2>/dev/null || true", new HashMap<>());
+            Files.deleteIfExists(tmuxShim);
+            Files.deleteIfExists(shimDirectory);
+        }
+    }
+
+    /**
+     * 在隔离环境中执行 tmux 测试命令，避免继承当前真实 tmux 服务器套接字。
+     *
+     * @param command Shell 命令，类型为 String，无默认值。
+     * @param environment 子进程环境变量，类型为 Map&lt;String, String&gt;，无默认值。
+     * @return 子进程退出码，类型为 int，无默认值。
+     */
+    private static int runShell(String command, Map<String, String> environment)
+        throws IOException, InterruptedException {
+        ProcessBuilder builder = new ProcessBuilder("/bin/sh", "-c", command);
+        Map<String, String> processEnvironment = builder.environment();
+        // TMUX 比 TMUX_TMPDIR 优先级更高；不清除会让隔离测试误连并终止父级 tmux 服务器。
+        processEnvironment.remove("TMUX");
+        processEnvironment.putAll(environment);
+        String testBin = environment.get("TERMUXPRO_TMUX_TEST_BIN");
+        if (testBin != null) {
+            processEnvironment.put("PATH", testBin + File.pathSeparator + processEnvironment.get("PATH"));
+        }
+        Process process = builder.redirectErrorStream(true).start();
+        while (process.getInputStream().read() != -1) {
+            // 消费有限测试输出，避免子进程因管道写满而阻塞。
+        }
+        return process.waitFor();
     }
 }

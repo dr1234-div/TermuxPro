@@ -15,6 +15,7 @@ import java.util.List;
 
 /** 在 CI 回环 sshd 上验证应用实际使用的 OpenSSH 进程链。 */
 public class RemoteCommandRunnerSshFixtureTest {
+    private static final String OWNER = "11111111-2222-3333-4444-555555555555";
 
     private RemoteCommandRunner runner;
     private String target;
@@ -63,19 +64,51 @@ public class RemoteCommandRunnerSshFixtureTest {
 
     @Test
     public void listsRealTmuxSessionsAndKeepsUnknownOwnershipReadOnly() {
+        String fingerprint = WorkspaceCommandBuilder.workspaceFingerprint(target, port, "~/repo");
         RemoteCommandRunner.Result setup = runner.run(target, port,
             "tmux new-session -d -s manual-fixture; "
-                + "tmux new-session -d -s termuxpro-fixture", 4096);
+                + "tmux new-session -d -s termuxpro-fixture; "
+                + "tmux set-option -t termuxpro-fixture "
+                + WorkspaceCommandBuilder.TMUX_OWNER_OPTION + " '" + OWNER + "'; "
+                + "tmux set-option -t termuxpro-fixture "
+                + WorkspaceCommandBuilder.TMUX_WORKSPACE_OPTION + " '" + fingerprint + "'", 4096);
         assertEquals(setup.output, 0, setup.exitCode);
 
         RemoteCommandRunner.Result result = runner.run(target, port,
             WorkspaceCommandBuilder.buildListTmuxSessionsRemoteCommand(), 32_000);
         assertEquals(result.output, 0, result.exitCode);
-        List<TmuxSessionInfo> sessions = TmuxSessionParser.parse(result.output);
+        List<TmuxSessionInfo> sessions = TmuxSessionParser.parse(result.output, OWNER, fingerprint);
         TmuxSessionInfo manual = find(sessions, "manual-fixture");
         TmuxSessionInfo managed = find(sessions, "termuxpro-fixture");
         assertFalse(manual.managedByTermuxPro);
         assertTrue(managed.managedByTermuxPro);
+    }
+
+    @Test
+    public void refusesToStopPrefixSpoofAndRechecksOwnerBeforeKill() {
+        String fingerprint = WorkspaceCommandBuilder.workspaceFingerprint(target, port, "~/repo");
+        RemoteCommandRunner.Result setup = runner.run(target, port,
+            "tmux new-session -d -s termuxpro-fixture; "
+                + "tmux set-option -t termuxpro-fixture "
+                + WorkspaceCommandBuilder.TMUX_OWNER_OPTION + " wrong-owner; "
+                + "tmux set-option -t termuxpro-fixture "
+                + WorkspaceCommandBuilder.TMUX_WORKSPACE_OPTION + " '" + fingerprint + "'", 4096);
+        assertEquals(setup.output, 0, setup.exitCode);
+
+        RemoteCommandRunner.Result refused = runner.run(target, port,
+            WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(
+                "termuxpro-fixture", OWNER, target, port, "~/repo"), 4096);
+        assertTrue(refused.exitCode != 0);
+        RemoteCommandRunner.Result stillExists = runner.run(target, port,
+            "tmux has-session -t '=termuxpro-fixture'", 4096);
+        assertEquals(stillExists.output, 0, stillExists.exitCode);
+
+        runner.run(target, port, "tmux set-option -t termuxpro-fixture "
+            + WorkspaceCommandBuilder.TMUX_OWNER_OPTION + " '" + OWNER + "'", 4096);
+        RemoteCommandRunner.Result stopped = runner.run(target, port,
+            WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(
+                "termuxpro-fixture", OWNER, target, port, "~/repo"), 4096);
+        assertEquals(stopped.output, 0, stopped.exitCode);
     }
 
     @Test

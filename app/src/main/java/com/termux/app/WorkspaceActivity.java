@@ -80,6 +80,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
     private boolean mEditingProfile;
     private boolean mAdvancedEditing;
     private WorkspaceConnectionStateStore mConnectionStateStore;
+    private WorkspaceOwnershipStore mOwnershipStore;
 
     private static final String INSTALL_SSH_COMMAND = "pkg update -y && pkg install -y openssh";
 
@@ -99,6 +100,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
         mWorkspaceSelector = findViewById(R.id.workspace_selector);
         mConnectionPolicySelector = findViewById(R.id.workspace_connection_policy_selector);
         mConnectionStateStore = new WorkspaceConnectionStateStore(this);
+        mOwnershipStore = new WorkspaceOwnershipStore(this);
 
         ArrayAdapter<CharSequence> policyAdapter = ArrayAdapter.createFromResource(this,
             R.array.workspace_connection_policy_labels, R.layout.item_workspace_spinner);
@@ -425,13 +427,14 @@ public final class WorkspaceActivity extends AppCompatActivity {
     }
 
     private void copyCurrentWorkspace() {
-        WorkspaceProfile copy = new WorkspaceProfile(UUID.randomUUID().toString(),
+        String copyId = UUID.randomUUID().toString();
+        WorkspaceProfile copy = new WorkspaceProfile(copyId,
             getString(R.string.workspace_copy_name, normalizedWorkspaceName()),
             mHostInput.getText().toString().trim(), mPortInput.getText().toString().trim(),
             mPathInput.getText().toString().trim(), mRemotePortInput.getText().toString().trim(),
             mLocalPortInput.getText().toString().trim(),
             indexToPolicy(mConnectionPolicySelector.getSelectedItemPosition()),
-            mSessionNameInput.getText().toString().trim());
+            defaultSessionName(copyId));
         mProfiles.add(copy);
         mActiveProfileId = copy.id;
         persistProfiles();
@@ -481,6 +484,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
             .setPositiveButton(R.string.workspace_delete_action, (dialog, which) -> {
                 mProfiles.remove(profile);
                 mConnectionStateStore.clear(profile.id);
+                mOwnershipStore.clear(profile.id);
                 if (mProfiles.isEmpty()) {
                     mProfiles.add(new WorkspaceProfile(UUID.randomUUID().toString(),
                         getString(R.string.workspace_default_name), "", "22", "~/", "5173", "5173",
@@ -566,7 +570,8 @@ public final class WorkspaceActivity extends AppCompatActivity {
             TermuxTerminalExtraKeys.PRESET_AI);
         // 远程连接必须进入独立本地终端会话，避免命令被写入正在运行任务的旧 Shell。
         openTerminal(WorkspaceCommandBuilder.buildSshCommand(
-            host, port, path, cli, policy, sessionName), true);
+            host, port, path, cli, policy, sessionName,
+            mOwnershipStore.getOrCreate(mActiveProfileId)), true);
     }
 
     private void showAiLaunchDialog(AiCliLaunchCommand.Tool tool) {
@@ -819,7 +824,9 @@ public final class WorkspaceActivity extends AppCompatActivity {
             return;
         }
         saveCurrentWorkspace();
-        startActivity(ProjectTasksActivity.newIntent(this, host, sshPort, path));
+        WorkspaceProfile profile = mProfiles.get(findActiveProfileIndex());
+        startActivity(ProjectTasksActivity.newIntent(this, host, sshPort, path,
+            mOwnershipStore.getOrCreate(profile.id)));
     }
 
     private void openConnectionDiagnostic() {
@@ -887,7 +894,9 @@ public final class WorkspaceActivity extends AppCompatActivity {
             mPathInput.setError(getString(R.string.workspace_error_path));
             return;
         }
-        startActivity(TaskSessionsActivity.newIntent(this, host, sshPort, path));
+        WorkspaceProfile profile = mProfiles.get(findActiveProfileIndex());
+        startActivity(TaskSessionsActivity.newIntent(this, host, sshPort, path,
+            mOwnershipStore.getOrCreate(profile.id)));
     }
 
     private int parsePort(String value, int defaultValue) {

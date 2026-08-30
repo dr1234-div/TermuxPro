@@ -8,6 +8,12 @@ TermuxPro 基于官方 Termux 的 Java/XML Android 工程，复用其 PTY、终�
 - `WorkspaceActivity` 是默认入口，管理本地/SSH 工作区和开发工具。
 - `TermuxActivity` 继续承载终端渲染、输入、会话和额外按键。
 - SSH、tmux、Claude Code、Codex CLI 均在 Termux 用户空间通过官方 OpenSSH/命令行工具运行。
+- 每个本地工作区拥有独立的非敏感随机 UUID。TermuxPro 创建远端 tmux 会话时同时写入
+  `@termuxpro_owner` 和由 SSH 目标、端口、项目路径生成的非敏感摘要。恢复、附着和停止先按完整名称解析
+  tmux server PID、不可复用 session ID 与创建时间，再在同一个 tmux 服务端命令队列中校验句柄和两项
+  标记后执行动作；同名会话在检查期间被替换时必须失败关闭。名称前缀不能授予管理权限。
+- 这些标记用于防止共享账号下的误进入和误停止，不是同一 Unix UID 内的安全认证：同 UID 进程本就能
+  读取或修改 tmux 状态。需要抵御恶意参与者时必须使用不同 Unix 账号、容器或独立主机进行系统级隔离。
 - 远端探测使用有界、可取消的命令执行；文件浏览为只读，避免手机误操作覆盖源码。
 - `com.termux`、`/data/data/com.termux/files/usr` 和官方 bootstrap 暂时保留。这是兼容约束，
   不是品牌声明，也意味着不同签名来源无法共存。
