@@ -129,8 +129,13 @@ public class CustomLayoutsSmokeTest {
         for (int index = 0; index < layouts.length; index++) {
             View page = inflater.inflate(layouts[index], new FrameLayout(context), false);
             View refresh = page.findViewById(refreshButtons[index]);
-            assertTrue(refresh instanceof ImageButton);
-            assertEquals(48, Math.round(refresh.getLayoutParams().width / density));
+            if (index == 0) {
+                assertTrue(refresh instanceof TextView);
+                assertTrue(refresh.getMinimumWidth() >= Math.round(48 * density));
+            } else {
+                assertTrue(refresh instanceof ImageButton);
+                assertEquals(48, Math.round(refresh.getLayoutParams().width / density));
+            }
             assertEquals(48, Math.round(refresh.getLayoutParams().height / density));
             View toolbar = (View) refresh.getParent();
             assertEquals(56, Math.round(toolbar.getMinimumHeight() / density));
