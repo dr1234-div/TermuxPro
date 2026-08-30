@@ -29,5 +29,9 @@ if grep -Eq 'dist/[0-9]+\.[0-9]+\.[0-9]+|termuxpro-[0-9]+\.[0-9]+\.[0-9]+[^$]*ar
     echo "发布链仍包含写死的 0.1.0 产物路径。" >&2
     exit 1
 fi
+if grep -Fq 'sha256sum "$dist_apk"' "$project_dir/scripts/build-termuxpro-release.sh"; then
+    echo "SHA256SUMS 仍会写入构建机器绝对路径。" >&2
+    exit 1
+fi
 
 echo "版本元数据校验通过：$version_name ($version_code)"
