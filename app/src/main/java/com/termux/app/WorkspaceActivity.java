@@ -178,9 +178,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
                 int current = findActiveProfileIndex();
                 if (position == current) return;
                 if (mHasUnsavedChanges) {
-                    mUpdatingSelector = true;
-                    mWorkspaceSelector.setSelection(current, false);
-                    mUpdatingSelector = false;
+                    restoreWorkspaceSelection(current);
                     confirmDiscardChanges(() -> selectWorkspace(position));
                 } else {
                     selectWorkspace(position);
@@ -189,6 +187,18 @@ public final class WorkspaceActivity extends AppCompatActivity {
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
+        });
+    }
+
+    /** Spinner 在部分 Android 实现中异步派发选择事件，因此同步与下一帧都恢复一次。 */
+    private void restoreWorkspaceSelection(int position) {
+        mUpdatingSelector = true;
+        mWorkspaceSelector.setSelection(position, false);
+        mUpdatingSelector = false;
+        mWorkspaceSelector.post(() -> {
+            mUpdatingSelector = true;
+            mWorkspaceSelector.setSelection(position, false);
+            mUpdatingSelector = false;
         });
     }
 
