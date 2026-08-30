@@ -32,33 +32,66 @@ import org.robolectric.annotation.Config;
 public class WorkspaceActivitySmokeTest {
 
     @Test
-    public void launcherInflatesWithAllPrimaryMobileActions() {
+    public void launcherKeepsOnlySetupActionVisibleWhenSshIsMissing() {
         WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
 
         assertEquals("TermuxPro", activity.getTitle());
         assertEquals("继续远程项目", activity.getString(R.string.workspace_home_title));
-        int[] requiredViews = {
-            R.id.workspace_connect_button,
-            R.id.workspace_connection_feedback,
-            R.id.workspace_connection_diagnostic_primary,
-            R.id.workspace_claude_button,
-            R.id.workspace_codex_button,
-            R.id.workspace_review_diff_button,
-            R.id.workspace_remote_files_button,
-            R.id.workspace_project_tasks_button,
-            R.id.workspace_task_sessions_button,
-            R.id.workspace_diagnostic_button,
-            R.id.workspace_ssh_keys_button,
-            R.id.workspace_start_preview_button,
-            R.id.workspace_open_preview_button,
-            R.id.workspace_local_terminal_button,
-            R.id.workspace_copy_button
-        };
-        for (int id : requiredViews) {
+        int[] visibleViews = {R.id.workspace_setup_button};
+        for (int id : visibleViews) {
             View view = activity.findViewById(id);
             assertNotNull(view);
             assertEquals(View.VISIBLE, view.getVisibility());
         }
+        int[] hiddenViews = {
+            R.id.workspace_remote_card,
+            R.id.workspace_ai_actions,
+            R.id.workspace_development_tools_card,
+            R.id.workspace_preview_card,
+            R.id.workspace_local_terminal_button,
+            R.id.workspace_new_button,
+            R.id.workspace_save_button,
+            R.id.workspace_copy_button,
+            R.id.workspace_delete_button
+        };
+        for (int id : hiddenViews) {
+            assertEquals(View.GONE, activity.findViewById(id).getVisibility());
+        }
+        activity.finish();
+    }
+
+    @Test
+    public void savedWorkspaceCollapsesEditorIntoConnectionSummary() {
+        WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
+        ((EditText) activity.findViewById(R.id.workspace_host_input))
+            .setText("hdr@192.168.1.153");
+        activity.findViewById(R.id.workspace_save_button).performClick();
+
+        assertEquals(View.VISIBLE, activity.findViewById(R.id.workspace_summary).getVisibility());
+        assertEquals(View.GONE, activity.findViewById(R.id.workspace_host_input).getVisibility());
+        assertTrue(((TextView) activity.findViewById(R.id.workspace_summary_details))
+            .getText().toString().contains("hdr@192.168.1.153"));
+
+        activity.findViewById(R.id.workspace_edit_button).performClick();
+        assertEquals(View.VISIBLE, activity.findViewById(R.id.workspace_host_input).getVisibility());
+        assertEquals(View.GONE, activity.findViewById(R.id.workspace_summary).getVisibility());
+        activity.finish();
+    }
+
+    @Test
+    public void firstConfigurationKeepsTmuxOptionsBehindAdvancedSettings() {
+        WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
+
+        assertEquals(View.VISIBLE, activity.findViewById(R.id.workspace_host_input).getVisibility());
+        assertEquals(View.GONE,
+            activity.findViewById(R.id.workspace_connection_policy_selector).getVisibility());
+        assertEquals(View.GONE, activity.findViewById(R.id.workspace_session_name_input).getVisibility());
+
+        activity.findViewById(R.id.workspace_advanced_button).performClick();
+        assertEquals(View.VISIBLE,
+            activity.findViewById(R.id.workspace_connection_policy_selector).getVisibility());
+        assertEquals(View.VISIBLE,
+            activity.findViewById(R.id.workspace_session_name_input).getVisibility());
         activity.finish();
     }
 
@@ -132,6 +165,8 @@ public class WorkspaceActivitySmokeTest {
     @Test
     public void connectionFeedbackShowsVerifiedFactsPerWorkspace() throws JSONException {
         WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
+        ((EditText) activity.findViewById(R.id.workspace_host_input))
+            .setText("hdr@192.168.1.153");
         activity.findViewById(R.id.workspace_save_button).performClick();
         String profiles = activity.getSharedPreferences("ai_terminal_workspace", 0)
             .getString("profiles_v2", "[]");
@@ -144,6 +179,32 @@ public class WorkspaceActivitySmokeTest {
         TextView feedback = activity.findViewById(R.id.workspace_connection_feedback);
         assertTrue(feedback.getText().toString().contains("已验证"));
         assertTrue(feedback.getText().toString().contains("SSH 身份认证"));
+        assertEquals(View.VISIBLE,
+            activity.findViewById(R.id.workspace_ai_actions).getVisibility());
+        activity.finish();
+    }
+
+    @Test
+    public void editingConnectionIdentityInvalidatesPreviousVerification() throws JSONException {
+        WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
+        EditText host = activity.findViewById(R.id.workspace_host_input);
+        host.setText("hdr@old.example.com");
+        activity.findViewById(R.id.workspace_save_button).performClick();
+        String profiles = activity.getSharedPreferences("ai_terminal_workspace", 0)
+            .getString("profiles_v2", "[]");
+        String workspaceId = new JSONArray(profiles).getJSONObject(0).getString("id");
+        WorkspaceConnectionStateStore store = new WorkspaceConnectionStateStore(activity);
+        store.save(workspaceId, new WorkspaceConnectionState(
+            WorkspaceConnectionState.Status.VERIFIED, null, 1_700_000_000_000L));
+        activity.onResume();
+        assertEquals(View.VISIBLE, activity.findViewById(R.id.workspace_ai_actions).getVisibility());
+
+        activity.findViewById(R.id.workspace_edit_button).performClick();
+        host.setText("hdr@new.example.com");
+        activity.findViewById(R.id.workspace_save_button).performClick();
+
+        assertEquals(null, store.read(workspaceId));
+        assertEquals(View.GONE, activity.findViewById(R.id.workspace_ai_actions).getVisibility());
         activity.finish();
     }
 
@@ -173,6 +234,8 @@ public class WorkspaceActivitySmokeTest {
         assertEquals("启动 Claude Code", shadowOf(dialog).getTitle());
         assertEquals("新建会话（安全默认）", dialog.getListView().getAdapter().getItem(0));
         assertEquals("选择历史会话", dialog.getListView().getAdapter().getItem(1));
+        assertEquals(2,
+            ((android.widget.TextView) dialog.getListView().getChildAt(0)).getMaxLines());
         assertEquals(activity.getColor(R.color.tp_primary),
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE).getCurrentTextColor());
         dialog.dismiss();

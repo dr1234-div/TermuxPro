@@ -255,7 +255,7 @@
     <string name="workspace_session_name_hint">Exact tmux session name</string>
     <string name="workspace_error_session_name">Use 1–64 letters, numbers, dots, underscores, or hyphens</string>
     <string name="workspace_connect_action">Connect remote workspace</string>
-    <string name="workspace_connection_guidance">The first connection opens a secure interactive terminal. Verify the server fingerprint, then enter your password or key passphrase. TermuxPro never accepts fingerprints automatically or stores credentials.</string>
+    <string name="workspace_connection_guidance">On first connect, verify the server fingerprint in the terminal. TermuxPro never trusts fingerprints automatically.</string>
     <string name="workspace_connection_terminal_opened">The connection terminal is open. Verify the host fingerprint and authenticate there. The server is authenticated only after “SSH authenticated” appears.</string>
     <string name="workspace_connection_last_opened">SSH terminal opened %1$s. Authentication has not been verified.</string>
     <string name="workspace_connection_verified">Verified %1$s: SSH authentication and the remote environment check succeeded.</string>
@@ -288,6 +288,13 @@
     <string name="workspace_setup_ready">SSH component is ready</string>
     <string name="workspace_selector_description">Saved workspaces</string>
     <string name="workspace_new_action">New</string>
+    <string name="workspace_manage_action">Manage workspace</string>
+    <string name="workspace_edit_action">Edit connection</string>
+    <string name="workspace_advanced_action">Advanced settings</string>
+    <string name="workspace_advanced_hide_action">Hide advanced settings</string>
+    <string name="workspace_summary_details">%1$s · %2$s · %3$s</string>
+    <string name="workspace_status_unverified">Not verified</string>
+    <string name="workspace_status_verified">Verified</string>
     <string name="workspace_save_action">Save</string>
     <string name="workspace_copy_action">Copy</string>
     <string name="workspace_delete_action">Delete</string>

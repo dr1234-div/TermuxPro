@@ -4,16 +4,19 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
+import android.app.LocaleManager;
 import android.app.UiAutomation;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.LocaleList;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ScrollView;
@@ -27,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Locale;
 
 /** 在真实 Android 渲染器中逐页截图，防止厂商主题默认文字色和大字体回归。 */
 @RunWith(AndroidJUnit4.class)
@@ -35,8 +39,12 @@ public final class UiRenderingInstrumentedTest {
     @Test
     public void captureCriticalDarkPages() throws Exception {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        capture(context, "workspace", new Intent(context, WorkspaceActivity.class));
-        capture(context, "workspace-policy", new Intent(context, WorkspaceActivity.class), activity -> {
+        forceSimplifiedChinese(context);
+        Intent workspaceIntent = new Intent(context, WorkspaceActivity.class)
+            .putExtra(WorkspaceActivity.EXTRA_UI_TEST_SSH_READY, true);
+        capture(context, "workspace", workspaceIntent);
+        capture(context, "workspace-policy", new Intent(workspaceIntent), activity -> {
+            activity.findViewById(com.termux.R.id.workspace_advanced_button).performClick();
             View policy = activity.findViewById(com.termux.R.id.workspace_connection_policy_selector);
             ScrollView scroll = activity.findViewById(com.termux.R.id.workspace_scroll_view);
             Rect bounds = new Rect();
@@ -44,10 +52,15 @@ public final class UiRenderingInstrumentedTest {
             scroll.offsetDescendantRectToMyCoords(policy, bounds);
             scroll.scrollTo(0, Math.max(0, bounds.top - 120));
         });
-        capture(context, "workspace-connection-guidance", new Intent(context, WorkspaceActivity.class),
-            activity -> scrollTo(activity, com.termux.R.id.workspace_connection_feedback));
-        capture(context, "workspace-connection-verified", new Intent(context, WorkspaceActivity.class),
+        capture(context, "workspace-connection-guidance", new Intent(workspaceIntent), activity -> {
+            ((android.widget.EditText) activity.findViewById(
+                com.termux.R.id.workspace_host_input)).setText("hdr@192.168.1.153");
+            activity.findViewById(com.termux.R.id.workspace_save_button).performClick();
+        });
+        capture(context, "workspace-connection-verified", new Intent(workspaceIntent),
             activity -> {
+                ((android.widget.EditText) activity.findViewById(
+                    com.termux.R.id.workspace_host_input)).setText("hdr@192.168.1.153");
                 activity.findViewById(com.termux.R.id.workspace_save_button).performClick();
                 String workspaceId = activity.getSharedPreferences("ai_terminal_workspace", 0)
                     .getString("active_profile", "");
@@ -56,10 +69,19 @@ public final class UiRenderingInstrumentedTest {
                     new WorkspaceConnectionState(WorkspaceConnectionState.Status.VERIFIED,
                         null, 1_700_000_000_000L));
                 ((WorkspaceActivity) activity).onResume();
-                scrollTo(activity, com.termux.R.id.workspace_connection_feedback);
             });
-        capture(context, "ai-session-choice", new Intent(context, WorkspaceActivity.class),
-            activity -> activity.findViewById(com.termux.R.id.workspace_claude_button).performClick());
+        capture(context, "ai-session-choice", new Intent(workspaceIntent), activity -> {
+            ((android.widget.EditText) activity.findViewById(
+                com.termux.R.id.workspace_host_input)).setText("hdr@192.168.1.153");
+            activity.findViewById(com.termux.R.id.workspace_save_button).performClick();
+            String workspaceId = activity.getSharedPreferences("ai_terminal_workspace", 0)
+                .getString("active_profile", "");
+            new WorkspaceConnectionStateStore(activity).save(workspaceId,
+                new WorkspaceConnectionState(WorkspaceConnectionState.Status.VERIFIED,
+                    null, 1_700_000_000_000L));
+            ((WorkspaceActivity) activity).onResume();
+            activity.findViewById(com.termux.R.id.workspace_claude_button).performClick();
+        });
         capture(context, "remote-files",
             RemoteFilesActivity.newIntent(context, "invalid", 0, "~/project"));
         capture(context, "project-tasks",
@@ -75,6 +97,26 @@ public final class UiRenderingInstrumentedTest {
             RemoteFilePreviewActivity.newIntent(context, "invalid", 0, "~/project", "README.md"));
         capture(context, "ssh-keys",
             SshKeysActivity.newIntent(context, "invalid", 0));
+    }
+
+    /** 截图门禁固定使用产品主语言，避免英文短文案通过后误判中文布局也通过。 */
+    @SuppressWarnings("deprecation")
+    private void forceSimplifiedChinese(Context context) {
+        Locale locale = Locale.SIMPLIFIED_CHINESE;
+        Locale.setDefault(locale);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            LocaleManager localeManager = context.getSystemService(LocaleManager.class);
+            if (localeManager != null) {
+                localeManager.setApplicationLocales(LocaleList.forLanguageTags("zh-CN"));
+            }
+        }
+        Configuration configuration = new Configuration(context.getResources().getConfiguration());
+        configuration.setLocale(locale);
+        context.getResources().updateConfiguration(configuration,
+            context.getResources().getDisplayMetrics());
+        Context instrumentationContext = InstrumentationRegistry.getInstrumentation().getContext();
+        instrumentationContext.getResources().updateConfiguration(configuration,
+            instrumentationContext.getResources().getDisplayMetrics());
     }
 
     private void scrollTo(Activity activity, int viewId) {

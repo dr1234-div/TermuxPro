@@ -16,6 +16,7 @@
         android:paddingBottom="28dp">
 
         <TextView
+            android:id="@+id/workspace_eyebrow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/workspace_home_eyebrow"
@@ -30,10 +31,11 @@
             android:layout_marginTop="8dp"
             android:text="@string/workspace_home_title"
             android:textColor="#F5F8FA"
-            android:textSize="30sp"
+            android:textSize="24sp"
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/workspace_subtitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -52,6 +54,7 @@
             android:backgroundTint="#24394A" />
 
         <LinearLayout
+            android:id="@+id/workspace_remote_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
@@ -67,6 +70,7 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/workspace_remote_description"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
@@ -90,6 +94,16 @@
                 android:orientation="vertical">
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/workspace_manage_button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:text="@string/workspace_manage_action"
+                    android:textAllCaps="false"
+                    android:textColor="#D8E4EC"
+                    android:backgroundTint="#24394A" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_new_button"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -97,7 +111,8 @@
                     android:text="@string/workspace_new_action"
                     android:textAllCaps="false"
                     android:textColor="#D8E4EC"
-                    android:backgroundTint="#24394A" />
+                    android:backgroundTint="#24394A"
+                    android:visibility="gone" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_save_button"
@@ -108,7 +123,8 @@
                     android:text="@string/workspace_save_action"
                     android:textAllCaps="false"
                     android:textColor="#D8E4EC"
-                    android:backgroundTint="#24394A" />
+                    android:backgroundTint="#24394A"
+                    android:visibility="gone" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_copy_button"
@@ -119,7 +135,8 @@
                     android:text="@string/workspace_copy_action"
                     android:textAllCaps="false"
                     android:textColor="#D8E4EC"
-                    android:backgroundTint="#24394A" />
+                    android:backgroundTint="#24394A"
+                    android:visibility="gone" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/workspace_delete_button"
@@ -130,7 +147,8 @@
                     android:text="@string/workspace_delete_action"
                     android:textAllCaps="false"
                     android:textColor="#FFB4AB"
-                    android:backgroundTint="#3B2930" />
+                    android:backgroundTint="#3B2930"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <TextView
@@ -142,6 +160,42 @@
                 android:textColor="#FFDDB3"
                 android:textSize="14sp"
                 android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/workspace_summary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/workspace_summary_target"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#F5F8FA"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/workspace_summary_details"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="#9EB1C2"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/workspace_edit_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:minHeight="48dp"
+                    android:text="@string/workspace_edit_action"
+                    android:textAllCaps="false"
+                    android:textColor="#D8E4EC"
+                    android:backgroundTint="#24394A" />
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/workspace_name_input"
@@ -191,6 +245,16 @@
                 android:singleLine="true"
                 android:textColor="#F5F8FA"
                 android:textColorHint="#71879A" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/workspace_advanced_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/workspace_advanced_action"
+                android:textAllCaps="false"
+                android:textColor="#D8E4EC"
+                android:backgroundTint="#24394A" />
 
             <Spinner
                 android:id="@+id/workspace_connection_policy_selector"
@@ -251,6 +315,7 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/workspace_ai_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="26dp"
@@ -294,11 +359,13 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/workspace_development_tools_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
             android:background="@drawable/workspace_card_background"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -417,11 +484,13 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/workspace_preview_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
             android:background="@drawable/workspace_card_background"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -506,9 +575,11 @@
             android:text="@string/workspace_open_local_terminal"
             android:textAllCaps="false"
             android:textColor="#AFC1CF"
-            android:backgroundTint="#162533" />
+            android:backgroundTint="#162533"
+            android:visibility="gone" />
 
         <TextView
+            android:id="@+id/workspace_security_footer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"

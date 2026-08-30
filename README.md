@@ -84,6 +84,10 @@ Android 标准测试位于各模块 `src/test` 和 `src/androidTest`；根目录
 `dev → master` 发布 PR → `vX.Y.Z` 正式 Release → `dev` 快进对齐 `master`。手动 Actions 构建的
 Artifact 仅用于验证，不视为正式发布。
 
+项目每天迭代，但稳定版不按提交逐个发布：每个通过自动化与 UI 验收、可独立体验的纵向切片都会生成
+候选 Release；每个自然周至少进行一次发布评审。发布范围冻结后，新 P2 需求进入下一版本；全部门禁
+通过后 48 小时内合入 `master` 并创建稳定 Release，失败则公开记录 HOLD 原因而不是无限延期。
+
 完整规范见 [贡献指南](CONTRIBUTING.md)、[架构说明](docs/ARCHITECTURE.md)和
 [发布与签名](docs/RELEASE_SIGNING.md)。Codex 与 Claude Code 应加载项目中的
 `termuxpro-development` Skill，按产品 → 架构 → 开发 → 测试 → 验收 → 回归闭环执行。
