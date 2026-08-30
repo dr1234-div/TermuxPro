@@ -36,7 +36,7 @@ jobs:
       - name: 安装模拟器、系统镜像与 NDK
         run: |
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
-            'platform-tools' 'emulator' 'platforms;android-36' \
+            'platform-tools' 'emulator' 'platforms;android-36' 'build-tools;36.0.0' \
             'system-images;android-35;google_apis;x86_64' 'ndk;29.0.14206865'
           echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
       - name: 创建并启动隔离模拟器
@@ -96,6 +96,30 @@ jobs:
           adb pull /sdcard/Pictures/termuxpro-ui-screenshots/. \
             test-artifacts/emulator-ui/font200/
           ./scripts/verify-ui-screenshots.sh test-artifacts/emulator-ui/font200 font200
+      - name: 正式签名 Release APK 覆盖升级与启动冒烟
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          candidate_name="$(./scripts/termuxpro-version.sh name)"
+          candidate_code="$(./scripts/termuxpro-version.sh code)"
+          candidate_tag="v$candidate_name"
+          baseline_tag="$(gh release list --exclude-pre-releases --exclude-drafts --limit 1 \
+            --json tagName --jq '.[0].tagName')"
+          [[ -n "$baseline_tag" && "$baseline_tag" != "$candidate_tag" ]]
+          mkdir -p "$RUNNER_TEMP/release-baseline" "$RUNNER_TEMP/release-candidate" \
+            test-artifacts/emulator-ui/release-apk
+          gh release download "$baseline_tag" --pattern '*.apk' --pattern 'SHA256SUMS' \
+            --dir "$RUNNER_TEMP/release-baseline"
+          gh release download "$candidate_tag" --pattern '*.apk' --pattern 'SHA256SUMS' \
+            --dir "$RUNNER_TEMP/release-candidate"
+          (cd "$RUNNER_TEMP/release-baseline" && sha256sum -c SHA256SUMS)
+          (cd "$RUNNER_TEMP/release-candidate" && sha256sum -c SHA256SUMS)
+          baseline_apk="$(find "$RUNNER_TEMP/release-baseline" -maxdepth 1 -name '*.apk' -print -quit)"
+          candidate_apk="$(find "$RUNNER_TEMP/release-candidate" -maxdepth 1 -name '*.apk' -print -quit)"
+          export AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          ./scripts/verify-release-apk-on-device.sh "$baseline_apk" "$candidate_apk" \
+            "$candidate_name" "$candidate_code" test-artifacts/emulator-ui/release-apk
       - name: 收集截图与 UI 层级
         if: always()
         run: |

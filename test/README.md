@@ -13,7 +13,9 @@ Android 测试代码继续放在 Gradle 标准目录（各模块的 `src/test` �
 ```
 
 Release 候选还必须运行 `./scripts/build-termuxpro-release.sh`，验证版本、Launcher、ARM64 ABI、证书及
-v1/v2 签名。设备接入后运行 `./scripts/device-smoke-test.sh`，再逐项完成
+v1/v2 签名。候选 Release 发布后，手动运行 `TermuxPro Emulator UI`，它会直接下载稳定版与当前候选的
+正式签名 APK，验证覆盖升级、UID 保持、版本、应用名、Launcher、进程和崩溃日志；不能用重新构建的
+Debug APK 代替这项证据。设备接入后运行 `./scripts/device-smoke-test.sh`，再逐项完成
 [真机验收清单](../docs/DEVICE_ACCEPTANCE.md)。
 
 ## 证据
