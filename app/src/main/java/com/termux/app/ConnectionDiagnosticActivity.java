@@ -41,6 +41,7 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
     private ProgressBar mProgress;
     private TextView mStatus;
     private Button mInteractiveConnection;
+    private Button mReturnWorkspace;
     private ArrayAdapter<ConnectionDiagnosticReport.Item> mAdapter;
 
     @NonNull
@@ -63,13 +64,20 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
         mProgress = findViewById(R.id.connection_diagnostic_progress);
         mStatus = findViewById(R.id.connection_diagnostic_status);
         mInteractiveConnection = findViewById(R.id.connection_diagnostic_interactive_button);
+        mReturnWorkspace = findViewById(R.id.connection_diagnostic_return_workspace_button);
         ListView list = findViewById(R.id.connection_diagnostic_list);
         mAdapter = new ArrayAdapter<>(this, R.layout.item_termuxpro_list, mItems);
         list.setAdapter(mAdapter);
         findViewById(R.id.connection_diagnostic_back_button).setOnClickListener(view -> finish());
         findViewById(R.id.connection_diagnostic_refresh_button).setOnClickListener(view -> diagnose());
         mInteractiveConnection.setOnClickListener(view -> openInteractiveConnection());
-        diagnose();
+        mReturnWorkspace.setOnClickListener(view -> WorkspaceNavigation.returnToWorkspace(this));
+        if (mHost == null || mHost.trim().isEmpty() || mProjectPath == null ||
+            mPort < 1 || mPort > 65535) {
+            showInvalidWorkspace();
+        } else {
+            diagnose();
+        }
     }
 
     private void diagnose() {
@@ -78,6 +86,7 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
         mAdapter.notifyDataSetChanged();
         mProgress.setVisibility(View.VISIBLE);
         mInteractiveConnection.setVisibility(View.GONE);
+        mReturnWorkspace.setVisibility(View.GONE);
         mStatus.setText(R.string.connection_diagnostic_running);
         mExecutor.execute(() -> {
             RemoteCommandRunner.Result result = mRunner.run(mHost, mPort,
@@ -97,7 +106,9 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
             mAdapter.notifyDataSetChanged();
             mInteractiveConnection.setVisibility(
                 SshDiagnosticStages.canOpenInteractiveConnection(reason) ? View.VISIBLE : View.GONE);
-            mStatus.setText(messageForFailure(reason, result.exitCode));
+            mReturnWorkspace.setVisibility(
+                SshDiagnosticStages.canOpenInteractiveConnection(reason) ? View.GONE : View.VISIBLE);
+            mStatus.setText(messageForFailure(reason));
             return;
         }
         List<ConnectionDiagnosticReport.Item> remoteItems =
@@ -108,6 +119,7 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
             saveConnectionState(stages);
             mAdapter.notifyDataSetChanged();
             mStatus.setText(R.string.connection_diagnostic_invalid);
+            mReturnWorkspace.setVisibility(View.VISIBLE);
             return;
         }
         List<SshDiagnosticStages.Item> stages = SshDiagnosticStages.success();
@@ -158,7 +170,14 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
             .putExtra(TermuxActivity.EXTRA_NEW_SESSION, true));
     }
 
-    private String messageForFailure(SshFailureClassifier.Reason reason, int exitCode) {
+    private void showInvalidWorkspace() {
+        mProgress.setVisibility(View.GONE);
+        mStatus.setText(R.string.connection_diagnostic_invalid_workspace);
+        mInteractiveConnection.setVisibility(View.GONE);
+        mReturnWorkspace.setVisibility(View.VISIBLE);
+    }
+
+    private String messageForFailure(SshFailureClassifier.Reason reason) {
         switch (reason) {
             case SSH_MISSING: return getString(R.string.connection_error_ssh_missing);
             case INTERRUPTED: return getString(R.string.connection_error_interrupted);
@@ -171,7 +190,7 @@ public final class ConnectionDiagnosticActivity extends AppCompatActivity {
             case HOST_KEY_UNVERIFIED: return getString(R.string.connection_error_host_key_unverified);
             case AUTH_FAILED: return getString(R.string.connection_error_auth);
             case CONNECTION_CLOSED: return getString(R.string.connection_error_closed);
-            default: return getString(R.string.connection_diagnostic_failed, exitCode);
+            default: return getString(R.string.connection_diagnostic_failed);
         }
     }
 

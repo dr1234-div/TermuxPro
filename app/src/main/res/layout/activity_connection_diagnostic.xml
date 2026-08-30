@@ -69,6 +69,18 @@
         android:textColor="#08131C"
         android:visibility="gone"
         app:backgroundTint="#68E0B7" />
+    <Button
+        android:id="@+id/connection_diagnostic_return_workspace_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        android:minHeight="48dp"
+        android:text="@string/return_to_workspace"
+        android:textAllCaps="false"
+        android:textColor="#08131C"
+        android:visibility="gone"
+        app:backgroundTint="#68E0B7" />
     <ListView
         android:id="@+id/connection_diagnostic_list"
         android:layout_width="match_parent"

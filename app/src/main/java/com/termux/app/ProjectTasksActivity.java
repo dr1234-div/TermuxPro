@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -41,6 +42,9 @@ public final class ProjectTasksActivity extends AppCompatActivity {
     private String mProjectPath;
     private ProgressBar mProgress;
     private TextView mType;
+    private TextView mStatus;
+    private Button mRecovery;
+    private ListView mList;
     private ArrayAdapter<ProjectTaskDetector.Task> mAdapter;
 
     @NonNull
@@ -60,12 +64,15 @@ public final class ProjectTasksActivity extends AppCompatActivity {
         mProjectPath = getIntent().getStringExtra(EXTRA_PROJECT_PATH);
         mProgress = findViewById(R.id.project_tasks_progress);
         mType = findViewById(R.id.project_tasks_type);
-        ListView list = findViewById(R.id.project_tasks_list);
+        mStatus = findViewById(R.id.project_tasks_status);
+        mRecovery = findViewById(R.id.project_tasks_recovery_button);
+        mList = findViewById(R.id.project_tasks_list);
         mAdapter = new ArrayAdapter<>(this, R.layout.item_termuxpro_list, mTasks);
-        list.setAdapter(mAdapter);
-        list.setOnItemClickListener((parent, view, position, id) -> confirmTask(mTasks.get(position)));
+        mList.setAdapter(mAdapter);
+        mList.setOnItemClickListener((parent, view, position, id) -> confirmTask(mTasks.get(position)));
         findViewById(R.id.project_tasks_back_button).setOnClickListener(view -> finish());
         findViewById(R.id.project_tasks_refresh_button).setOnClickListener(view -> detect());
+        mRecovery.setOnClickListener(view -> WorkspaceNavigation.returnToWorkspace(this));
         if (mHost == null || mProjectPath == null || mPort < 1 || mPort > 65535) {
             showError(R.string.project_tasks_invalid_workspace);
         } else {
@@ -76,6 +83,9 @@ public final class ProjectTasksActivity extends AppCompatActivity {
     private void detect() {
         mRunner.cancel();
         mProgress.setVisibility(View.VISIBLE);
+        mStatus.setVisibility(View.GONE);
+        mRecovery.setVisibility(View.GONE);
+        mList.setVisibility(View.VISIBLE);
         mType.setText(R.string.project_tasks_detecting);
         mTasks.clear();
         mAdapter.notifyDataSetChanged();
@@ -98,7 +108,7 @@ public final class ProjectTasksActivity extends AppCompatActivity {
             mType.setText(getString(R.string.project_tasks_type, info.type));
             mTasks.addAll(info.tasks);
             mAdapter.notifyDataSetChanged();
-            if (mTasks.isEmpty()) showError(R.string.project_tasks_empty);
+            if (mTasks.isEmpty()) showEmpty();
         } catch (JSONException exception) {
             showError(R.string.project_tasks_invalid_metadata);
         }
@@ -106,7 +116,18 @@ public final class ProjectTasksActivity extends AppCompatActivity {
 
     private void showError(int message) {
         mProgress.setVisibility(View.GONE);
-        mType.setText(message);
+        mType.setText(R.string.project_tasks_unavailable);
+        mStatus.setText(message);
+        mStatus.setVisibility(View.VISIBLE);
+        mRecovery.setVisibility(View.VISIBLE);
+        mList.setVisibility(View.GONE);
+    }
+
+    private void showEmpty() {
+        mStatus.setText(R.string.project_tasks_empty);
+        mStatus.setVisibility(View.VISIBLE);
+        mRecovery.setVisibility(View.GONE);
+        mList.setVisibility(View.GONE);
     }
 
     private void confirmTask(ProjectTaskDetector.Task task) {

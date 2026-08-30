@@ -61,9 +61,49 @@ public class RemoteToolRecoveryTest {
             activity.findViewById(R.id.remote_files_return_workspace_button));
     }
 
+    @Test
+    public void taskSessionsInvalidWorkspaceShowsReadableRecoveryState() {
+        TaskSessionsActivity activity = Robolectric.buildActivity(TaskSessionsActivity.class,
+            TaskSessionsActivity.newIntent(RuntimeEnvironment.getApplication(), "invalid", 0,
+                "~/project"))
+            .setup().get();
+
+        assertReadableRecoveryMessage(activity.findViewById(R.id.task_sessions_status),
+            activity.findViewById(R.id.task_sessions_recovery_button));
+    }
+
+    @Test
+    public void projectTasksInvalidWorkspaceShowsReadableRecoveryState() {
+        ProjectTasksActivity activity = Robolectric.buildActivity(ProjectTasksActivity.class,
+            ProjectTasksActivity.newIntent(RuntimeEnvironment.getApplication(), "invalid", 0,
+                "~/project")).setup().get();
+
+        assertReadableRecoveryMessage(activity.findViewById(R.id.project_tasks_status),
+            activity.findViewById(R.id.project_tasks_recovery_button));
+        assertTrue(activity.findViewById(R.id.project_tasks_list).getVisibility() == View.GONE);
+    }
+
+    @Test
+    public void diagnosticInvalidWorkspaceShowsReadableRecoveryState() {
+        ConnectionDiagnosticActivity activity = Robolectric.buildActivity(
+            ConnectionDiagnosticActivity.class,
+            ConnectionDiagnosticActivity.newIntent(RuntimeEnvironment.getApplication(),
+                "invalid", 0, "~/project", "workspace")).setup().get();
+
+        assertReadableRecoveryMessage(activity.findViewById(R.id.connection_diagnostic_status),
+            activity.findViewById(R.id.connection_diagnostic_return_workspace_button));
+    }
+
     private void assertRecoveryState(View state, View content, TextView message, View recovery) {
         assertTrue(state.getVisibility() == View.VISIBLE);
         assertTrue(content.getVisibility() == View.GONE);
+        assertTrue(recovery.getVisibility() == View.VISIBLE);
+        assertFalse(message.getText().toString().isEmpty());
+        assertFalse(message.getText().toString().contains("退出码"));
+    }
+
+    private void assertReadableRecoveryMessage(TextView message, View recovery) {
+        assertTrue(message.getVisibility() == View.VISIBLE);
         assertTrue(recovery.getVisibility() == View.VISIBLE);
         assertFalse(message.getText().toString().isEmpty());
         assertFalse(message.getText().toString().contains("退出码"));

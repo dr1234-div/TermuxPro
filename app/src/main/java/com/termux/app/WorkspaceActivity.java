@@ -853,6 +853,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
             return;
         }
         String host = mHostInput.getText().toString().trim();
+        String path = mPathInput.getText().toString().trim();
         int sshPort = parsePort(mPortInput.getText().toString(), 22);
         if (!SshTargetValidator.isValid(host)) {
             mHostInput.setError(getString(R.string.workspace_error_host));
@@ -872,6 +873,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
             return;
         }
         String host = mHostInput.getText().toString().trim();
+        String path = mPathInput.getText().toString().trim();
         int sshPort = parsePort(mPortInput.getText().toString(), 22);
         if (!SshTargetValidator.isValid(host)) {
             mHostInput.setError(getString(R.string.workspace_error_host));
@@ -881,7 +883,11 @@ public final class WorkspaceActivity extends AppCompatActivity {
             mPortInput.setError(getString(R.string.workspace_error_port));
             return;
         }
-        startActivity(TaskSessionsActivity.newIntent(this, host, sshPort));
+        if (TextUtils.isEmpty(path)) {
+            mPathInput.setError(getString(R.string.workspace_error_path));
+            return;
+        }
+        startActivity(TaskSessionsActivity.newIntent(this, host, sshPort, path));
     }
 
     private int parsePort(String value, int defaultValue) {
