@@ -8,6 +8,7 @@ import android.app.UiAutomation;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.net.Uri;
@@ -27,6 +28,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Locale;
 
 /** 在真实 Android 渲染器中逐页截图，防止厂商主题默认文字色和大字体回归。 */
 @RunWith(AndroidJUnit4.class)
@@ -35,6 +37,7 @@ public final class UiRenderingInstrumentedTest {
     @Test
     public void captureCriticalDarkPages() throws Exception {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        forceSimplifiedChinese(context);
         Intent workspaceIntent = new Intent(context, WorkspaceActivity.class)
             .putExtra(WorkspaceActivity.EXTRA_UI_TEST_SSH_READY, true);
         capture(context, "workspace", workspaceIntent);
@@ -92,6 +95,20 @@ public final class UiRenderingInstrumentedTest {
             RemoteFilePreviewActivity.newIntent(context, "invalid", 0, "~/project", "README.md"));
         capture(context, "ssh-keys",
             SshKeysActivity.newIntent(context, "invalid", 0));
+    }
+
+    /** 截图门禁固定使用产品主语言，避免英文短文案通过后误判中文布局也通过。 */
+    @SuppressWarnings("deprecation")
+    private void forceSimplifiedChinese(Context context) {
+        Locale locale = Locale.SIMPLIFIED_CHINESE;
+        Locale.setDefault(locale);
+        Configuration configuration = new Configuration(context.getResources().getConfiguration());
+        configuration.setLocale(locale);
+        context.getResources().updateConfiguration(configuration,
+            context.getResources().getDisplayMetrics());
+        Context instrumentationContext = InstrumentationRegistry.getInstrumentation().getContext();
+        instrumentationContext.getResources().updateConfiguration(configuration,
+            instrumentationContext.getResources().getDisplayMetrics());
     }
 
     private void scrollTo(Activity activity, int viewId) {
