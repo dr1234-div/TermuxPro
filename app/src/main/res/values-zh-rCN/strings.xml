@@ -304,6 +304,7 @@
     <string name="terminal_search_results_title">“%1$s” · %2$d 条结果</string>
     <string name="terminal_search_empty">在当前可用的终端历史中没有找到匹配内容。</string>
     <string name="terminal_search_truncated">搜索范围限制为最近 1 MB，最多展示 100 条结果。</string>
+    <string name="terminal_session_switched">已切换到会话：%1$s</string>
     <string name="task_sessions_title">tmux 会话</string>
     <string name="task_sessions_loading">正在读取远端 tmux 会话…</string>
     <string name="task_sessions_ready">点击会话可显式进入；仅 TermuxPro 创建的会话允许在此停止。</string>

@@ -398,7 +398,14 @@ public class Logger {
     public static void showToast(final Context context, final String toastText, boolean longDuration) {
         if (context == null || DataUtils.isNullOrEmpty(toastText)) return;
 
-        new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, toastText, longDuration ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT).show());
+        new Handler(Looper.getMainLooper()).post(() -> {
+            if (context instanceof ForegroundFeedbackHost) {
+                ((ForegroundFeedbackHost) context).showForegroundFeedback(toastText, longDuration);
+            } else {
+                Toast.makeText(context, toastText,
+                    longDuration ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
 

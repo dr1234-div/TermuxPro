@@ -18,7 +18,9 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.LocaleList;
 import android.provider.MediaStore;
+import android.view.Gravity;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -98,6 +100,19 @@ public final class UiRenderingInstrumentedTest {
                     null, System.currentTimeMillis()));
             ((WorkspaceActivity) activity).onResume();
             activity.findViewById(com.termux.R.id.workspace_claude_button).performClick();
+        });
+        capture(context, "terminal-feedback", new Intent(workspaceIntent), activity -> {
+            TextView feedback = (TextView) activity.getLayoutInflater().inflate(
+                com.termux.R.layout.view_terminal_feedback, null, false);
+            int margin = Math.round(16 * activity.getResources().getDisplayMetrics().density);
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP);
+            params.setMargins(margin, margin * 5, margin, 0);
+            activity.addContentView(feedback, params);
+            new TerminalFeedbackController(feedback).show("已切换到会话：TermuxPro 日常迭代", true);
+            assertTrue(feedback.getVisibility() == View.VISIBLE);
+            assertTrue(!feedback.getText().toString().isEmpty());
         });
         capture(context, "remote-files",
             RemoteFilesActivity.newIntent(context, "invalid", 0, "~/project"), activity ->
