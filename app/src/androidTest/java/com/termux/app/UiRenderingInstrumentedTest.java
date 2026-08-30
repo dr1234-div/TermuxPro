@@ -190,9 +190,14 @@ public final class UiRenderingInstrumentedTest {
         customCommands.save("ui-commands", new CustomCommand("ui-git-status", "查看 Git 状态",
             "git status --short --branch", "", "Git", true,
             CustomCommand.Confirmation.ALWAYS));
-        customCommands.save("ui-frontend-test", new CustomCommand("ui-test", "运行前端测试",
+        customCommands.save("ui-commands", new CustomCommand("ui-frontend-test", "运行前端测试",
             "pnpm test", "~/project/web", "测试", true,
             CustomCommand.Confirmation.DANGEROUS_ONLY));
+        assertTrue("截图夹具必须持久化两条快捷指令",
+            new CustomCommandStore(context).list("ui-commands").size() == 2);
+        WorkspaceTarget commandTarget = WorkspaceTargetStore.readActive(context);
+        assertNotNull("截图夹具必须具有当前工作区", commandTarget);
+        assertTrue("截图夹具工作区必须可用", commandTarget.isConfigured());
         capture(context, "custom-commands", new Intent(context, CustomCommandsActivity.class),
             activity -> {
                 assertToolbarActionsVisible(activity, com.termux.R.id.custom_commands_back,
