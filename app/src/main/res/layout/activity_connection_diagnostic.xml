@@ -22,20 +22,29 @@
             android:layout_gravity="start|center_vertical"
             android:src="@drawable/ic_arrow_back"
             app:tint="#AFC1CF" />
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_marginHorizontal="48dp"
-            android:ellipsize="end"
-            android:maxLines="1"
+            android:gravity="center_vertical"
+            android:minHeight="56dp"
             android:minWidth="0dp"
+            android:orientation="vertical"
             android:paddingHorizontal="8dp"
-            android:text="@string/connection_diagnostic_title"
-            android:gravity="center"
-            android:textColor="#F5F8FA"
-            android:textSize="17sp"
-            android:textStyle="bold" />
+            >
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="1"
+                android:minWidth="0dp"
+                android:text="@string/connection_diagnostic_title"
+                android:textColor="#F5F8FA"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+        </LinearLayout>
         <ImageButton
             android:id="@+id/connection_diagnostic_refresh_button"
             android:layout_width="48dp"
