@@ -39,6 +39,11 @@ UI/UX 是与功能同等级的持续主线，遵循 `docs/UX_QUALITY.md`。负�
 `vX.Y.Z`。稳定 Release 成功后将 `dev` 快进到 `master` 并确认收尾 CI 通过。Actions Artifact 只是
 临时构建产物，不能替代 GitHub Release；不得移动或覆盖已发布标签。
 
+每天迭代不等于每天发稳定版，但每个独立可体验纵向切片通过 PR 自动化和 UI 验收后必须生成候选
+Release，不等待 backlog 清空。每个自然周至少进行一次发布评审；存在可发布改动时冻结本轮范围并推进
+候选版，全部门禁通过后 48 小时内完成 `dev → master` 和稳定 Release。若结论为 HOLD，必须记录具体
+失败证据和解除条件；不得因持续优化而无限推迟 master 与正式包。
+
 检测到远程或共享服务器时，先运行 `scripts/resource-guard.sh`。Gradle 默认最多 2 个 worker，不并行
 运行多个全量构建；模拟器仅在 KVM 和 CPU/内存/磁盘余量满足时单实例运行。所有项目工具安装到
 `.tooling/`，禁止修改全局 JDK、SDK、PATH、服务、软件源或影响其他用户的文件与进程。
