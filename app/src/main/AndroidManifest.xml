@@ -73,7 +73,7 @@
         <activity
             android:name=".app.WorkspaceActivity"
             android:exported="true"
-            android:label="@string/workspace_home_title"
+            android:label="@string/application_name"
             android:theme="@style/Theme.TermuxPro.DayNight.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

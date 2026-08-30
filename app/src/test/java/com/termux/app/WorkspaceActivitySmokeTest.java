@@ -35,6 +35,7 @@ public class WorkspaceActivitySmokeTest {
     public void launcherInflatesWithAllPrimaryMobileActions() {
         WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
 
+        assertEquals("TermuxPro", activity.getTitle());
         assertEquals("继续远程项目", activity.getString(R.string.workspace_home_title));
         int[] requiredViews = {
             R.id.workspace_connect_button,
