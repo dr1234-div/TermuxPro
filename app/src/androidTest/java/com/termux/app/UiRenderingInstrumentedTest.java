@@ -35,8 +35,11 @@ public final class UiRenderingInstrumentedTest {
     @Test
     public void captureCriticalDarkPages() throws Exception {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        capture(context, "workspace", new Intent(context, WorkspaceActivity.class));
-        capture(context, "workspace-policy", new Intent(context, WorkspaceActivity.class), activity -> {
+        Intent workspaceIntent = new Intent(context, WorkspaceActivity.class)
+            .putExtra(WorkspaceActivity.EXTRA_UI_TEST_SSH_READY, true);
+        capture(context, "workspace", workspaceIntent);
+        capture(context, "workspace-policy", new Intent(workspaceIntent), activity -> {
+            activity.findViewById(com.termux.R.id.workspace_advanced_button).performClick();
             View policy = activity.findViewById(com.termux.R.id.workspace_connection_policy_selector);
             ScrollView scroll = activity.findViewById(com.termux.R.id.workspace_scroll_view);
             Rect bounds = new Rect();
@@ -44,10 +47,15 @@ public final class UiRenderingInstrumentedTest {
             scroll.offsetDescendantRectToMyCoords(policy, bounds);
             scroll.scrollTo(0, Math.max(0, bounds.top - 120));
         });
-        capture(context, "workspace-connection-guidance", new Intent(context, WorkspaceActivity.class),
-            activity -> scrollTo(activity, com.termux.R.id.workspace_connection_feedback));
-        capture(context, "workspace-connection-verified", new Intent(context, WorkspaceActivity.class),
+        capture(context, "workspace-connection-guidance", new Intent(workspaceIntent), activity -> {
+            ((android.widget.EditText) activity.findViewById(
+                com.termux.R.id.workspace_host_input)).setText("hdr@192.168.1.153");
+            activity.findViewById(com.termux.R.id.workspace_save_button).performClick();
+        });
+        capture(context, "workspace-connection-verified", new Intent(workspaceIntent),
             activity -> {
+                ((android.widget.EditText) activity.findViewById(
+                    com.termux.R.id.workspace_host_input)).setText("hdr@192.168.1.153");
                 activity.findViewById(com.termux.R.id.workspace_save_button).performClick();
                 String workspaceId = activity.getSharedPreferences("ai_terminal_workspace", 0)
                     .getString("active_profile", "");
@@ -56,10 +64,19 @@ public final class UiRenderingInstrumentedTest {
                     new WorkspaceConnectionState(WorkspaceConnectionState.Status.VERIFIED,
                         null, 1_700_000_000_000L));
                 ((WorkspaceActivity) activity).onResume();
-                scrollTo(activity, com.termux.R.id.workspace_connection_feedback);
             });
-        capture(context, "ai-session-choice", new Intent(context, WorkspaceActivity.class),
-            activity -> activity.findViewById(com.termux.R.id.workspace_claude_button).performClick());
+        capture(context, "ai-session-choice", new Intent(workspaceIntent), activity -> {
+            ((android.widget.EditText) activity.findViewById(
+                com.termux.R.id.workspace_host_input)).setText("hdr@192.168.1.153");
+            activity.findViewById(com.termux.R.id.workspace_save_button).performClick();
+            String workspaceId = activity.getSharedPreferences("ai_terminal_workspace", 0)
+                .getString("active_profile", "");
+            new WorkspaceConnectionStateStore(activity).save(workspaceId,
+                new WorkspaceConnectionState(WorkspaceConnectionState.Status.VERIFIED,
+                    null, 1_700_000_000_000L));
+            ((WorkspaceActivity) activity).onResume();
+            activity.findViewById(com.termux.R.id.workspace_claude_button).performClick();
+        });
         capture(context, "remote-files",
             RemoteFilesActivity.newIntent(context, "invalid", 0, "~/project"));
         capture(context, "project-tasks",

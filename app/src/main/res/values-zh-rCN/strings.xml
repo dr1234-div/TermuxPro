@@ -137,7 +137,7 @@
     <string name="workspace_session_name_hint">精确的 tmux 会话名称</string>
     <string name="workspace_error_session_name">请输入 1–64 位字母、数字、点、下划线或连字符</string>
     <string name="workspace_connect_action">连接远程工作区</string>
-    <string name="workspace_connection_guidance">首次连接将在安全交互终端中进行：请核对服务器指纹，再输入密码或密钥口令。TermuxPro 不会自动接受指纹，也不会保存凭据。</string>
+    <string name="workspace_connection_guidance">首次连接请在终端核对服务器指纹；TermuxPro 不会自动信任未知指纹。</string>
     <string name="workspace_connection_terminal_opened">连接终端已打开。请在终端中核对主机指纹并完成认证；只有出现“SSH authenticated”后才表示服务器已认证。</string>
     <string name="workspace_connection_last_opened">%1$s 已打开 SSH 终端，尚未验证身份认证是否成功。</string>
     <string name="workspace_connection_verified">%1$s 已验证：SSH 身份认证和远端环境检查均成功。</string>
@@ -171,6 +171,12 @@
     <string name="workspace_selector_description">已保存的工作区</string>
     <string name="workspace_new_action">新建</string>
     <string name="workspace_manage_action">管理工作区</string>
+    <string name="workspace_edit_action">编辑连接</string>
+    <string name="workspace_advanced_action">高级设置</string>
+    <string name="workspace_advanced_hide_action">收起高级设置</string>
+    <string name="workspace_summary_details">%1$s · %2$s · %3$s</string>
+    <string name="workspace_status_unverified">尚未验证</string>
+    <string name="workspace_status_verified">已验证</string>
     <string name="workspace_save_action">保存</string>
     <string name="workspace_copy_action">复制</string>
     <string name="workspace_delete_action">删除</string>

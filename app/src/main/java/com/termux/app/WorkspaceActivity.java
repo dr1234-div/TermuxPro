@@ -47,6 +47,8 @@ import java.util.UUID;
  */
 public final class WorkspaceActivity extends AppCompatActivity {
 
+    static final String EXTRA_UI_TEST_SSH_READY = "com.termux.app.extra.UI_TEST_SSH_READY";
+
     private static final int REQUEST_NOTIFICATIONS = 1001;
     private static final int MANAGE_NEW = 1;
     private static final int MANAGE_COPY = 2;
@@ -74,6 +76,8 @@ public final class WorkspaceActivity extends AppCompatActivity {
     private boolean mUpdatingSelector;
     private boolean mBindingProfile;
     private boolean mHasUnsavedChanges;
+    private boolean mEditingProfile;
+    private boolean mAdvancedEditing;
     private WorkspaceConnectionStateStore mConnectionStateStore;
 
     private static final String INSTALL_SSH_COMMAND = "pkg update -y && pkg install -y openssh";
@@ -144,6 +148,16 @@ public final class WorkspaceActivity extends AppCompatActivity {
         findViewById(R.id.workspace_new_button).setOnClickListener(view ->
             runAfterDiscardConfirmation(this::createWorkspace));
         findViewById(R.id.workspace_manage_button).setOnClickListener(this::showWorkspaceManagement);
+        findViewById(R.id.workspace_edit_button).setOnClickListener(view -> {
+            mEditingProfile = true;
+            mAdvancedEditing = false;
+            refreshHomeState();
+            mHostInput.requestFocus();
+        });
+        findViewById(R.id.workspace_advanced_button).setOnClickListener(view -> {
+            mAdvancedEditing = !mAdvancedEditing;
+            refreshHomeState();
+        });
         findViewById(R.id.workspace_save_button).setOnClickListener(view -> saveCurrentWorkspace());
         findViewById(R.id.workspace_copy_button).setOnClickListener(view -> copyCurrentWorkspace());
         findViewById(R.id.workspace_delete_button).setOnClickListener(view -> confirmDeleteWorkspace());
@@ -225,14 +239,19 @@ public final class WorkspaceActivity extends AppCompatActivity {
     }
 
     private boolean isSshClientInstalled() {
+        if (BuildConfig.DEBUG && getIntent().getBooleanExtra(EXTRA_UI_TEST_SSH_READY, false)) {
+            return true;
+        }
         return new File(TermuxConstants.TERMUX_BIN_PREFIX_DIR_PATH, "ssh").canExecute();
     }
 
     private void refreshSetupState() {
         boolean ready = isSshClientInstalled();
-        findViewById(R.id.workspace_setup_button).setEnabled(!ready);
+        findViewById(R.id.workspace_setup_button).setVisibility(ready ? View.GONE : View.VISIBLE);
+        findViewById(R.id.workspace_remote_card).setVisibility(ready ? View.VISIBLE : View.GONE);
         ((android.widget.Button) findViewById(R.id.workspace_setup_button)).setText(
             ready ? R.string.workspace_setup_ready : R.string.workspace_setup_action);
+        if (ready) refreshHomeState();
     }
 
     private void installSshClient() {
@@ -311,6 +330,8 @@ public final class WorkspaceActivity extends AppCompatActivity {
         mLocalPortInput.setText(profile.localPort);
         mBindingProfile = false;
         setWorkspaceDirty(false);
+        mEditingProfile = TextUtils.isEmpty(profile.host);
+        mAdvancedEditing = false;
         refreshConnectionState();
     }
 
@@ -407,16 +428,29 @@ public final class WorkspaceActivity extends AppCompatActivity {
 
     private void saveCurrentWorkspace() {
         WorkspaceProfile profile = mProfiles.get(findActiveProfileIndex());
+        String nextHost = mHostInput.getText().toString().trim();
+        String nextPort = mPortInput.getText().toString().trim();
+        String nextPath = mPathInput.getText().toString().trim();
+        String nextPolicy = indexToPolicy(mConnectionPolicySelector.getSelectedItemPosition());
+        String nextSessionName = mSessionNameInput.getText().toString().trim();
+        boolean connectionIdentityChanged = !TextUtils.equals(profile.host, nextHost)
+            || !TextUtils.equals(profile.port, nextPort)
+            || !TextUtils.equals(profile.path, nextPath)
+            || !TextUtils.equals(profile.connectionPolicy, nextPolicy)
+            || !TextUtils.equals(profile.sessionName, nextSessionName);
         profile.name = normalizedWorkspaceName();
-        profile.host = mHostInput.getText().toString().trim();
-        profile.port = mPortInput.getText().toString().trim();
-        profile.path = mPathInput.getText().toString().trim();
-        profile.connectionPolicy = indexToPolicy(mConnectionPolicySelector.getSelectedItemPosition());
-        profile.sessionName = mSessionNameInput.getText().toString().trim();
+        profile.host = nextHost;
+        profile.port = nextPort;
+        profile.path = nextPath;
+        profile.connectionPolicy = nextPolicy;
+        profile.sessionName = nextSessionName;
         profile.remotePort = mRemotePortInput.getText().toString().trim();
         profile.localPort = mLocalPortInput.getText().toString().trim();
+        if (connectionIdentityChanged) mConnectionStateStore.clear(profile.id);
         persistProfiles();
         refreshWorkspaceSelector();
+        mEditingProfile = TextUtils.isEmpty(profile.host);
+        refreshHomeState();
     }
 
     private String normalizedWorkspaceName() {
@@ -570,6 +604,58 @@ public final class WorkspaceActivity extends AppCompatActivity {
             }
         }
         feedback.setContentDescription(feedback.getText());
+        refreshHomeState();
+    }
+
+    /** 首页只展示当前任务所需信息；连接参数仅在首次配置或主动编辑时出现。 */
+    private void refreshHomeState() {
+        if (mProfiles.isEmpty()) return;
+        WorkspaceProfile profile = mProfiles.get(findActiveProfileIndex());
+        boolean configured = !TextUtils.isEmpty(profile.host);
+        boolean showEditor = !configured || mEditingProfile;
+        int editorVisibility = showEditor ? View.VISIBLE : View.GONE;
+        int[] basicEditorViews = {
+            R.id.workspace_host_input, R.id.workspace_port_input, R.id.workspace_path_input,
+            R.id.workspace_advanced_button
+        };
+        for (int id : basicEditorViews) findViewById(id).setVisibility(editorVisibility);
+        int advancedVisibility = showEditor && mAdvancedEditing ? View.VISIBLE : View.GONE;
+        int[] advancedEditorViews = {
+            R.id.workspace_name_input, R.id.workspace_connection_policy_selector,
+            R.id.workspace_session_name_input
+        };
+        for (int id : advancedEditorViews) findViewById(id).setVisibility(advancedVisibility);
+        ((android.widget.Button) findViewById(R.id.workspace_advanced_button)).setText(
+            mAdvancedEditing ? R.string.workspace_advanced_hide_action :
+                R.string.workspace_advanced_action);
+
+        View summary = findViewById(R.id.workspace_summary);
+        summary.setVisibility(configured && !showEditor ? View.VISIBLE : View.GONE);
+        findViewById(R.id.workspace_manage_button).setVisibility(
+            showEditor ? View.GONE : View.VISIBLE);
+        if (configured) {
+            ((TextView) findViewById(R.id.workspace_summary_target)).setText(profile.name);
+            WorkspaceConnectionState state = mConnectionStateStore.read(profile.id);
+            String status = state != null && state.status == WorkspaceConnectionState.Status.VERIFIED
+                ? getString(R.string.workspace_status_verified)
+                : getString(R.string.workspace_status_unverified);
+            ((TextView) findViewById(R.id.workspace_summary_details)).setText(getString(
+                R.string.workspace_summary_details, profile.host, profile.path, status));
+        }
+
+        WorkspaceConnectionState currentState = mConnectionStateStore.read(profile.id);
+        boolean verified = configured && currentState != null
+            && currentState.status == WorkspaceConnectionState.Status.VERIFIED;
+        findViewById(R.id.workspace_connection_feedback).setVisibility(
+            configured && !showEditor && !verified ? View.VISIBLE : View.GONE);
+        findViewById(R.id.workspace_connection_diagnostic_primary).setVisibility(
+            configured && !showEditor && !verified ? View.VISIBLE : View.GONE);
+        findViewById(R.id.workspace_connect_button).setVisibility(
+            configured && showEditor ? View.GONE : View.VISIBLE);
+        findViewById(R.id.workspace_ai_title).setVisibility(
+            verified && !showEditor ? View.VISIBLE : View.GONE);
+        findViewById(R.id.workspace_ai_actions).setVisibility(
+            verified && !showEditor ? View.VISIBLE : View.GONE);
     }
 
     private int stageLabel(SshDiagnosticStages.Stage stage) {
