@@ -7,6 +7,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.util.TypedValue;
 
+import androidx.core.content.ContextCompat;
+
 import com.termux.R;
 
 /** 统一 AI 会话选择弹窗的大字体可读性与品牌色。 */
@@ -16,6 +18,13 @@ final class AiSessionDialog {
 
     static void applyReadableStyle(Activity activity, AlertDialog dialog) {
         TermuxProDialogStyle.apply(activity, dialog);
+
+        // 会话选择项本身承担确认动作，底部只有“取消”一个按钮；继续使用品牌主色，
+        // 避免套用双按钮弹窗的次要操作色后降低可发现性。
+        if (dialog.getButton(AlertDialog.BUTTON_NEGATIVE) != null) {
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(
+                ContextCompat.getColor(activity, R.color.tp_primary));
+        }
 
         ListView list = dialog.getListView();
         int minimumEndPadding = Math.round(TypedValue.applyDimension(
