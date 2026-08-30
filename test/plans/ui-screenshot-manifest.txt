@@ -1,0 +1,14 @@
+# UiRenderingInstrumentedTest 必须生成的截图基名；新增/删除页面时同步维护本清单。
+ai-session-choice
+connection-diagnostic
+git-diff
+project-tasks
+remote-file-preview
+remote-files
+ssh-keys
+task-sessions
+workspace
+workspace-connection-expired
+workspace-connection-guidance
+workspace-connection-verified
+workspace-policy

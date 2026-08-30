@@ -68,8 +68,24 @@ public final class UiRenderingInstrumentedTest {
                 assertTrue("截图工作区必须具有持久化 ID", !workspaceId.isEmpty());
                 new WorkspaceConnectionStateStore(activity).save(workspaceId,
                     new WorkspaceConnectionState(WorkspaceConnectionState.Status.VERIFIED,
-                        null, 1_700_000_000_000L));
+                        null, System.currentTimeMillis()));
                 ((WorkspaceActivity) activity).onResume();
+            });
+        capture(context, "workspace-connection-expired", new Intent(workspaceIntent),
+            activity -> {
+                ((android.widget.EditText) activity.findViewById(
+                    com.termux.R.id.workspace_host_input)).setText("hdr@192.168.1.153");
+                activity.findViewById(com.termux.R.id.workspace_save_button).performClick();
+                String workspaceId = activity.getSharedPreferences("ai_terminal_workspace", 0)
+                    .getString("active_profile", "");
+                new WorkspaceConnectionStateStore(activity).save(workspaceId,
+                    new WorkspaceConnectionState(WorkspaceConnectionState.Status.VERIFIED,
+                        null, System.currentTimeMillis()
+                            - WorkspaceConnectionState.VERIFICATION_TTL_MS - 1L));
+                ((WorkspaceActivity) activity).onResume();
+                assertTrue(((TextView) activity.findViewById(
+                    com.termux.R.id.workspace_connection_feedback)).getText().toString()
+                    .contains("检查结果已过期"));
             });
         capture(context, "ai-session-choice", new Intent(workspaceIntent), activity -> {
             ((android.widget.EditText) activity.findViewById(
@@ -79,7 +95,7 @@ public final class UiRenderingInstrumentedTest {
                 .getString("active_profile", "");
             new WorkspaceConnectionStateStore(activity).save(workspaceId,
                 new WorkspaceConnectionState(WorkspaceConnectionState.Status.VERIFIED,
-                    null, 1_700_000_000_000L));
+                    null, System.currentTimeMillis()));
             ((WorkspaceActivity) activity).onResume();
             activity.findViewById(com.termux.R.id.workspace_claude_button).performClick();
         });

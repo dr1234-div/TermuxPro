@@ -38,14 +38,26 @@ GitHub Actions 和可直连环境默认优先使用 `google()` 与 Maven Central
 
 项目 Skill 使用仓库内一键校验入口。首次运行会在被忽略的
 `.tooling/skill-validator-venv` 创建项目级虚拟环境，并按 `requirements-tools.txt` 安装锁定版 PyYAML；
-它不依赖系统 Python 包，也不会修改全局环境：
+它不依赖系统 Python 包，也不会修改全局环境。即使直接运行 `scripts/validate-skills.py`，缺少 PyYAML
+时也会自动回到同一引导入口，不再需要人工补包：
 
 ```bash
 ./scripts/validate-skills.sh
 ```
 
+模拟器截图集合由 `test/plans/ui-screenshot-manifest.txt` 定义，CI 校验准确文件名而非手工维护数量；新增或
+删除验收页面时同步更新清单，避免截图增加后因陈旧计数误报失败。
+
 GitHub API 操作使用 `./scripts/github-cli.sh <gh 参数>`；该入口会自动选择系统 `gh` 或仓库内
 `.tooling/gh/bin/gh`，不依赖交互 shell 的 `PATH`。
+
+所有仓库构建入口会 source `scripts/resolve-jdk17.sh`，优先选择项目内同时包含 `java`/`javac` 的完整
+JDK 17。执行临时 Gradle 子任务时也先 source 该脚本，不要手工把系统 JRE 目录设为 `JAVA_HOME`：
+
+```bash
+source scripts/resolve-jdk17.sh
+./gradlew --no-daemon --max-workers=2 <task>
+```
 
 ```bash
 ./scripts/test-all.sh

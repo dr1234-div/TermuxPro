@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 """验证 TermuxPro 的 Codex/Claude Skill 元数据与共用入口。"""
 
+import os
 from pathlib import Path
 import sys
 
-import yaml
+try:
+    import yaml
+except ModuleNotFoundError:
+    # 直接执行本文件时也自动使用仓库级依赖，不修改系统 Python。
+    bootstrap = Path(__file__).resolve().with_name("validate-skills.sh")
+    os.execv(str(bootstrap), [str(bootstrap)])
 
 
 ROOT = Path(__file__).resolve().parent.parent

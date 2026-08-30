@@ -33,6 +33,8 @@ UI/UX 是与功能同等级的持续主线，遵循 `docs/UX_QUALITY.md`。负�
 同一可复现故障不得靠重复手工操作维持。首次修复后必须补齐仓库级依赖声明、自动引导脚本、回归测试或
 故障规则中的至少一项，使全新检出环境可复现验证；再次出现时按流程缺陷处理，先消除根因再继续迭代。
 GitHub API 操作统一通过 `scripts/github-cli.sh`，不要假定项目级 `gh` 已加入当前 shell 的 `PATH`。
+Gradle/Java 操作统一先 source `scripts/resolve-jdk17.sh`；禁止把只有 `java`、没有 `javac` 的系统 JRE
+目录手工设为 `JAVA_HOME`。
 
 日常维护默认静默：分支、提交、PR、合入 `dev`、普通 CI、小修改和内部验收不发送飞书通知。小改动
 最多每周汇总一次；只有正式/候选安装包需要体验、稳定 Release、严重阻断、安全风险或必须由用户决策

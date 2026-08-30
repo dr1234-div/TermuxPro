@@ -11,11 +11,7 @@ if [[ -n "${TERMUXPRO_RELEASE_TAG:-}" ]]; then
     ./scripts/termuxpro-version.sh tag "$TERMUXPRO_RELEASE_TAG" >/dev/null
 fi
 
-bundled_jdk="$project_dir/.tooling/jdk-deb/full/usr/lib/jvm/java-17-openjdk-amd64"
-if [[ -x "$bundled_jdk/bin/java" ]]; then
-    export JAVA_HOME="$bundled_jdk"
-    export PATH="$JAVA_HOME/bin:$PATH"
-fi
+source "$project_dir/scripts/resolve-jdk17.sh"
 
 if [[ ! -f .signing/termuxpro-release.p12 || ! -f .signing/termuxpro-release.pass ]]; then
     echo "缺少 Release 签名文件，请阅读 docs/RELEASE_SIGNING.md。" >&2
