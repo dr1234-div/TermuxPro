@@ -217,7 +217,7 @@
     <string name="git_diff_loading">正在通过活动 SSH 连接读取修改…</string>
     <string name="git_diff_clean">当前工作区没有未暂存修改。</string>
     <string name="git_diff_truncated">输出已在 1.5 MB 处截断，完整 Diff 请在终端中查看。</string>
-    <string name="git_diff_failed">Git 审查失败（退出码 %1$d）。请先连接该工作区，再重试。</string>
+    <string name="git_diff_failed">暂时无法读取 Git 修改。请返回工作区重新连接，再回来重试。</string>
     <string name="git_diff_invalid_workspace">工作区连接信息无效。</string>
     <string name="git_diff_ssh_missing">尚未安装 OpenSSH，请返回工作区安装 SSH 组件。</string>
     <string name="git_diff_cancelled">已取消审查。</string>
@@ -226,11 +226,12 @@
     <string name="remote_files_title">远端文件</string>
     <string name="remote_file_preview_title">文件预览</string>
     <string name="remote_files_invalid_workspace">工作区连接信息无效。</string>
-    <string name="remote_files_failed">无法列出该目录（退出码 %1$d），请先连接工作区。</string>
+    <string name="remote_files_failed">暂时无法列出该目录。请返回工作区重新连接，再回来重试。</string>
     <string name="remote_files_empty">该目录为空。</string>
     <string name="remote_files_truncated">目录项过多，列表已截断。</string>
     <string name="remote_file_loading">正在通过活动 SSH 连接读取文件…</string>
-    <string name="remote_file_failed">无法读取该文件（退出码 %1$d）。</string>
+    <string name="remote_file_failed">暂时无法读取该文件。请返回工作区重新连接，再回来重试。</string>
+    <string name="return_to_workspace">返回工作区</string>
     <string name="remote_file_failed_format">远端文件响应格式无效。</string>
     <string name="remote_file_binary">二进制文件不会加载到文本预览中。</string>
     <string name="remote_file_truncated">预览已在 1 MB 处停止。</string>

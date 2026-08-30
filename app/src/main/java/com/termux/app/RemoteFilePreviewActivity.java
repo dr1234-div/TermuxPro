@@ -31,6 +31,10 @@ public final class RemoteFilePreviewActivity extends AppCompatActivity {
     private final RemoteCommandRunner mRunner = new RemoteCommandRunner();
     private ProgressBar mProgress;
     private TextView mContent;
+    private TextView mStatusMessage;
+    private View mContentScroll;
+    private View mStatusState;
+    private View mReturnWorkspace;
     private String mHost;
     private int mPort;
     private String mProjectPath;
@@ -54,20 +58,25 @@ public final class RemoteFilePreviewActivity extends AppCompatActivity {
         mFilePath = getIntent().getStringExtra(EXTRA_FILE_PATH);
         mProgress = findViewById(R.id.remote_file_progress);
         mContent = findViewById(R.id.remote_file_content);
+        mContentScroll = findViewById(R.id.remote_file_scroll);
+        mStatusState = findViewById(R.id.remote_file_status_state);
+        mStatusMessage = findViewById(R.id.remote_file_status_message);
+        mReturnWorkspace = findViewById(R.id.remote_file_return_workspace_button);
         ((TextView) findViewById(R.id.remote_file_title)).setText(mFilePath);
         findViewById(R.id.remote_file_back_button).setOnClickListener(view -> finish());
         findViewById(R.id.remote_file_refresh_button).setOnClickListener(view -> loadFile());
+        mReturnWorkspace.setOnClickListener(view -> WorkspaceNavigation.returnToWorkspace(this));
         loadFile();
     }
 
     private void loadFile() {
-        if (mHost == null || mProjectPath == null || mFilePath == null) {
-            mContent.setText(R.string.remote_files_invalid_workspace);
+        if (mHost == null || mProjectPath == null || mFilePath == null || mPort < 1 || mPort > 65535) {
+            showStatus(getString(R.string.remote_files_invalid_workspace), true);
             return;
         }
         mRunner.cancel();
         mProgress.setVisibility(View.VISIBLE);
-        mContent.setText(R.string.remote_file_loading);
+        showStatus(getString(R.string.remote_file_loading), false);
         mExecutor.execute(() -> {
             RemoteCommandRunner.Result result = mRunner.run(mHost, mPort,
                 WorkspaceCommandBuilder.buildReadFileRemoteCommand(mProjectPath, mFilePath), MAX_RESULT_BYTES);
@@ -80,20 +89,29 @@ public final class RemoteFilePreviewActivity extends AppCompatActivity {
     private void showResult(RemoteCommandRunner.Result result) {
         mProgress.setVisibility(View.GONE);
         if (result.exitCode != 0) {
-            mContent.setText(getString(R.string.remote_file_failed, result.exitCode));
+            showStatus(getString(R.string.remote_file_failed), true);
             return;
         }
         int markerEnd = result.output.indexOf('\u0000');
         String marker = markerEnd < 0 ? "" : result.output.substring(0, markerEnd);
         if ("BINARY".equals(marker)) {
-            mContent.setText(R.string.remote_file_binary);
+            showStatus(getString(R.string.remote_file_binary), false);
         } else if ("TEXT".equals(marker)) {
             String text = result.output.substring(markerEnd + 1);
             if (text.length() >= 1_000_000) text += "\n\n" + getString(R.string.remote_file_truncated);
+            mStatusState.setVisibility(View.GONE);
+            mContentScroll.setVisibility(View.VISIBLE);
             mContent.setText(text);
         } else {
-            mContent.setText(R.string.remote_file_failed_format);
+            showStatus(getString(R.string.remote_file_failed_format), true);
         }
+    }
+
+    private void showStatus(@NonNull String message, boolean recoverable) {
+        mContentScroll.setVisibility(View.GONE);
+        mStatusState.setVisibility(View.VISIBLE);
+        mStatusMessage.setText(message);
+        mReturnWorkspace.setVisibility(recoverable ? View.VISIBLE : View.GONE);
     }
 
     @Override

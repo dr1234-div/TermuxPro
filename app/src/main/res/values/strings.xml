@@ -335,7 +335,7 @@
     <string name="git_diff_loading">Loading changes through the active SSH connection…</string>
     <string name="git_diff_clean">The working tree has no unstaged changes.</string>
     <string name="git_diff_truncated">Output was truncated at 1.5 MB. Use the terminal for the complete diff.</string>
-    <string name="git_diff_failed">Git review failed (exit code %1$d). Connect to this workspace first, then retry.</string>
+    <string name="git_diff_failed">Git changes are temporarily unavailable. Return to the workspace, reconnect, then retry.</string>
     <string name="git_diff_invalid_workspace">The workspace connection information is invalid.</string>
     <string name="git_diff_ssh_missing">OpenSSH is not installed. Return to the workspace and install the SSH component.</string>
     <string name="git_diff_cancelled">Review was cancelled.</string>
@@ -344,11 +344,12 @@
     <string name="remote_files_title">Remote files</string>
     <string name="remote_file_preview_title">File preview</string>
     <string name="remote_files_invalid_workspace">The workspace connection information is invalid.</string>
-    <string name="remote_files_failed">Unable to list this directory (exit code %1$d). Connect to the workspace first.</string>
+    <string name="remote_files_failed">This directory is temporarily unavailable. Return to the workspace, reconnect, then retry.</string>
     <string name="remote_files_empty">This directory is empty.</string>
     <string name="remote_files_truncated">Too many entries; the list was truncated.</string>
     <string name="remote_file_loading">Loading the file through the active SSH connection…</string>
-    <string name="remote_file_failed">Unable to read this file (exit code %1$d).</string>
+    <string name="remote_file_failed">This file is temporarily unavailable. Return to the workspace, reconnect, then retry.</string>
+    <string name="return_to_workspace">Return to workspace</string>
     <string name="remote_file_failed_format">The remote file response format is invalid.</string>
     <string name="remote_file_binary">Binary files are not loaded into the text preview.</string>
     <string name="remote_file_truncated">Preview stopped at 1 MB.</string>

@@ -73,12 +73,48 @@
         android:layout_height="3dp"
         android:indeterminate="true" />
 
-    <ListView
-        android:id="@+id/remote_files_list"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:divider="#203444"
-        android:dividerHeight="1dp"
-        android:paddingHorizontal="8dp" />
+        android:layout_weight="1">
+
+        <ListView
+            android:id="@+id/remote_files_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:divider="#203444"
+            android:dividerHeight="1dp"
+            android:paddingHorizontal="8dp" />
+
+        <LinearLayout
+            android:id="@+id/remote_files_status_state"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/remote_files_status_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:lineSpacingExtra="4dp"
+                android:textColor="#D8E4EC"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/remote_files_return_workspace_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:backgroundTint="#68E0B7"
+                android:minHeight="48dp"
+                android:text="@string/return_to_workspace"
+                android:textColor="#06231B"
+                android:textStyle="bold"
+                android:visibility="gone" />
+        </LinearLayout>
+    </FrameLayout>
 </LinearLayout>

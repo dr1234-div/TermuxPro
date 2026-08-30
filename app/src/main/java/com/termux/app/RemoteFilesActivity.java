@@ -40,6 +40,10 @@ public final class RemoteFilesActivity extends AppCompatActivity {
     private ArrayAdapter<FileEntry> mAdapter;
     private ProgressBar mProgress;
     private TextView mPathView;
+    private TextView mStatusMessage;
+    private ListView mList;
+    private View mStatusState;
+    private View mReturnWorkspace;
     private String mHost;
     private int mPort;
     private String mProjectPath;
@@ -63,15 +67,19 @@ public final class RemoteFilesActivity extends AppCompatActivity {
         mProjectPath = getIntent().getStringExtra(EXTRA_PROJECT_PATH);
         mProgress = findViewById(R.id.remote_files_progress);
         mPathView = findViewById(R.id.remote_files_path);
-        ListView list = findViewById(R.id.remote_files_list);
+        mList = findViewById(R.id.remote_files_list);
+        mStatusState = findViewById(R.id.remote_files_status_state);
+        mStatusMessage = findViewById(R.id.remote_files_status_message);
+        mReturnWorkspace = findViewById(R.id.remote_files_return_workspace_button);
         mAdapter = new ArrayAdapter<>(this, R.layout.item_termuxpro_list, mEntries);
-        list.setAdapter(mAdapter);
-        list.setOnItemClickListener((parent, view, position, id) -> openEntry(mEntries.get(position)));
+        mList.setAdapter(mAdapter);
+        mList.setOnItemClickListener((parent, view, position, id) -> openEntry(mEntries.get(position)));
         findViewById(R.id.remote_files_back_button).setOnClickListener(view -> navigateBack());
         findViewById(R.id.remote_files_refresh_button).setOnClickListener(view -> loadDirectory());
+        mReturnWorkspace.setOnClickListener(view -> WorkspaceNavigation.returnToWorkspace(this));
 
         if (mHost == null || mProjectPath == null || mPort < 1 || mPort > 65535) {
-            showError(getString(R.string.remote_files_invalid_workspace));
+            showStatus(getString(R.string.remote_files_invalid_workspace), true);
         } else {
             loadDirectory();
         }
@@ -81,6 +89,8 @@ public final class RemoteFilesActivity extends AppCompatActivity {
         mRunner.cancel();
         mProgress.setVisibility(View.VISIBLE);
         mPathView.setText(mCurrentDirectory);
+        mStatusState.setVisibility(View.GONE);
+        mList.setVisibility(View.VISIBLE);
         mEntries.clear();
         mAdapter.notifyDataSetChanged();
         final String directory = mCurrentDirectory;
@@ -97,7 +107,8 @@ public final class RemoteFilesActivity extends AppCompatActivity {
         if (!requestedDirectory.equals(mCurrentDirectory)) return;
         mProgress.setVisibility(View.GONE);
         if (result.exitCode != 0) {
-            showError(remoteErrorMessage(result));
+            showStatus(remoteErrorMessage(result),
+                result.exitCode != RemoteCommandRunner.ERROR_INTERRUPTED);
             return;
         }
         String[] fields = result.output.split("\u0000", -1);
@@ -112,7 +123,7 @@ public final class RemoteFilesActivity extends AppCompatActivity {
             mEntries.add(new FileEntry('!', getString(R.string.remote_files_truncated)));
         }
         mAdapter.notifyDataSetChanged();
-        if (mEntries.isEmpty()) showError(getString(R.string.remote_files_empty));
+        if (mEntries.isEmpty()) showStatus(getString(R.string.remote_files_empty), false);
     }
 
     private void openEntry(FileEntry entry) {
@@ -146,11 +157,14 @@ public final class RemoteFilesActivity extends AppCompatActivity {
         navigateBack();
     }
 
-    private void showError(String message) {
+    private void showStatus(String message, boolean recoverable) {
         mProgress.setVisibility(View.GONE);
         mEntries.clear();
-        mEntries.add(new FileEntry('!', message));
         mAdapter.notifyDataSetChanged();
+        mList.setVisibility(View.GONE);
+        mStatusState.setVisibility(View.VISIBLE);
+        mStatusMessage.setText(message);
+        mReturnWorkspace.setVisibility(recoverable ? View.VISIBLE : View.GONE);
     }
 
     private String remoteErrorMessage(RemoteCommandRunner.Result result) {
@@ -160,7 +174,7 @@ public final class RemoteFilesActivity extends AppCompatActivity {
         if (result.exitCode == RemoteCommandRunner.ERROR_INTERRUPTED) {
             return getString(R.string.git_diff_cancelled);
         }
-        return getString(R.string.remote_files_failed, result.exitCode);
+        return getString(R.string.remote_files_failed);
     }
 
     @Override
