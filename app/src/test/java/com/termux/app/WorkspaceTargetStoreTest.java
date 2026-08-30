@@ -42,14 +42,13 @@ public class WorkspaceTargetStoreTest {
     }
 
     @Test
-    public void fallsBackToFirstProfileWhenSelectionIsStale() {
+    public void staleSelectionFailsClosedInsteadOfTargetingFirstProfile() {
         preferences.edit()
             .putString(WorkspaceTargetStore.KEY_PROFILES,
                 "[{\"id\":\"a\",\"name\":\"A\",\"host\":\"a@example.com\",\"port\":\"22\",\"path\":\"~/a\"}]")
             .putString(WorkspaceTargetStore.KEY_ACTIVE_PROFILE, "missing").commit();
 
-        assertEquals("a", WorkspaceTargetStore.readActive(
-            RuntimeEnvironment.getApplication()).id);
+        assertNull(WorkspaceTargetStore.readActive(RuntimeEnvironment.getApplication()));
     }
 
     @Test

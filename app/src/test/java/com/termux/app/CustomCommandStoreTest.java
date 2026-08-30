@@ -73,6 +73,9 @@ public class CustomCommandStoreTest {
         assertTrue(CustomCommandValidator.containsPossibleSecret(
             "-----BEGIN OPENSSH PRIVATE KEY-----"));
         assertFalse(CustomCommandValidator.containsPossibleSecret("TOKEN=$TOKEN npm test"));
+        assertTrue(CustomCommandValidator.isLikelyDangerous("git reset --hard HEAD~1"));
+        assertTrue(CustomCommandValidator.isLikelyDangerous("pnpm test; rm -rf build"));
+        assertFalse(CustomCommandValidator.isLikelyDangerous("git status --short"));
         assertNull(CustomCommandValidator.validate(command("状态", "git status --short")));
     }
 

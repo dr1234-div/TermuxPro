@@ -33,7 +33,8 @@ final class WorkspaceTargetStore {
                     if (fallback == null) fallback = item;
                     if (activeId.equals(item.optString("id"))) return fromJson(item);
                 }
-                if (fallback != null) return fromJson(fallback);
+                if (activeId.isEmpty() && fallback != null) return fromJson(fallback);
+                return null;
             } catch (JSONException ignored) {
                 return null;
             }

@@ -97,6 +97,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     private static final int TOOL_AI_CONFIRM = 9;
     private static final int TOOL_AI_REJECT = 10;
     private static final int TOOL_SEARCH_OUTPUT = 11;
+    private static final int TOOL_CUSTOM_COMMANDS = 12;
     private static final int TERMINAL_SEARCH_MAX_CHARS = 1_000_000;
     private static final int TERMINAL_SEARCH_MAX_MATCHES = 100;
     private static final String UI_PREFERENCES = "ai_terminal_ui";
@@ -705,6 +706,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
     private void showProjectTools(View anchor) {
         PopupMenu popup = new PopupMenu(this, anchor);
         popup.getMenu().add(Menu.NONE, TOOL_SEARCH_OUTPUT, Menu.NONE, R.string.terminal_search_action);
+        popup.getMenu().add(Menu.NONE, TOOL_CUSTOM_COMMANDS, Menu.NONE,
+            R.string.terminal_custom_commands_action);
         popup.getMenu().add(Menu.NONE, TOOL_GIT_STATUS, Menu.NONE, R.string.workspace_git_status_action);
         popup.getMenu().add(Menu.NONE, TOOL_GIT_DIFF, Menu.NONE, R.string.workspace_git_diff_action);
         popup.getMenu().add(Menu.NONE, TOOL_PROJECT_CHECK, Menu.NONE, R.string.workspace_project_check_action);
@@ -719,6 +722,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             switch (item.getItemId()) {
                 case TOOL_SEARCH_OUTPUT:
                     showTerminalSearch();
+                    return true;
+                case TOOL_CUSTOM_COMMANDS:
+                    startActivity(new Intent(this, CustomCommandsActivity.class));
                     return true;
                 case TOOL_GIT_STATUS:
                     confirmAndSendCommand("git status --short --branch");

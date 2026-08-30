@@ -40,7 +40,8 @@ public class CustomLayoutsSmokeTest {
             R.layout.activity_project_tasks,
             R.layout.activity_connection_diagnostic,
             R.layout.activity_ssh_keys,
-            R.layout.activity_task_sessions
+            R.layout.activity_task_sessions,
+            R.layout.activity_custom_commands
         };
         LayoutInflater inflater = LayoutInflater.from(context);
         for (int layout : layouts) {
@@ -115,7 +116,8 @@ public class CustomLayoutsSmokeTest {
             R.layout.activity_remote_file_preview,
             R.layout.activity_project_tasks,
             R.layout.activity_connection_diagnostic,
-            R.layout.activity_task_sessions
+            R.layout.activity_task_sessions,
+            R.layout.activity_custom_commands
         };
         int[] refreshButtons = {
             R.id.git_diff_refresh_button,
@@ -123,20 +125,27 @@ public class CustomLayoutsSmokeTest {
             R.id.remote_file_refresh_button,
             R.id.project_tasks_refresh_button,
             R.id.connection_diagnostic_refresh_button,
-            R.id.task_sessions_refresh_button
+            R.id.task_sessions_refresh_button,
+            R.id.custom_commands_add
         };
         float density = context.getResources().getDisplayMetrics().density;
         for (int index = 0; index < layouts.length; index++) {
             View page = inflater.inflate(layouts[index], new FrameLayout(context), false);
             View refresh = page.findViewById(refreshButtons[index]);
-            if (index == 0) {
+            if (index == 0 || index == layouts.length - 1) {
                 assertTrue(refresh instanceof TextView);
                 assertTrue(refresh.getMinimumWidth() >= Math.round(48 * density));
             } else {
                 assertTrue(refresh instanceof ImageButton);
                 assertEquals(48, Math.round(refresh.getLayoutParams().width / density));
             }
-            assertEquals(48, Math.round(refresh.getLayoutParams().height / density));
+            if (index == layouts.length - 1) {
+                assertTrue(refresh.getMinimumHeight() >= Math.round(48 * density));
+                assertEquals(ViewGroup.LayoutParams.WRAP_CONTENT,
+                    refresh.getLayoutParams().height);
+            } else {
+                assertEquals(48, Math.round(refresh.getLayoutParams().height / density));
+            }
             View toolbar = (View) refresh.getParent();
             assertEquals(56, Math.round(toolbar.getMinimumHeight() / density));
             assertEquals(ViewGroup.LayoutParams.WRAP_CONTENT, toolbar.getLayoutParams().height);
@@ -166,7 +175,8 @@ public class CustomLayoutsSmokeTest {
             R.layout.activity_remote_file_preview,
             R.layout.activity_project_tasks,
             R.layout.activity_connection_diagnostic,
-            R.layout.activity_task_sessions
+            R.layout.activity_task_sessions,
+            R.layout.activity_custom_commands
         };
         int[] backButtons = {
             R.id.git_diff_back_button,
@@ -174,7 +184,8 @@ public class CustomLayoutsSmokeTest {
             R.id.remote_file_back_button,
             R.id.project_tasks_back_button,
             R.id.connection_diagnostic_back_button,
-            R.id.task_sessions_back_button
+            R.id.task_sessions_back_button,
+            R.id.custom_commands_back
         };
         int[] actionButtons = {
             R.id.git_diff_refresh_button,
@@ -182,7 +193,8 @@ public class CustomLayoutsSmokeTest {
             R.id.remote_file_refresh_button,
             R.id.project_tasks_refresh_button,
             R.id.connection_diagnostic_refresh_button,
-            R.id.task_sessions_refresh_button
+            R.id.task_sessions_refresh_button,
+            R.id.custom_commands_add
         };
         float density = context.getResources().getDisplayMetrics().density;
         int width = Math.round(205 * density);

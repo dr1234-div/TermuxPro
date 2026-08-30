@@ -23,6 +23,10 @@ final class CustomCommandValidator {
         "(?i)-----BEGIN(?: [A-Z0-9]+)? PRIVATE KEY-----");
     private static final Pattern URL_CREDENTIALS = Pattern.compile(
         "(?i)[a-z][a-z0-9+.-]*://[^/\\s:@]+:[^/\\s@]+@");
+    private static final Pattern DANGEROUS_COMMAND = Pattern.compile(
+        "(?im)(^|[;&|]\\s*)(sudo\\s+|su\\s|rm\\s|mv\\s|chmod\\s|chown\\s|kill(?:all)?\\s|"
+            + "pkill\\s|git\\s+(?:reset\\s+--hard|clean\\s|push\\s+--force)|"
+            + "docker\\s+(?:rm|system\\s+prune)|kubectl\\s+delete|drop\\s+(?:table|database))");
 
     private CustomCommandValidator() {}
 
@@ -42,5 +46,9 @@ final class CustomCommandValidator {
         return SECRET_ASSIGNMENT.matcher(command).find()
             || PRIVATE_KEY.matcher(command).find()
             || URL_CREDENTIALS.matcher(command).find();
+    }
+
+    static boolean isLikelyDangerous(@NonNull String command) {
+        return DANGEROUS_COMMAND.matcher(command).find();
     }
 }
