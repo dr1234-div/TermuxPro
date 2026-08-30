@@ -594,9 +594,6 @@ public final class WorkspaceActivity extends AppCompatActivity {
     private void refreshConnectionState() {
         TextView feedback = findViewById(R.id.workspace_connection_feedback);
         WorkspaceConnectionState state = mConnectionStateStore.read(mActiveProfileId);
-        boolean verified = state != null && state.status == WorkspaceConnectionState.Status.VERIFIED;
-        findViewById(R.id.workspace_ai_title).setVisibility(verified ? View.VISIBLE : View.GONE);
-        findViewById(R.id.workspace_ai_actions).setVisibility(verified ? View.VISIBLE : View.GONE);
         if (state == null) {
             feedback.setText(R.string.workspace_connection_guidance);
         } else {
@@ -607,7 +604,9 @@ public final class WorkspaceActivity extends AppCompatActivity {
                     feedback.setText(getString(R.string.workspace_connection_last_opened, time));
                     break;
                 case VERIFIED:
-                    feedback.setText(getString(R.string.workspace_connection_verified, time));
+                    feedback.setText(getString(state.isVerificationFresh(System.currentTimeMillis())
+                        ? R.string.workspace_connection_verified
+                        : R.string.workspace_connection_verification_expired, time));
                     break;
                 case ACTION_REQUIRED:
                     feedback.setText(getString(R.string.workspace_connection_action_required, time,
@@ -639,10 +638,10 @@ public final class WorkspaceActivity extends AppCompatActivity {
         for (int id : basicEditorViews) findViewById(id).setVisibility(editorVisibility);
         int advancedVisibility = showEditor && mAdvancedEditing ? View.VISIBLE : View.GONE;
         int[] advancedEditorViews = {
-            R.id.workspace_name_input, R.id.workspace_connection_policy_selector,
-            R.id.workspace_session_name_input
+            R.id.workspace_name_input, R.id.workspace_connection_policy_selector
         };
         for (int id : advancedEditorViews) findViewById(id).setVisibility(advancedVisibility);
+        updateSessionNameState();
         ((android.widget.Button) findViewById(R.id.workspace_advanced_button)).setText(
             mAdvancedEditing ? R.string.workspace_advanced_hide_action :
                 R.string.workspace_advanced_action);
@@ -654,20 +653,24 @@ public final class WorkspaceActivity extends AppCompatActivity {
         if (configured) {
             ((TextView) findViewById(R.id.workspace_summary_target)).setText(profile.name);
             WorkspaceConnectionState state = mConnectionStateStore.read(profile.id);
-            String status = state != null && state.status == WorkspaceConnectionState.Status.VERIFIED
-                ? getString(R.string.workspace_status_verified)
-                : getString(R.string.workspace_status_unverified);
+            boolean fresh = state != null && state.isVerificationFresh(System.currentTimeMillis());
+            String status = fresh ? getString(R.string.workspace_status_recently_verified) :
+                state != null && state.hasVerifiedFact()
+                    ? getString(R.string.workspace_status_verification_expired)
+                    : getString(R.string.workspace_status_unverified);
             ((TextView) findViewById(R.id.workspace_summary_details)).setText(getString(
                 R.string.workspace_summary_details, profile.host, profile.path, status));
         }
 
         WorkspaceConnectionState currentState = mConnectionStateStore.read(profile.id);
-        boolean verified = configured && currentState != null
-            && currentState.status == WorkspaceConnectionState.Status.VERIFIED;
+        boolean verifiedBefore = configured && currentState != null
+            && currentState.hasVerifiedFact();
+        boolean freshVerification = verifiedBefore
+            && currentState.isVerificationFresh(System.currentTimeMillis());
         findViewById(R.id.workspace_connection_feedback).setVisibility(
-            configured && !showEditor && !verified ? View.VISIBLE : View.GONE);
+            configured && !showEditor && !freshVerification ? View.VISIBLE : View.GONE);
         findViewById(R.id.workspace_connection_diagnostic_primary).setVisibility(
-            configured && !showEditor && !verified ? View.VISIBLE : View.GONE);
+            configured && !showEditor && !freshVerification ? View.VISIBLE : View.GONE);
         if (getResources().getConfiguration().fontScale < 1.5f) {
             findViewById(R.id.workspace_security_footer).setVisibility(
                 configured ? View.GONE : View.VISIBLE);
@@ -675,9 +678,9 @@ public final class WorkspaceActivity extends AppCompatActivity {
         findViewById(R.id.workspace_connect_button).setVisibility(
             configured && showEditor ? View.GONE : View.VISIBLE);
         findViewById(R.id.workspace_ai_title).setVisibility(
-            verified && !showEditor ? View.VISIBLE : View.GONE);
+            verifiedBefore && !showEditor ? View.VISIBLE : View.GONE);
         findViewById(R.id.workspace_ai_actions).setVisibility(
-            verified && !showEditor ? View.VISIBLE : View.GONE);
+            verifiedBefore && !showEditor ? View.VISIBLE : View.GONE);
     }
 
     private int stageLabel(SshDiagnosticStages.Stage stage) {
@@ -694,7 +697,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
         boolean enabled = requiresSessionName(
             indexToPolicy(mConnectionPolicySelector.getSelectedItemPosition()));
         mSessionNameInput.setEnabled(enabled);
-        mSessionNameInput.setAlpha(enabled ? 1f : 0.55f);
+        mSessionNameInput.setVisibility(mAdvancedEditing && enabled ? View.VISIBLE : View.GONE);
     }
 
     private static boolean requiresSessionName(String policy) {

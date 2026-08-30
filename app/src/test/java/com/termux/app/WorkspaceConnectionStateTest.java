@@ -1,7 +1,9 @@
 package com.termux.app;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 
@@ -23,6 +25,26 @@ public class WorkspaceConnectionStateTest {
         WorkspaceConnectionState state = WorkspaceConnectionState.terminalOpened(1234L);
         assertEquals(WorkspaceConnectionState.Status.TERMINAL_OPENED, state.status);
         assertNull(state.stage);
+    }
+
+    @Test
+    public void verificationFactExpiresAndRejectsImpossibleFutureTimestamp() {
+        long now = 2_000_000_000_000L;
+        WorkspaceConnectionState fresh = new WorkspaceConnectionState(
+            WorkspaceConnectionState.Status.VERIFIED, null, now - 60_000L);
+        assertTrue(fresh.hasVerifiedFact());
+        assertTrue(fresh.isVerificationFresh(now));
+
+        WorkspaceConnectionState expired = new WorkspaceConnectionState(
+            WorkspaceConnectionState.Status.VERIFIED, null,
+            now - WorkspaceConnectionState.VERIFICATION_TTL_MS - 1L);
+        assertTrue(expired.hasVerifiedFact());
+        assertFalse(expired.isVerificationFresh(now));
+
+        WorkspaceConnectionState future = new WorkspaceConnectionState(
+            WorkspaceConnectionState.Status.VERIFIED, null, now + 10L * 60L * 1000L);
+        assertFalse(future.isVerificationFresh(now));
+        assertFalse(WorkspaceConnectionState.terminalOpened(now).hasVerifiedFact());
     }
 
     @Test

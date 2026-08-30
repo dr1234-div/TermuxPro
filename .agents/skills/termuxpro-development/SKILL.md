@@ -40,6 +40,7 @@ Access、`:danger-full-access` 或 approval policy 为 `never`，禁止传入 `r
 同一可复现问题第一次解决后，必须把根因修复沉淀为仓库依赖声明、自动引导脚本、回归测试或明确门禁；
 禁止在后续迭代中继续执行相同的临时安装、人工清理或口头提醒。重复出现视为研发流程缺陷并优先修复。
 GitHub API 操作统一使用 `scripts/github-cli.sh`，由它解析系统或项目级 CLI，禁止直接依赖当前 `PATH`。
+所有 Gradle/Java 操作先 source `scripts/resolve-jdk17.sh`，禁止再次手工选择只有 JRE 能力的系统目录。
 
 红线包括：修改系统或其他用户环境、泄露秘密/公司数据、绕过资源守卫、删除公开 Release/稳定标签/
 用户数据、伪造验收证据、向 `master` 发布未经门禁的稳定版，以及超出 TermuxPro 范围的外部变更。

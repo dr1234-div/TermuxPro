@@ -47,6 +47,14 @@ GitHub Actions 和可直连环境默认优先使用 `google()` 与 Maven Central
 GitHub API 操作使用 `./scripts/github-cli.sh <gh 参数>`；该入口会自动选择系统 `gh` 或仓库内
 `.tooling/gh/bin/gh`，不依赖交互 shell 的 `PATH`。
 
+所有仓库构建入口会 source `scripts/resolve-jdk17.sh`，优先选择项目内同时包含 `java`/`javac` 的完整
+JDK 17。执行临时 Gradle 子任务时也先 source 该脚本，不要手工把系统 JRE 目录设为 `JAVA_HOME`：
+
+```bash
+source scripts/resolve-jdk17.sh
+./gradlew --no-daemon --max-workers=2 <task>
+```
+
 ```bash
 ./scripts/test-all.sh
 ./gradlew --no-daemon --max-workers=2 :app:assembleDebug

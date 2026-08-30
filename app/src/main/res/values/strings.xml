@@ -258,7 +258,8 @@
     <string name="workspace_connection_guidance">On first connect, verify the server fingerprint in the terminal. TermuxPro never trusts fingerprints automatically.</string>
     <string name="workspace_connection_terminal_opened">The connection terminal is open. Verify the host fingerprint and authenticate there. The server is authenticated only after “SSH authenticated” appears.</string>
     <string name="workspace_connection_last_opened">SSH terminal opened %1$s. Authentication has not been verified.</string>
-    <string name="workspace_connection_verified">Verified %1$s: SSH authentication and the remote environment check succeeded.</string>
+    <string name="workspace_connection_verified">Recently verified %1$s: SSH authentication and the remote environment check succeeded.</string>
+    <string name="workspace_connection_verification_expired">The check from %1$s has expired. Run the check again to refresh the status; a direct connection will still let SSH verify the host identity and authentication.</string>
     <string name="workspace_connection_action_required">Checked %1$s: %2$s needs your action.</string>
     <string name="workspace_connection_check_failed">Check failed %1$s at %2$s. Open diagnostics for details.</string>
     <string name="workspace_connection_check_unknown">The %1$s check could not determine the connection state. Open diagnostics for details.</string>
@@ -294,7 +295,8 @@
     <string name="workspace_advanced_hide_action">Hide advanced settings</string>
     <string name="workspace_summary_details">%1$s · %2$s · %3$s</string>
     <string name="workspace_status_unverified">Not verified</string>
-    <string name="workspace_status_verified">Verified</string>
+    <string name="workspace_status_recently_verified">Recently verified</string>
+    <string name="workspace_status_verification_expired">Verification expired</string>
     <string name="workspace_save_action">Save</string>
     <string name="workspace_copy_action">Copy</string>
     <string name="workspace_delete_action">Delete</string>
