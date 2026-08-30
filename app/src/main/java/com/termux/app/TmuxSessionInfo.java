@@ -9,10 +9,13 @@ final class TmuxSessionInfo {
     final boolean attached;
     final boolean managedByTermuxPro;
 
-    TmuxSessionInfo(@NonNull String name, int windows, boolean attached) {
+    TmuxSessionInfo(@NonNull String name, int windows, boolean attached,
+                    @NonNull String ownerMarker, @NonNull String workspaceMarker,
+                    @NonNull String expectedOwnerToken, @NonNull String expectedWorkspaceFingerprint) {
         this.name = name;
         this.windows = windows;
         this.attached = attached;
-        this.managedByTermuxPro = name.startsWith("mobile-task-") || name.startsWith("termuxpro-");
+        this.managedByTermuxPro = !ownerMarker.isEmpty() && ownerMarker.equals(expectedOwnerToken)
+            && !workspaceMarker.isEmpty() && workspaceMarker.equals(expectedWorkspaceFingerprint);
     }
 }

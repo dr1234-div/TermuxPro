@@ -42,7 +42,7 @@ Claude Code 和 Codex CLI。工作区内的 Claude、Codex、Git、文件、任�
 - Git 2.40+、JDK 17
 - Android SDK Platform 36、Build Tools 35.0.0
 - Android NDK `29.0.14206865`
-- ARM64 Android 真机用于最终验收
+- Android API/屏幕/字体模拟器矩阵；触发厂商或硬件相关风险时使用 ARM64 实体设备或云真机
 
 Gradle Wrapper 已提交，无需单独安装 Gradle：
 
@@ -77,7 +77,7 @@ Android 标准测试位于各模块 `src/test` 和 `src/androidTest`；根目录
 - `dev`：日常产品开发和集成分支。
 - 功能分支从 `dev` 创建，使用 `dev_<englishCamelCase>_<YYYYMMDD>` 命名，完成后通过 PR 合回
   `dev`；紧急修复使用 `hotfix_<englishCamelCase>_<YYYYMMDD>` 或关联 bug ID。
-- `master`：只接收通过自动化、Release 校验和三星真机 P0 验收的发布候选。
+- `master`：只接收通过自动化、Release 校验和风险匹配的 Android 运行时验收的发布候选。
 - 官方 Termux 更新通过只读 `upstream` 同步，不向上游推送 TermuxPro 代码。
 
 发布闭环固定为：功能 PR 合入 `dev` → `vX.Y.Z-rc.N` Pre-release → 真机验收记录 →

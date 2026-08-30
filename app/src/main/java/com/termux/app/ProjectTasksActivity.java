@@ -31,6 +31,7 @@ public final class ProjectTasksActivity extends AppCompatActivity {
     private static final String EXTRA_HOST = "host";
     private static final String EXTRA_PORT = "port";
     private static final String EXTRA_PROJECT_PATH = "project_path";
+    private static final String EXTRA_OWNER_TOKEN = "owner_token";
     private static final int MAX_METADATA_BYTES = 600_000;
 
     private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
@@ -40,19 +41,21 @@ public final class ProjectTasksActivity extends AppCompatActivity {
     private String mHost;
     private int mPort;
     private String mProjectPath;
+    private String mOwnerToken;
     private ProgressBar mProgress;
     private TextView mType;
     private TextView mStatus;
     private Button mRecovery;
     private ListView mList;
     private ArrayAdapter<ProjectTaskDetector.Task> mAdapter;
+    private View mRefresh;
 
     @NonNull
     static Intent newIntent(@NonNull Context context, @NonNull String host, int port,
-                            @NonNull String projectPath) {
+                            @NonNull String projectPath, @NonNull String ownerToken) {
         return new Intent(context, ProjectTasksActivity.class)
             .putExtra(EXTRA_HOST, host).putExtra(EXTRA_PORT, port)
-            .putExtra(EXTRA_PROJECT_PATH, projectPath);
+            .putExtra(EXTRA_PROJECT_PATH, projectPath).putExtra(EXTRA_OWNER_TOKEN, ownerToken);
     }
 
     @Override
@@ -62,6 +65,7 @@ public final class ProjectTasksActivity extends AppCompatActivity {
         mHost = getIntent().getStringExtra(EXTRA_HOST);
         mPort = getIntent().getIntExtra(EXTRA_PORT, 22);
         mProjectPath = getIntent().getStringExtra(EXTRA_PROJECT_PATH);
+        mOwnerToken = getIntent().getStringExtra(EXTRA_OWNER_TOKEN);
         mProgress = findViewById(R.id.project_tasks_progress);
         mType = findViewById(R.id.project_tasks_type);
         mStatus = findViewById(R.id.project_tasks_status);
@@ -71,9 +75,13 @@ public final class ProjectTasksActivity extends AppCompatActivity {
         mList.setAdapter(mAdapter);
         mList.setOnItemClickListener((parent, view, position, id) -> confirmTask(mTasks.get(position)));
         findViewById(R.id.project_tasks_back_button).setOnClickListener(view -> finish());
-        findViewById(R.id.project_tasks_refresh_button).setOnClickListener(view -> detect());
+        mRefresh = findViewById(R.id.project_tasks_refresh_button);
+        mRefresh.setOnClickListener(view -> detect());
         mRecovery.setOnClickListener(view -> WorkspaceNavigation.returnToWorkspace(this));
-        if (mHost == null || mProjectPath == null || mPort < 1 || mPort > 65535) {
+        if (mHost == null || mHost.trim().isEmpty() || mProjectPath == null || mProjectPath.trim().isEmpty()
+            || !WorkspaceOwnershipStore.isValid(mOwnerToken)
+            || mPort < 1 || mPort > 65535) {
+            mRefresh.setEnabled(false);
             showError(R.string.project_tasks_invalid_workspace);
         } else {
             detect();
@@ -141,7 +149,7 @@ public final class ProjectTasksActivity extends AppCompatActivity {
 
     private void runTask(ProjectTaskDetector.Task task) {
         String startup = WorkspaceCommandBuilder.buildSshTaskCommand(
-            mHost, mPort, mProjectPath, task.command);
+            mHost, mPort, mProjectPath, task.command, mOwnerToken);
         startActivity(new Intent(this, TermuxActivity.class)
             .putExtra(TermuxActivity.EXTRA_STARTUP_COMMAND, startup)
             .putExtra(TermuxActivity.EXTRA_NEW_SESSION, true));

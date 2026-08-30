@@ -89,7 +89,8 @@ public final class UiRenderingInstrumentedTest {
                     com.termux.R.id.remote_files_status_message,
                     com.termux.R.id.remote_files_return_workspace_button));
         capture(context, "project-tasks",
-            ProjectTasksActivity.newIntent(context, "invalid", 0, "~/project"), activity ->
+            ProjectTasksActivity.newIntent(context, "invalid", 0, "~/project",
+                "11111111-2222-3333-4444-555555555555"), activity ->
                 {
                 assertToolbarActionsVisible(activity,
                     com.termux.R.id.project_tasks_back_button,
@@ -109,7 +110,8 @@ public final class UiRenderingInstrumentedTest {
                     com.termux.R.id.connection_diagnostic_return_workspace_button);
                 });
         capture(context, "task-sessions",
-            TaskSessionsActivity.newIntent(context, "invalid", 0, "~/project"), activity -> {
+            TaskSessionsActivity.newIntent(context, "invalid", 0, "~/project",
+                "11111111-2222-3333-4444-555555555555"), activity -> {
                 assertToolbarActionsVisible(activity,
                     com.termux.R.id.task_sessions_back_button,
                     com.termux.R.id.task_sessions_refresh_button);

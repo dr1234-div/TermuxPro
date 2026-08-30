@@ -65,7 +65,7 @@ public class RemoteToolRecoveryTest {
     public void taskSessionsInvalidWorkspaceShowsReadableRecoveryState() {
         TaskSessionsActivity activity = Robolectric.buildActivity(TaskSessionsActivity.class,
             TaskSessionsActivity.newIntent(RuntimeEnvironment.getApplication(), "invalid", 0,
-                "~/project"))
+                "~/project", "11111111-2222-3333-4444-555555555555"))
             .setup().get();
 
         assertReadableRecoveryMessage(activity.findViewById(R.id.task_sessions_status),
@@ -76,7 +76,7 @@ public class RemoteToolRecoveryTest {
     public void projectTasksInvalidWorkspaceShowsReadableRecoveryState() {
         ProjectTasksActivity activity = Robolectric.buildActivity(ProjectTasksActivity.class,
             ProjectTasksActivity.newIntent(RuntimeEnvironment.getApplication(), "invalid", 0,
-                "~/project")).setup().get();
+                "~/project", "11111111-2222-3333-4444-555555555555")).setup().get();
 
         assertReadableRecoveryMessage(activity.findViewById(R.id.project_tasks_status),
             activity.findViewById(R.id.project_tasks_recovery_button));
