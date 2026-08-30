@@ -14,13 +14,15 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.activity.OnBackPressedCallback;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.termux.R;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** 通过已认证的 OpenSSH 复用连接读取只读 Git diff，并使用原生界面着色展示。 */
+/** 通过已认证的 OpenSSH 复用连接提供 Git 概览、分支切换、修改审查和提交记录。 */
 public final class GitDiffActivity extends AppCompatActivity {
 
     private static final String EXTRA_HOST = "host";
@@ -35,8 +37,11 @@ public final class GitDiffActivity extends AppCompatActivity {
     private TextView mStatusMessage;
     private ProgressBar mProgress;
     private View mContentScroll;
+    private View mOverviewScroll;
     private View mStatusState;
     private View mReturnWorkspace;
+    private GitRepositoryOverview mOverview;
+    private Mode mMode = Mode.OVERVIEW;
 
     @NonNull
     public static Intent newIntent(@NonNull Context context, @NonNull String host, int port,
@@ -53,29 +58,83 @@ public final class GitDiffActivity extends AppCompatActivity {
         setContentView(R.layout.activity_git_diff);
         mContent = findViewById(R.id.git_diff_content);
         mContentScroll = findViewById(R.id.git_diff_scroll);
+        mOverviewScroll = findViewById(R.id.git_overview_scroll);
         mStatusState = findViewById(R.id.git_diff_status_state);
         mStatusMessage = findViewById(R.id.git_diff_status_message);
         mReturnWorkspace = findViewById(R.id.git_diff_return_workspace_button);
         mProgress = findViewById(R.id.git_diff_progress);
-        findViewById(R.id.git_diff_back_button).setOnClickListener(view -> finish());
-        findViewById(R.id.git_diff_refresh_button).setOnClickListener(view -> loadDiff());
+        findViewById(R.id.git_diff_back_button).setOnClickListener(view -> navigateBack());
+        findViewById(R.id.git_diff_refresh_button).setOnClickListener(view -> refreshCurrentMode());
+        findViewById(R.id.git_overview_branches_button).setOnClickListener(view -> showBranches());
+        findViewById(R.id.git_overview_changes_button).setOnClickListener(view -> loadDiff());
+        findViewById(R.id.git_overview_commits_button).setOnClickListener(view -> showCommits());
         mReturnWorkspace.setOnClickListener(view -> WorkspaceNavigation.returnToWorkspace(this));
-        loadDiff();
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                navigateBack();
+            }
+        });
+        loadOverview();
+    }
+
+    private void refreshCurrentMode() {
+        if (mMode == Mode.DIFF) loadDiff();
+        else loadOverview();
+    }
+
+    private void loadOverview() {
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        mMode = Mode.OVERVIEW;
+        beginLoading(getString(R.string.git_workbench_loading));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(target.path), MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode != 0) {
+                    showRemoteFailure(result, R.string.git_workbench_not_repository);
+                    return;
+                }
+                if (result.truncated) {
+                    showStatus(getString(R.string.git_workbench_overview_truncated), false);
+                    return;
+                }
+                try {
+                    mOverview = GitRepositoryOverview.parse(result.output);
+                    showOverview(target.path, mOverview);
+                } catch (IllegalArgumentException exception) {
+                    showStatus(getString(R.string.git_workbench_invalid_response), true);
+                }
+            });
+        });
     }
 
     private void loadDiff() {
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+
+        mMode = Mode.DIFF;
+        beginLoading(getString(R.string.git_diff_loading));
+        mExecutor.execute(() -> showResultOnMain(runGitDiff(target.host, target.port, target.path)));
+    }
+
+    private void beginLoading(@NonNull String message) {
+        mRunner.cancel();
+        mProgress.setVisibility(View.VISIBLE);
+        showStatus(message, false);
+    }
+
+    private ConnectionTarget readTarget() {
         String host = getIntent().getStringExtra(EXTRA_HOST);
         String path = getIntent().getStringExtra(EXTRA_PATH);
         int port = getIntent().getIntExtra(EXTRA_PORT, 22);
         if (host == null || path == null || port < 1 || port > 65535) {
-            showResult(new CommandResult(-1, getString(R.string.git_diff_invalid_workspace), false, true));
-            return;
+            showStatus(getString(R.string.git_diff_invalid_workspace), true);
+            return null;
         }
-
-        mRunner.cancel();
-        mProgress.setVisibility(View.VISIBLE);
-        showStatus(getString(R.string.git_diff_loading), false);
-        mExecutor.execute(() -> showResultOnMain(runGitDiff(host, port, path)));
+        return new ConnectionTarget(host, port, path);
     }
 
     @NonNull
@@ -114,12 +173,148 @@ public final class GitDiffActivity extends AppCompatActivity {
         }
         if (result.truncated) output += "\n\n" + getString(R.string.git_diff_truncated);
         mStatusState.setVisibility(View.GONE);
+        mOverviewScroll.setVisibility(View.GONE);
         mContentScroll.setVisibility(View.VISIBLE);
         mContent.setText(colorize(output));
     }
 
+    private void showOverview(@NonNull String path, @NonNull GitRepositoryOverview overview) {
+        mProgress.setVisibility(View.GONE);
+        mStatusState.setVisibility(View.GONE);
+        mContentScroll.setVisibility(View.GONE);
+        mOverviewScroll.setVisibility(View.VISIBLE);
+        ((TextView) findViewById(R.id.git_overview_head)).setText(getString(
+            overview.detached ? R.string.git_workbench_detached : R.string.git_workbench_branch,
+            overview.head));
+        ((TextView) findViewById(R.id.git_overview_path)).setText(path);
+        ((TextView) findViewById(R.id.git_overview_changes)).setText(getResources().getQuantityString(
+            R.plurals.git_workbench_changed_files, overview.changedFiles, overview.changedFiles));
+        TextView sync = findViewById(R.id.git_overview_sync);
+        if (overview.ahead == null || overview.behind == null) {
+            sync.setText(R.string.git_workbench_no_upstream);
+        } else {
+            sync.setText(getString(R.string.git_workbench_sync, overview.ahead, overview.behind));
+        }
+    }
+
+    /** 模拟器截图只注入脱敏协议数据，仍走与真实 SSH 结果相同的解析和渲染路径。 */
+    void showOverviewForTesting(@NonNull String path, @NonNull String protocolOutput) {
+        showOverview(path, GitRepositoryOverview.parse(protocolOutput));
+    }
+
+    private void showCommits() {
+        if (mOverview == null) return;
+        mMode = Mode.COMMITS;
+        mOverviewScroll.setVisibility(View.GONE);
+        mStatusState.setVisibility(View.GONE);
+        mContentScroll.setVisibility(View.VISIBLE);
+        if (mOverview.commits.isEmpty()) {
+            mContent.setText(R.string.git_workbench_no_commits);
+            return;
+        }
+        StringBuilder text = new StringBuilder();
+        for (GitRepositoryOverview.Commit commit : mOverview.commits) {
+            if (text.length() > 0) text.append("\n\n");
+            text.append(commit.shortHash).append("  ").append(commit.relativeTime)
+                .append('\n').append(commit.subject);
+        }
+        mContent.setText(text.toString());
+    }
+
+    private void showBranches() {
+        if (mOverview == null || (mOverview.localBranches.isEmpty()
+            && mOverview.remoteBranches.isEmpty())) {
+            showStatus(getString(R.string.git_workbench_no_local_branches), false);
+            return;
+        }
+        int localCount = mOverview.localBranches.size();
+        String[] labels = new String[localCount + mOverview.remoteBranches.size()];
+        for (int index = 0; index < localCount; index++) {
+            String branch = mOverview.localBranches.get(index);
+            labels[index] = branch.equals(mOverview.head)
+                ? getString(R.string.git_workbench_current_branch, branch)
+                : getString(R.string.git_workbench_local_branch, branch);
+        }
+        for (int index = 0; index < mOverview.remoteBranches.size(); index++) {
+            labels[localCount + index] = getString(R.string.git_workbench_remote_branch,
+                mOverview.remoteBranches.get(index));
+        }
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_switch_branch)
+            .setItems(labels, (dialog, which) -> {
+                if (which < localCount) confirmSwitch(mOverview.localBranches.get(which));
+                else showRemoteBranch(mOverview.remoteBranches.get(which - localCount));
+            })
+            .setNegativeButton(android.R.string.cancel, null)
+            .show();
+    }
+
+    private void showRemoteBranch(@NonNull String branch) {
+        new AlertDialog.Builder(this)
+            .setTitle(branch)
+            .setMessage(R.string.git_workbench_remote_branch_guidance)
+            .setPositiveButton(android.R.string.ok, null)
+            .show();
+    }
+
+    private void confirmSwitch(@NonNull String branch) {
+        if (mOverview == null || branch.equals(mOverview.head)) return;
+        int message = mOverview.changedFiles > 0
+            ? R.string.git_workbench_switch_dirty_message : R.string.git_workbench_switch_message;
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_switch_branch)
+            .setMessage(getString(message, mOverview.head, branch, mOverview.changedFiles))
+            .setPositiveButton(R.string.git_workbench_switch_action,
+                (dialog, which) -> switchBranch(branch))
+            .setNegativeButton(android.R.string.cancel, null)
+            .show();
+    }
+
+    private void switchBranch(@NonNull String branch) {
+        if (mOverview == null || !mOverview.localBranches.contains(branch)) return;
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(R.string.git_workbench_switching, branch));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand(target.path, branch),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else showStatus(getString(R.string.git_workbench_switch_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    private void showRemoteFailure(@NonNull RemoteCommandRunner.Result result, int commandFailure) {
+        mProgress.setVisibility(View.GONE);
+        if (result.exitCode == RemoteCommandRunner.ERROR_SSH_MISSING) {
+            showStatus(getString(R.string.git_diff_ssh_missing), true);
+        } else if (result.exitCode == RemoteCommandRunner.ERROR_PROCESS) {
+            showStatus(getString(R.string.git_diff_connection_error,
+                result.errorType == null ? "Process" : result.errorType), true);
+        } else if (result.exitCode == RemoteCommandRunner.ERROR_INTERRUPTED) {
+            showStatus(getString(R.string.git_diff_cancelled), false);
+        } else {
+            showStatus(getString(commandFailure), false);
+        }
+    }
+
+    private void navigateBack() {
+        if (mMode != Mode.OVERVIEW && mOverview != null) {
+            mMode = Mode.OVERVIEW;
+            String path = getIntent().getStringExtra(EXTRA_PATH);
+            showOverview(path == null ? "" : path, mOverview);
+        } else {
+            finish();
+        }
+    }
+
     private void showStatus(@NonNull String message, boolean recoverable) {
         mContentScroll.setVisibility(View.GONE);
+        mOverviewScroll.setVisibility(View.GONE);
         mStatusState.setVisibility(View.VISIBLE);
         mStatusMessage.setText(message);
         mReturnWorkspace.setVisibility(recoverable ? View.VISIBLE : View.GONE);
@@ -166,6 +361,20 @@ public final class GitDiffActivity extends AppCompatActivity {
             this.output = output;
             this.truncated = truncated;
             this.recoverable = recoverable;
+        }
+    }
+
+    private enum Mode { OVERVIEW, DIFF, COMMITS }
+
+    private static final class ConnectionTarget {
+        @NonNull final String host;
+        final int port;
+        @NonNull final String path;
+
+        ConnectionTarget(@NonNull String host, int port, @NonNull String path) {
+            this.host = host;
+            this.port = port;
+            this.path = path;
         }
     }
 }

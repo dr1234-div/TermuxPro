@@ -100,6 +100,35 @@ final class WorkspaceCommandBuilder {
             + " && git diff --cached --no-ext-diff --no-color";
     }
 
+    /** 输出供原生 Git 工作台解析的稳定协议，不依赖用户 locale 或 Git 彩色配置。 */
+    @NonNull
+    static String buildGitOverviewRemoteCommand(@NonNull String path) {
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && head=$(git symbolic-ref --quiet --short HEAD 2>/dev/null)"
+            + " && if [ -n \"$head\" ]; then detached=0; else detached=1; "
+            + "head=$(git rev-parse --short HEAD 2>/dev/null || printf 'unborn'); fi"
+            + " && changed=$(git status --porcelain=v1 -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && if counts=$(git rev-list --left-right --count '@{upstream}...HEAD' 2>/dev/null); then "
+            + "behind=${counts%%[[:space:]]*}; ahead=${counts##*[[:space:]]}; upstream=1; "
+            + "else behind=; ahead=; upstream=0; fi"
+            + " && printf 'TP_OVERVIEW\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' "
+            + "\"$head\" \"$detached\" \"$changed\" \"$ahead\" \"$behind\" \"$upstream\""
+            + " && git for-each-ref --sort=-committerdate --format='TP_LOCAL%09%(refname:short)' refs/heads"
+            + " && git for-each-ref --sort=-committerdate --format='TP_REMOTE%09%(refname:short)' refs/remotes"
+            + " && (git log -20 --date=relative --pretty=format:'TP_LOG%x09%h%x09%ar%x09%s'"
+            + " 2>/dev/null || true)";
+    }
+
+    /** 只允许调用方从已读取的本地分支列表中选择目标；这里仍执行完整 Shell 转义。 */
+    @NonNull
+    static String buildGitSwitchBranchRemoteCommand(@NonNull String path, @NonNull String branch) {
+        if (branch.isEmpty() || branch.indexOf('\n') >= 0 || branch.indexOf('\r') >= 0) {
+            throw new IllegalArgumentException("Invalid branch");
+        }
+        return "cd -- " + remotePathExpression(path) + " && git switch -- " + shellQuote(branch);
+    }
+
     /** 列出项目内单层目录，使用 NUL 分隔以支持空格、Tab 和换行文件名。 */
     @NonNull
     static String buildListFilesRemoteCommand(@NonNull String projectPath, @NonNull String relativeDirectory) {

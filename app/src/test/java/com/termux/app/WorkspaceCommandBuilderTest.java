@@ -1,12 +1,14 @@
 package com.termux.app;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Assume;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -123,6 +125,56 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(command.contains("git status --short --branch"));
         assertTrue(command.contains("git diff --no-ext-diff --no-color"));
         assertTrue(command.contains("git diff --cached --no-ext-diff --no-color"));
+    }
+
+    @Test
+    public void gitOverviewAndBranchSwitchUseStableProtocolAndShellQuoting() {
+        String overview = WorkspaceCommandBuilder.buildGitOverviewRemoteCommand("~/team app");
+        String branch = WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand(
+            "/srv/team's app", "feature/user's-work");
+
+        assertTrue(overview.contains("TP_OVERVIEW\\t"));
+        assertTrue(overview.contains("git status --porcelain=v1 -z"));
+        assertTrue(overview.contains("refs/heads"));
+        assertTrue(overview.contains("git log -20"));
+        assertTrue(branch.contains("'/srv/team'\\''s app'"));
+        assertTrue(branch.endsWith("'feature/user'\\''s-work'"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand("~/app", "bad\nbranch"));
+    }
+
+    @Test
+    public void gitOverviewRunsAgainstRealRepositoryIncludingUnbornHead() throws Exception {
+        Assume.assumeTrue(new File("/usr/bin/git").canExecute());
+        Path repository = Files.createTempDirectory("termuxpro git repo");
+        assertEquals(0, runShell("git init -q -- " + WorkspaceCommandBuilder.shellQuote(
+            repository.toString()), new HashMap<>()));
+
+        ShellOutput unborn = runShellCapture(WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(
+            repository.toString()));
+        assertEquals(0, unborn.exitCode);
+        GitRepositoryOverview unbornOverview = GitRepositoryOverview.parse(unborn.output);
+        assertEquals("master", unbornOverview.head);
+        assertTrue(unbornOverview.commits.isEmpty());
+
+        String setup = "cd -- " + WorkspaceCommandBuilder.shellQuote(repository.toString())
+            + " && git config user.name test && git config user.email test@example.com"
+            + " && printf content > README.md && git add README.md && git commit -q -m initial"
+            + " && git branch feature && printf changed >> README.md";
+        assertEquals(0, runShell(setup, new HashMap<>()));
+        ShellOutput populated = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        assertEquals(0, populated.exitCode);
+        GitRepositoryOverview overview = GitRepositoryOverview.parse(populated.output);
+        assertEquals(1, overview.changedFiles);
+        assertTrue(overview.localBranches.contains("feature"));
+        assertEquals(1, overview.commits.size());
+
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand(
+            repository.toString(), "feature"), new HashMap<>()));
+        ShellOutput switched = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        assertEquals("feature", GitRepositoryOverview.parse(switched.output).head);
     }
 
     @Test
@@ -314,5 +366,25 @@ public class WorkspaceCommandBuilderTest {
             // 消费有限测试输出，避免子进程因管道写满而阻塞。
         }
         return process.waitFor();
+    }
+
+    private static ShellOutput runShellCapture(String command) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder("/bin/sh", "-c", command)
+            .redirectErrorStream(true).start();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        byte[] buffer = new byte[4096];
+        int count;
+        while ((count = process.getInputStream().read(buffer)) != -1) output.write(buffer, 0, count);
+        return new ShellOutput(process.waitFor(), new String(output.toByteArray(), StandardCharsets.UTF_8));
+    }
+
+    private static final class ShellOutput {
+        final int exitCode;
+        final String output;
+
+        ShellOutput(int exitCode, String output) {
+            this.exitCode = exitCode;
+            this.output = output;
+        }
     }
 }

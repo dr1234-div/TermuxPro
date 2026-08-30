@@ -168,10 +168,15 @@ public final class UiRenderingInstrumentedTest {
                     com.termux.R.id.task_sessions_recovery_button);
                 });
         capture(context, "git-diff",
-            GitDiffActivity.newIntent(context, "invalid", 0, "~/project"), activity ->
-                assertReadableRecoveryState(activity, com.termux.R.id.git_diff_status_state,
-                    com.termux.R.id.git_diff_status_message,
-                    com.termux.R.id.git_diff_return_workspace_button));
+            GitDiffActivity.newIntent(context, "invalid", 0, "~/project"), activity -> {
+                ((GitDiffActivity) activity).showOverviewForTesting("~/project",
+                    "TP_OVERVIEW\tdev\t0\t3\t2\t1\t1\n"
+                        + "TP_LOCAL\tdev\nTP_LOCAL\tmaster\n"
+                        + "TP_REMOTE\torigin/dev\n"
+                        + "TP_LOG\ta1b2c3d\t2 小时前\t完善 Git 工作台\n");
+                assertTrue(activity.findViewById(com.termux.R.id.git_overview_scroll)
+                    .getVisibility() == View.VISIBLE);
+            });
         capture(context, "remote-file-preview",
             RemoteFilePreviewActivity.newIntent(context, "invalid", 0, "~/project", "README.md"),
             activity -> assertReadableRecoveryState(activity,
