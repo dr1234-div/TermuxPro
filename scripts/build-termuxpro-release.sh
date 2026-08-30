@@ -75,7 +75,7 @@ mkdir -p "$dist_dir"
 cp "$apk" "$dist_apk"
 cp "$project_dir/$release_notes" "$dist_dir/RELEASE_NOTES.md"
 cp "$project_dir/docs/DEVICE_ACCEPTANCE.md" "$dist_dir/DEVICE_ACCEPTANCE.md"
-sha256sum "$dist_apk" > "$dist_dir/SHA256SUMS"
+(cd "$dist_dir" && sha256sum "$(basename "$dist_apk")" > SHA256SUMS)
 printf '%s\n' "$signature" > "$dist_dir/APK_SIGNATURE.txt"
 {
     echo "产品：TermuxPro"
