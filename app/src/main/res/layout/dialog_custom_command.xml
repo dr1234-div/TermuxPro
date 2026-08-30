@@ -13,6 +13,14 @@
         android:paddingEnd="20dp"
         android:paddingBottom="8dp">
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/custom_commands_name_label"
+            android:textColor="#F5F8FA"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
         <EditText
             android:id="@+id/custom_command_name_input"
             android:layout_width="match_parent"
@@ -23,33 +31,60 @@
             android:minHeight="52dp"
             android:singleLine="true" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/custom_commands_value_label"
+            android:textColor="#F5F8FA"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
         <EditText
             android:id="@+id/custom_command_value_input"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="2dp"
             android:gravity="top|start"
             android:hint="@string/custom_commands_value_hint"
             android:inputType="textMultiLine|textNoSuggestions"
             android:maxLength="4096"
             android:minHeight="104dp" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/custom_commands_directory_label"
+            android:textColor="#F5F8FA"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
         <EditText
             android:id="@+id/custom_command_directory_input"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="2dp"
             android:hint="@string/custom_commands_directory_hint"
             android:inputType="textNoSuggestions"
             android:maxLength="1024"
             android:minHeight="52dp"
             android:singleLine="true" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/custom_commands_group_label"
+            android:textColor="#F5F8FA"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
         <EditText
             android:id="@+id/custom_command_group_input"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="2dp"
             android:hint="@string/custom_commands_group_hint"
             android:inputType="textCapWords"
             android:maxLength="40"

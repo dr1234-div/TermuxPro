@@ -492,9 +492,13 @@
     <string name="custom_commands_edit_title">Edit quick command</string>
     <string name="custom_commands_create_title">New quick command</string>
     <string name="custom_commands_name_hint">Name, for example: Run frontend tests</string>
+    <string name="custom_commands_name_label">Name</string>
     <string name="custom_commands_value_hint">Command, for example: pnpm test</string>
+    <string name="custom_commands_value_label">Command</string>
     <string name="custom_commands_directory_hint">Working directory; leave blank for workspace directory</string>
+    <string name="custom_commands_directory_label">Working directory (optional)</string>
     <string name="custom_commands_group_hint">Group, for example: Tests</string>
+    <string name="custom_commands_group_label">Group (optional)</string>
     <string name="custom_commands_always_confirm">Confirm every run; when off, confirm dangerous commands only</string>
     <string name="custom_commands_enabled">Enable this command</string>
     <string name="custom_commands_save">Save</string>

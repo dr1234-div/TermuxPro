@@ -172,8 +172,9 @@ public final class CustomCommandsActivity extends AppCompatActivity {
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.custom_commands_save, null)
             .create();
-        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-            .setOnClickListener(view -> {
+        dialog.setOnShowListener(ignored -> {
+            TermuxProDialogStyle.apply(this, dialog);
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
                 CustomCommand candidate = new CustomCommand(existing == null
                     ? CustomCommand.create("temp", "true", "", "",
                         CustomCommand.Confirmation.ALWAYS).id : existing.id,
@@ -199,7 +200,8 @@ public final class CustomCommandsActivity extends AppCompatActivity {
                     dialog.dismiss();
                     renderCommands();
                 }
-            }));
+            });
+        });
         dialog.show();
     }
 
@@ -211,14 +213,16 @@ public final class CustomCommandsActivity extends AppCompatActivity {
         }
         String directory = TextUtils.isEmpty(command.workingDirectory)
             ? mTarget.path : command.workingDirectory;
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
             .setTitle(getString(R.string.custom_commands_preview_title, command.name))
             .setMessage(getString(R.string.custom_commands_preview_message, mTarget.host,
                 mTarget.port, directory, command.command))
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.custom_commands_execute,
-                (dialog, which) -> execute(command))
-            .show();
+                (selectionDialog, which) -> execute(command))
+            .create();
+        dialog.setOnShowListener(ignored -> TermuxProDialogStyle.apply(this, dialog));
+        dialog.show();
     }
 
     private void execute(CustomCommand command) {
@@ -231,14 +235,16 @@ public final class CustomCommandsActivity extends AppCompatActivity {
     }
 
     private void confirmDelete(CustomCommand command) {
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
             .setTitle(getString(R.string.custom_commands_delete_title, command.name))
             .setMessage(R.string.custom_commands_delete_message)
             .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.custom_commands_delete, (dialog, which) -> {
+            .setPositiveButton(R.string.custom_commands_delete, (selectionDialog, which) -> {
                 mStore.delete(mTarget.id, command.id);
                 renderCommands();
             })
-            .show();
+            .create();
+        dialog.setOnShowListener(ignored -> TermuxProDialogStyle.apply(this, dialog));
+        dialog.show();
     }
 }

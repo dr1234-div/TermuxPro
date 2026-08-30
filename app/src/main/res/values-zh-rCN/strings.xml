@@ -373,9 +373,13 @@
     <string name="custom_commands_edit_title">编辑快捷指令</string>
     <string name="custom_commands_create_title">新建快捷指令</string>
     <string name="custom_commands_name_hint">名称，例如：运行前端测试</string>
+    <string name="custom_commands_name_label">名称</string>
     <string name="custom_commands_value_hint">命令，例如：pnpm test</string>
+    <string name="custom_commands_value_label">命令</string>
     <string name="custom_commands_directory_hint">工作目录；留空使用工作区目录</string>
+    <string name="custom_commands_directory_label">工作目录（可选）</string>
     <string name="custom_commands_group_hint">分组，例如：测试</string>
+    <string name="custom_commands_group_label">分组（可选）</string>
     <string name="custom_commands_always_confirm">每次运行前显示确认；关闭后仅危险命令确认</string>
     <string name="custom_commands_enabled">启用这条指令</string>
     <string name="custom_commands_save">保存</string>

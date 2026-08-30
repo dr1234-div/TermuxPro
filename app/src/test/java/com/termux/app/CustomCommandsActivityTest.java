@@ -55,6 +55,10 @@ public class CustomCommandsActivityTest {
         shadowOf(Looper.getMainLooper()).idle();
         AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
         assertNotNull(dialog);
+        assertEquals(activity.getColor(R.color.tp_primary),
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).getCurrentTextColor());
+        assertEquals(activity.getColor(R.color.tp_text_secondary),
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).getCurrentTextColor());
         ((EditText) dialog.findViewById(R.id.custom_command_name_input)).setText("查看状态");
         ((EditText) dialog.findViewById(R.id.custom_command_value_input)).setText("git status --short");
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();

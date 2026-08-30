@@ -7,8 +7,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.util.TypedValue;
 
-import androidx.core.content.ContextCompat;
-
 import com.termux.R;
 
 /** 统一 AI 会话选择弹窗的大字体可读性与品牌色。 */
@@ -17,8 +15,7 @@ final class AiSessionDialog {
     private AiSessionDialog() {}
 
     static void applyReadableStyle(Activity activity, AlertDialog dialog) {
-        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-            .setTextColor(ContextCompat.getColor(activity, R.color.tp_primary));
+        TermuxProDialogStyle.apply(activity, dialog);
 
         ListView list = dialog.getListView();
         int minimumEndPadding = Math.round(TypedValue.applyDimension(
