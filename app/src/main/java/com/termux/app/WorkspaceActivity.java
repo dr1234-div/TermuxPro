@@ -24,6 +24,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import com.termux.BuildConfig;
 import com.termux.R;
 import com.termux.app.terminal.io.TermuxTerminalExtraKeys;
 import com.termux.shared.termux.TermuxConstants;
