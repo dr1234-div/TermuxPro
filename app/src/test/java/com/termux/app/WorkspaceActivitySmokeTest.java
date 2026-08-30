@@ -234,6 +234,8 @@ public class WorkspaceActivitySmokeTest {
         assertEquals("启动 Claude Code", shadowOf(dialog).getTitle());
         assertEquals("新建会话（安全默认）", dialog.getListView().getAdapter().getItem(0));
         assertEquals("选择历史会话", dialog.getListView().getAdapter().getItem(1));
+        assertEquals(2,
+            ((android.widget.TextView) dialog.getListView().getChildAt(0)).getMaxLines());
         assertEquals(activity.getColor(R.color.tp_primary),
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE).getCurrentTextColor());
         dialog.dismiss();

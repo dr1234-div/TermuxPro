@@ -695,8 +695,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                     AiCliLaunchCommand.Mode.PICK_HISTORY)))
             .setNegativeButton(android.R.string.cancel, null)
             .create();
-        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-            .setTextColor(ContextCompat.getColor(this, R.color.tp_primary)));
+        dialog.setOnShowListener(ignored -> AiSessionDialog.applyReadableStyle(this, dialog));
         dialog.show();
     }
 
