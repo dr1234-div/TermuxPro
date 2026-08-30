@@ -88,6 +88,36 @@ final class WorkspaceCommandBuilder {
             + " -- " + shellQuote(host);
     }
 
+    /**
+     * 在明确的 SSH 工作区中执行用户已确认的快捷指令。
+     *
+     * 命令正文属于用户主动配置的脚本，不与应用生成的控制语句拼接；目标和目录分别转义，并在目录不可用
+     * 时直接失败，避免静默退回 HOME 后误执行。
+     */
+    @NonNull
+    static String buildCustomCommandSshCommand(@NonNull String host, int port,
+                                               @NonNull String workspacePath,
+                                               @NonNull String workingDirectory,
+                                               @NonNull String command) {
+        if (!SshTargetValidator.isValid(host) || port < 1 || port > 65535) {
+            throw new IllegalArgumentException("Invalid SSH target");
+        }
+        if (command.trim().isEmpty() || command.length() > 4096
+            || CustomCommandValidator.containsPossibleSecret(command)) {
+            throw new IllegalArgumentException("Invalid custom command");
+        }
+        String targetDirectory = workingDirectory.trim().isEmpty()
+            ? workspacePath : workingDirectory;
+        String remote = "if ! cd -- " + remotePathExpression(targetDirectory)
+            + "; then printf '\\n[TermuxPro] Command directory is unavailable: %s\\n' "
+            + shellQuote(targetDirectory) + " >&2; exit 2; fi; exec ${SHELL:-sh} -lc "
+            + shellQuote(command);
+        return "ssh -t -o ControlMaster=auto -o ControlPersist=600 -o ControlPath="
+            + shellQuote(CONTROL_PATH)
+            + " -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o TCPKeepAlive=yes -p "
+            + port + " -- " + shellQuote(host) + " " + shellQuote(remote);
+    }
+
     /** 为原生审查页面构造只读 Git 命令，路径按远端 Shell 规则安全转义。 */
     @NonNull
     static String buildGitDiffRemoteCommand(@NonNull String path) {

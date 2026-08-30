@@ -1,6 +1,7 @@
 package com.termux.app;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -18,6 +19,25 @@ import java.util.Map;
 import java.util.UUID;
 
 public class WorkspaceCommandBuilderTest {
+
+    @Test
+    public void buildsCustomCommandForExplicitTargetAndDirectory() {
+        String result = WorkspaceCommandBuilder.buildCustomCommandSshCommand(
+            "developer@example.com", 2222, "~/project", "~/project/mobile app",
+            "git status --short && printf '%s\\n' \"done\"");
+
+        assertTrue(result.contains("-p 2222 -- 'developer@example.com'"));
+        assertTrue(result.contains("Command directory is unavailable"));
+        assertTrue(result.contains("mobile app"));
+        assertTrue(result.contains("git status --short"));
+        assertFalse(result.contains("tmux"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void rejectsSecretInCustomCommand() {
+        WorkspaceCommandBuilder.buildCustomCommandSshCommand(
+            "developer@example.com", 22, "~/project", "", "TOKEN=plain-secret npm test");
+    }
     private static final String OWNER = "11111111-2222-3333-4444-555555555555";
 
     @Test
