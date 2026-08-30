@@ -16,6 +16,7 @@ if ! command -v javac >/dev/null || ! javac -version 2>&1 | grep -q '^javac 17\.
 fi
 
 ./test/version-metadata-test.sh
+./scripts/validate-skills.sh
 
 gradle_args=(--no-daemon --max-workers=2)
 if [[ "${TERMUXPRO_OFFLINE:-0}" == "1" ]]; then
