@@ -131,13 +131,13 @@ public final class SshKeysActivity extends AppCompatActivity {
     }
 
     private void confirmGenerate() {
-        new AlertDialog.Builder(this)
+        TermuxProDialogStyle.show(this, new AlertDialog.Builder(this)
             .setTitle(R.string.ssh_keys_generate_title)
             .setMessage(R.string.ssh_keys_generate_message)
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.ssh_keys_generate_action,
                 (dialog, which) -> openTerminal(WorkspaceCommandBuilder.buildGenerateSshKeyCommand()))
-            .show();
+            .create());
     }
 
     private void copyPublicKeys() {
@@ -150,13 +150,13 @@ public final class SshKeysActivity extends AppCompatActivity {
 
     private void confirmInstall() {
         String command = WorkspaceCommandBuilder.buildCopySshKeyCommand(mHost, mPort);
-        new AlertDialog.Builder(this)
+        TermuxProDialogStyle.show(this, new AlertDialog.Builder(this)
             .setTitle(R.string.ssh_keys_install_title)
             .setMessage(getString(R.string.ssh_keys_install_message, mHost, command))
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.ssh_keys_install_action,
                 (dialog, which) -> openTerminal(command))
-            .show();
+            .create());
     }
 
     private void openTerminal(String command) {

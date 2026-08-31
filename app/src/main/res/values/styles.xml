@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <style name="TermuxAlertDialogStyle" parent="@android:style/Theme.Material.Light.Dialog.Alert">
-        <!-- Seen in buttons on alert dialog: -->
-        <item name="android:colorAccent">#212121</item>
+    <style name="TermuxAlertDialogStyle" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">@color/tp_primary</item>
+        <item name="android:windowBackground">@color/tp_surface_elevated</item>
+        <item name="android:textColorPrimary">@color/tp_text_primary</item>
+        <item name="android:textColorSecondary">@color/tp_text_secondary</item>
+        <item name="android:fontFamily">sans</item>
     </style>
 
     <style name="TermuxActivity.Drawer.ButtonBarStyle.Light" parent="@style/Widget.MaterialComponents.Button.TextButton">

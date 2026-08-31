@@ -247,7 +247,9 @@ final class TermuxInstaller {
 
         activity.runOnUiThread(() -> {
             try {
-                new AlertDialog.Builder(activity).setTitle(R.string.bootstrap_error_title).setMessage(R.string.bootstrap_error_body)
+                TermuxProDialogStyle.show(activity, new AlertDialog.Builder(activity)
+                    .setTitle(R.string.bootstrap_error_title)
+                    .setMessage(R.string.bootstrap_error_body)
                     .setNegativeButton(R.string.bootstrap_error_abort, (dialog, which) -> {
                         dialog.dismiss();
                         activity.finish();
@@ -256,7 +258,8 @@ final class TermuxInstaller {
                         dialog.dismiss();
                         FileUtils.deleteFile("termux prefix directory", TERMUX_PREFIX_DIR_PATH, true);
                         TermuxInstaller.setupBootstrapIfNeeded(activity, whenDone);
-                    }).show();
+                    })
+                    .create());
             } catch (WindowManager.BadTokenException e1) {
                 // Activity already dismissed - ignore.
             }

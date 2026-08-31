@@ -207,8 +207,10 @@ public final class CustomCommandsActivity extends AppCompatActivity {
 
     private void preview(CustomCommand command) {
         if (!command.enabled) {
-            new AlertDialog.Builder(this).setMessage(R.string.custom_commands_disabled_message)
-                .setPositiveButton(android.R.string.ok, null).show();
+            TermuxProDialogStyle.show(this, new AlertDialog.Builder(this)
+                .setMessage(R.string.custom_commands_disabled_message)
+                .setPositiveButton(android.R.string.ok, null)
+                .create());
             return;
         }
         String directory = TextUtils.isEmpty(command.workingDirectory)

@@ -18,6 +18,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.termux.R;
+import com.termux.app.TermuxProDialogStyle;
 import com.termux.app.TermuxActivity;
 import com.termux.shared.file.FileUtils;
 import com.termux.shared.interact.MessageDialogUtils;
@@ -699,7 +700,10 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
 
         LinkedHashSet<CharSequence> urlSet = TermuxUrlUtils.extractUrls(text);
         if (urlSet.isEmpty()) {
-            new AlertDialog.Builder(mActivity).setMessage(R.string.title_select_url_none_found).show();
+            TermuxProDialogStyle.show(mActivity, new AlertDialog.Builder(mActivity)
+                .setMessage(R.string.title_select_url_none_found)
+                .setPositiveButton(android.R.string.ok, null)
+                .create());
             return;
         }
 
@@ -721,6 +725,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
                 ShareUtils.openUrl(mActivity, url);
                 return true;
             });
+            TermuxProDialogStyle.apply(mActivity, dialog);
         });
 
         dialog.show();
