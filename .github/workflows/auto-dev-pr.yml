@@ -9,6 +9,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -41,8 +42,9 @@ jobs:
           wait_for_workflow() {
             workflow="$1"
             label="$2"
+            target_sha="${3:-$COMMIT_SHA}"
             for attempt in $(seq 1 180); do
-              record="$(gh run list --repo "$REPOSITORY" --commit "$COMMIT_SHA" \
+              record="$(gh run list --repo "$REPOSITORY" --commit "$target_sha" \
                 --workflow "$workflow" --limit 1 --json status,conclusion,databaseId \
                 --jq '.[0] // empty')"
               if [[ -n "$record" ]]; then
@@ -68,3 +70,7 @@ jobs:
           gh pr merge "$pr_number" --repo "$REPOSITORY" --merge \
             --subject "Merge pull request #$pr_number from ${{ github.repository_owner }}/$HEAD_BRANCH" \
             --body "$title"
+          merge_sha="$(gh pr view "$pr_number" --repo "$REPOSITORY" --json mergeCommit \
+            --jq '.mergeCommit.oid')"
+          gh workflow run '.github/workflows/ci.yml' --repo "$REPOSITORY" --ref dev
+          wait_for_workflow '.github/workflows/ci.yml' 'dev 合并后 CI' "$merge_sha"
