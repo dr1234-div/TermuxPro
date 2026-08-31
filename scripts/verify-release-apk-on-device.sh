@@ -23,17 +23,62 @@ collect_evidence() {
 }
 trap collect_evidence EXIT
 
-"$adb_bin" get-state | grep -Fxq device
+require_contains() {
+    local haystack="${1:?}"
+    local needle="${2:?}"
+    local message="${3:?}"
+    if [[ "$haystack" != *"$needle"* ]]; then
+        echo "$message" >&2
+        echo "期望包含：$needle" >&2
+        exit 1
+    fi
+}
+
+require_regex() {
+    local haystack="${1:?}"
+    local pattern="${2:?}"
+    local message="${3:?}"
+    if ! grep -Eq "$pattern" <<<"$haystack"; then
+        echo "$message" >&2
+        echo "期望匹配：$pattern" >&2
+        exit 1
+    fi
+}
+
+install_apk() {
+    local mode="${1:?}"
+    local apk="${2:?}"
+    local output_file="${3:?}"
+    local install_output
+    if [[ "$mode" == "replace" ]]; then
+        install_output="$("$adb_bin" install -r "$apk" 2>&1 || true)"
+    else
+        install_output="$("$adb_bin" install "$apk" 2>&1 || true)"
+    fi
+    printf '%s\n' "$install_output" | tee "$output_file"
+    if ! grep -Fxq Success <<<"$install_output"; then
+        echo "APK 安装失败：$apk" >&2
+        exit 1
+    fi
+}
+
+device_state="$("$adb_bin" get-state 2>&1 || true)"
+if [[ "$device_state" != "device" ]]; then
+    echo "ADB 设备未就绪：$device_state" >&2
+    exit 1
+fi
 badging="$($aapt_bin dump badging "$candidate_apk")"
-grep -Fq "package: name='com.termux' versionCode='$expected_code' versionName='$expected_name'" <<<"$badging"
-grep -Fq "application-label:'TermuxPro'" <<<"$badging"
+require_contains "$badging" "package: name='com.termux' versionCode='$expected_code' versionName='$expected_name'" \
+    "候选 APK 包名或版本不符合发布期望。"
+require_contains "$badging" "application-label:'TermuxPro'" \
+    "候选 APK 桌面名称不是 TermuxPro。"
 
 "$adb_bin" uninstall com.termux >/dev/null 2>&1 || true
-"$adb_bin" install "$baseline_apk" | tee "$evidence_dir/install-baseline.txt" | grep -Fxq Success
+install_apk fresh "$baseline_apk" "$evidence_dir/install-baseline.txt"
 baseline_uid="$($adb_bin shell cmd package list packages -U com.termux | tr -d '\r' | sed -n 's/.*uid://p')"
 [[ -n "$baseline_uid" ]] || { echo '无法读取稳定版应用 UID。' >&2; exit 1; }
 
-"$adb_bin" install -r "$candidate_apk" | tee "$evidence_dir/install-candidate.txt" | grep -Fxq Success
+install_apk replace "$candidate_apk" "$evidence_dir/install-candidate.txt"
 candidate_uid="$($adb_bin shell cmd package list packages -U com.termux | tr -d '\r' | sed -n 's/.*uid://p')"
 [[ "$candidate_uid" == "$baseline_uid" ]] || {
     echo "覆盖升级后 UID 变化：$baseline_uid -> $candidate_uid" >&2
@@ -41,18 +86,21 @@ candidate_uid="$($adb_bin shell cmd package list packages -U com.termux | tr -d 
 }
 
 package_state="$($adb_bin shell dumpsys package com.termux | tr -d '\r')"
-grep -Eq "versionCode=${expected_code}([[:space:]]|$)" <<<"$package_state"
-grep -Fq "versionName=$expected_name" <<<"$package_state"
+require_regex "$package_state" "versionCode=${expected_code}([[:space:]]|$)" \
+    "覆盖升级后设备上的 versionCode 不正确。"
+require_contains "$package_state" "versionName=$expected_name" \
+    "覆盖升级后设备上的 versionName 不正确。"
 
 "$adb_bin" logcat -c
 "$adb_bin" shell am force-stop com.termux
 launch_output="$($adb_bin shell monkey -p com.termux -c android.intent.category.LAUNCHER 1 2>&1)"
-grep -Fq 'Events injected: 1' <<<"$launch_output"
+require_contains "$launch_output" 'Events injected: 1' "启动候选 APK 失败。"
 for _ in $(seq 1 20); do
     if "$adb_bin" shell pidof com.termux | grep -Eq '[0-9]'; then break; fi
     sleep 1
 done
-"$adb_bin" shell pidof com.termux | grep -Eq '[0-9]'
+pid_output="$("$adb_bin" shell pidof com.termux 2>&1 || true)"
+require_regex "$pid_output" '[0-9]' "候选 APK 启动后未检测到 com.termux 进程。"
 sleep 3
 
 android_runtime="$($adb_bin logcat -d -v brief AndroidRuntime:E '*:S' | tr -d '\r')"

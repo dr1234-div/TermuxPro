@@ -16,8 +16,8 @@ cat > "$temp_dir/fake-adb" <<'FAKE_ADB'
 #!/usr/bin/env bash
 case "$*" in
   get-state) echo device ;;
-  'install '*) echo Success ;;
-  'install -r '*) echo Success ;;
+  'install '*) printf 'Performing Streamed Install\nSuccess\n' ;;
+  'install -r '*) printf 'Performing Streamed Install\nSuccess\n' ;;
   'shell cmd package list packages -U com.termux') echo 'package:com.termux uid:10123' ;;
   'shell dumpsys package com.termux') printf 'versionCode=40001 minSdk=24\nversionName=0.4.0-rc.1\n' ;;
   'shell monkey -p com.termux -c android.intent.category.LAUNCHER 1') echo 'Events injected: 1' ;;
@@ -43,5 +43,14 @@ if FAKE_LABEL=Wrong ADB="$temp_dir/fake-adb" AAPT="$temp_dir/fake-aapt" \
     echo '错误桌面名称未被拒绝。' >&2
     exit 1
 fi
+
+if ADB="$temp_dir/missing-adb" AAPT="$temp_dir/fake-aapt" \
+  "$project_dir/scripts/verify-release-apk-on-device.sh" \
+  "$temp_dir/stable.apk" "$temp_dir/candidate.apk" 0.4.0-rc.1 40001 \
+  "$temp_dir/no-device" >/tmp/termuxpro-release-no-device.log 2>&1; then
+    echo 'ADB 不可用时不应通过。' >&2
+    exit 1
+fi
+grep -Fq 'ADB 设备未就绪' /tmp/termuxpro-release-no-device.log
 
 echo 'Release APK 设备冒烟脚本测试通过。'
