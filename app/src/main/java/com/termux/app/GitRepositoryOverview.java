@@ -18,6 +18,8 @@ final class GitRepositoryOverview {
     @NonNull final String head;
     final boolean detached;
     final int changedFiles;
+    final int stagedFiles;
+    final int unstagedFiles;
     @Nullable final Integer ahead;
     @Nullable final Integer behind;
     @NonNull final List<String> localBranches;
@@ -25,6 +27,7 @@ final class GitRepositoryOverview {
     @NonNull final List<Commit> commits;
 
     private GitRepositoryOverview(@NonNull String head, boolean detached, int changedFiles,
+                                  int stagedFiles, int unstagedFiles,
                                   @Nullable Integer ahead, @Nullable Integer behind,
                                   @NonNull List<String> localBranches,
                                   @NonNull List<String> remoteBranches,
@@ -32,6 +35,8 @@ final class GitRepositoryOverview {
         this.head = head;
         this.detached = detached;
         this.changedFiles = changedFiles;
+        this.stagedFiles = stagedFiles;
+        this.unstagedFiles = unstagedFiles;
         this.ahead = ahead;
         this.behind = behind;
         this.localBranches = Collections.unmodifiableList(localBranches);
@@ -44,6 +49,8 @@ final class GitRepositoryOverview {
         String head = null;
         boolean detached = false;
         int changedFiles = 0;
+        int stagedFiles = 0;
+        int unstagedFiles = 0;
         Integer ahead = null;
         Integer behind = null;
         List<String> local = new ArrayList<>();
@@ -53,13 +60,27 @@ final class GitRepositoryOverview {
         for (String line : output.split("\n")) {
             if (line.startsWith(OVERVIEW)) {
                 String[] fields = line.split("\t", -1);
-                if (fields.length != 7) throw new IllegalArgumentException("Invalid Git overview record");
+                if (fields.length != 7 && fields.length != 9) {
+                    throw new IllegalArgumentException("Invalid Git overview record");
+                }
                 head = requireValue(fields[1], "head");
                 detached = "1".equals(fields[2]);
                 changedFiles = parseNonNegative(fields[3], "changed files");
-                if (!fields[4].isEmpty()) ahead = parseNonNegative(fields[4], "ahead");
-                if (!fields[5].isEmpty()) behind = parseNonNegative(fields[5], "behind");
-                if (!"1".equals(fields[6])) ahead = behind = null;
+                int aheadIndex = 4;
+                int behindIndex = 5;
+                int upstreamIndex = 6;
+                if (fields.length == 9) {
+                    stagedFiles = parseNonNegative(fields[4], "staged files");
+                    unstagedFiles = parseNonNegative(fields[5], "unstaged files");
+                    aheadIndex = 6;
+                    behindIndex = 7;
+                    upstreamIndex = 8;
+                } else {
+                    unstagedFiles = changedFiles;
+                }
+                if (!fields[aheadIndex].isEmpty()) ahead = parseNonNegative(fields[aheadIndex], "ahead");
+                if (!fields[behindIndex].isEmpty()) behind = parseNonNegative(fields[behindIndex], "behind");
+                if (!"1".equals(fields[upstreamIndex])) ahead = behind = null;
             } else if (line.startsWith(LOCAL_BRANCH)) {
                 local.add(requireValue(line.substring(LOCAL_BRANCH.length()), "local branch"));
             } else if (line.startsWith(REMOTE_BRANCH)) {
@@ -72,7 +93,8 @@ final class GitRepositoryOverview {
             }
         }
         if (head == null) throw new IllegalArgumentException("Missing Git overview record");
-        return new GitRepositoryOverview(head, detached, changedFiles, ahead, behind,
+        return new GitRepositoryOverview(head, detached, changedFiles, stagedFiles, unstagedFiles,
+            ahead, behind,
             local, remote, commits);
     }
 

@@ -139,11 +139,16 @@ final class WorkspaceCommandBuilder {
             + " && if [ -n \"$head\" ]; then detached=0; else detached=1; "
             + "head=$(git rev-parse --short HEAD 2>/dev/null || printf 'unborn'); fi"
             + " && changed=$(git status --porcelain=v1 -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && staged=$(git diff --cached --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && unstaged_tracked=$(git diff --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && untracked=$(git ls-files --others --exclude-standard -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && unstaged=$((unstaged_tracked + untracked))"
             + " && if counts=$(git rev-list --left-right --count '@{upstream}...HEAD' 2>/dev/null); then "
             + "behind=${counts%%[[:space:]]*}; ahead=${counts##*[[:space:]]}; upstream=1; "
             + "else behind=; ahead=; upstream=0; fi"
-            + " && printf 'TP_OVERVIEW\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' "
-            + "\"$head\" \"$detached\" \"$changed\" \"$ahead\" \"$behind\" \"$upstream\""
+            + " && printf 'TP_OVERVIEW\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' "
+            + "\"$head\" \"$detached\" \"$changed\" \"$staged\" \"$unstaged\" "
+            + "\"$ahead\" \"$behind\" \"$upstream\""
             + " && git for-each-ref --sort=-committerdate --format='TP_LOCAL%09%(refname:short)' refs/heads"
             + " && git for-each-ref --sort=-committerdate --format='TP_REMOTE%09%(refname:short)' refs/remotes"
             + " | grep -v '/HEAD$' || true"
@@ -173,6 +178,32 @@ final class WorkspaceCommandBuilder {
             + " && if git show-ref --verify --quiet refs/heads/" + shellQuote(branch)
             + "; then exit 74; fi"
             + " && git switch -c " + shellQuote(branch);
+    }
+
+    /** 暂存当前 Git 仓库的全部工作区改动；只改 index，不提交也不推送。 */
+    @NonNull
+    static String buildGitStageAllRemoteCommand(@NonNull String path) {
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && root=$(git rev-parse --show-toplevel)"
+            + " && cd -- \"$root\""
+            + " && unstaged_tracked=$(git diff --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && untracked=$(git ls-files --others --exclude-standard -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && if [ $((unstaged_tracked + untracked)) -eq 0 ]; then exit 75; fi"
+            + " && git add -A -- .";
+    }
+
+    /** 取消暂存当前 Git 仓库的全部 staged 改动；保留工作区文件，不执行 reset --hard。 */
+    @NonNull
+    static String buildGitUnstageAllRemoteCommand(@NonNull String path) {
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && root=$(git rev-parse --show-toplevel)"
+            + " && cd -- \"$root\""
+            + " && staged=$(git diff --cached --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && if [ \"$staged\" -eq 0 ]; then exit 75; fi"
+            + " && if git rev-parse --verify HEAD >/dev/null 2>&1; then "
+            + "git restore --staged -- .; else git rm -r --cached -- . >/dev/null; fi";
     }
 
     static boolean isSafeGitBranchName(@NonNull String branch) {

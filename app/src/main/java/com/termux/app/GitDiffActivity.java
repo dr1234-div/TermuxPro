@@ -12,6 +12,7 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -74,6 +75,10 @@ public final class GitDiffActivity extends AppCompatActivity {
         findViewById(R.id.git_overview_create_branch_button).setOnClickListener(
             view -> showCreateBranchDialog());
         findViewById(R.id.git_overview_changes_button).setOnClickListener(view -> loadDiff());
+        findViewById(R.id.git_overview_stage_all_button).setOnClickListener(
+            view -> confirmStageAll());
+        findViewById(R.id.git_overview_unstage_all_button).setOnClickListener(
+            view -> confirmUnstageAll());
         findViewById(R.id.git_overview_commits_button).setOnClickListener(view -> showCommits());
         mReturnWorkspace.setOnClickListener(view -> WorkspaceNavigation.returnToWorkspace(this));
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -203,6 +208,14 @@ public final class GitDiffActivity extends AppCompatActivity {
         ((TextView) findViewById(R.id.git_overview_path)).setText(path);
         ((TextView) findViewById(R.id.git_overview_changes)).setText(getResources().getQuantityString(
             R.plurals.git_workbench_changed_files, overview.changedFiles, overview.changedFiles));
+        ((TextView) findViewById(R.id.git_overview_index_state)).setText(getString(
+            R.string.git_workbench_index_state, overview.stagedFiles, overview.unstagedFiles));
+        Button stageAll = findViewById(R.id.git_overview_stage_all_button);
+        stageAll.setEnabled(overview.unstagedFiles > 0);
+        stageAll.setAlpha(overview.unstagedFiles > 0 ? 1f : 0.48f);
+        Button unstageAll = findViewById(R.id.git_overview_unstage_all_button);
+        unstageAll.setEnabled(overview.stagedFiles > 0);
+        unstageAll.setAlpha(overview.stagedFiles > 0 ? 1f : 0.48f);
         TextView sync = findViewById(R.id.git_overview_sync);
         if (overview.ahead == null || overview.behind == null) {
             sync.setText(R.string.git_workbench_no_upstream);
@@ -301,6 +314,38 @@ public final class GitDiffActivity extends AppCompatActivity {
             .setMessage(getString(message, mOverview.head, branch, mOverview.changedFiles))
             .setPositiveButton(R.string.git_workbench_switch_action,
                 (selectionDialog, which) -> switchBranch(branch))
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        showStyledDialog(dialog);
+    }
+
+    private void confirmStageAll() {
+        if (mOverview == null || mOverview.unstagedFiles <= 0) {
+            showStatus(getString(R.string.git_workbench_no_unstaged_changes), false);
+            return;
+        }
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_stage_all)
+            .setMessage(getString(R.string.git_workbench_stage_all_message,
+                mOverview.unstagedFiles))
+            .setPositiveButton(R.string.git_workbench_stage_all_action,
+                (selectionDialog, which) -> runIndexOperation(true))
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        showStyledDialog(dialog);
+    }
+
+    private void confirmUnstageAll() {
+        if (mOverview == null || mOverview.stagedFiles <= 0) {
+            showStatus(getString(R.string.git_workbench_no_staged_changes), false);
+            return;
+        }
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_unstage_all)
+            .setMessage(getString(R.string.git_workbench_unstage_all_message,
+                mOverview.stagedFiles))
+            .setPositiveButton(R.string.git_workbench_unstage_all_action,
+                (selectionDialog, which) -> runIndexOperation(false))
             .setNegativeButton(android.R.string.cancel, null)
             .create();
         showStyledDialog(dialog);
@@ -408,6 +453,32 @@ public final class GitDiffActivity extends AppCompatActivity {
                 else if (result.exitCode == 74) showStatus(getString(
                     R.string.git_workbench_track_remote_conflict, branch), false);
                 else showStatus(getString(R.string.git_workbench_switch_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    private void runIndexOperation(boolean stage) {
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(stage
+            ? R.string.git_workbench_staging_all
+            : R.string.git_workbench_unstaging_all));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                stage
+                    ? WorkspaceCommandBuilder.buildGitStageAllRemoteCommand(target.path)
+                    : WorkspaceCommandBuilder.buildGitUnstageAllRemoteCommand(target.path),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 75) showStatus(getString(stage
+                    ? R.string.git_workbench_no_unstaged_changes
+                    : R.string.git_workbench_no_staged_changes), false);
+                else showStatus(getString(stage
+                    ? R.string.git_workbench_stage_all_failed
+                    : R.string.git_workbench_unstage_all_failed,
                     result.output.trim()), false);
             });
         });
