@@ -74,3 +74,25 @@ jobs:
             --jq '.mergeCommit.oid')"
           gh workflow run '.github/workflows/ci.yml' --repo "$REPOSITORY" --ref dev
           wait_for_workflow '.github/workflows/ci.yml' 'dev 合并后 CI' "$merge_sha"
+
+          if [[ "$HEAD_BRANCH" == dev_release* ]]; then
+            version_file="$(gh api "repos/$REPOSITORY/contents/termuxpro-version.properties?ref=$merge_sha" \
+              --jq '.content' | base64 --decode)"
+            version_name="$(sed -n 's/^versionName=//p' <<<"$version_file")"
+            [[ "$version_name" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || {
+              echo "候选版本号无效：$version_name" >&2
+              exit 1
+            }
+            tag="v$version_name"
+            if existing_tag="$(gh api "repos/$REPOSITORY/git/ref/tags/$tag" --jq '.object.sha' 2>/dev/null)"; then
+              [[ "$existing_tag" == "$merge_sha" ]] || {
+                echo "标签 $tag 已指向其他提交，拒绝覆盖。" >&2
+                exit 1
+              }
+            else
+              gh api --method POST "repos/$REPOSITORY/git/refs" \
+                -f "ref=refs/tags/$tag" -f "sha=$merge_sha" >/dev/null
+            fi
+            gh workflow run '.github/workflows/release.yml' --repo "$REPOSITORY" --ref "$tag"
+            wait_for_workflow '.github/workflows/release.yml' '候选 Release' "$merge_sha"
+          fi
