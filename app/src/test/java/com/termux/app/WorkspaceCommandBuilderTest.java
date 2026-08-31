@@ -158,6 +158,7 @@ public class WorkspaceCommandBuilderTest {
             "/srv/team's app", "origin/feature/user's-work");
         String fetch = WorkspaceCommandBuilder.buildGitFetchUpstreamRemoteCommand("/srv/team's app");
         String pull = WorkspaceCommandBuilder.buildGitPullFastForwardRemoteCommand("/srv/team's app");
+        String push = WorkspaceCommandBuilder.buildGitPushUpstreamRemoteCommand("/srv/team's app");
 
         assertTrue(overview.contains("TP_OVERVIEW\\t"));
         assertTrue(overview.contains("upstream_name=$(git rev-parse"));
@@ -181,6 +182,10 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(pull.contains("then exit 77; fi"));
         assertTrue(pull.contains("then exit 76; fi"));
         assertTrue(pull.endsWith("git pull --ff-only"));
+        assertTrue(push.contains("if ! current=$(git symbolic-ref --short HEAD"));
+        assertTrue(push.contains("if ! upstream=$(git rev-parse"));
+        assertTrue(push.contains("git push \"$remote\" \"HEAD:$branch\""));
+        assertTrue(push.endsWith("git update-ref \"refs/remotes/$upstream\" HEAD"));
         String commit = WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand(
             "/srv/team's app", "fix: user's mobile flow");
         assertTrue(commit.contains("git diff --cached --name-only -z"));
@@ -265,6 +270,8 @@ public class WorkspaceCommandBuilderTest {
             repository.toString()), new HashMap<>()));
         assertEquals(76, runShell(WorkspaceCommandBuilder.buildGitPullFastForwardRemoteCommand(
             repository.toString()), new HashMap<>()));
+        assertEquals(76, runShell(WorkspaceCommandBuilder.buildGitPushUpstreamRemoteCommand(
+            repository.toString()), new HashMap<>()));
 
         assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand(
             repository.toString(), "feature"), new HashMap<>()));
@@ -328,6 +335,22 @@ public class WorkspaceCommandBuilderTest {
             WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(clone.toString()));
         GitRepositoryOverview pulledOverview = GitRepositoryOverview.parse(pulled.output);
         assertEquals(Integer.valueOf(0), pulledOverview.behind);
+        String localChange = "cd -- " + WorkspaceCommandBuilder.shellQuote(clone.toString())
+            + " && git config user.name test && git config user.email test@example.com"
+            + " && printf local >> README.md && git add README.md"
+            + " && git commit -q -m local-change";
+        assertEquals(0, runShell(localChange, new HashMap<>()));
+        ShellOutput ahead = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(clone.toString()));
+        GitRepositoryOverview aheadOverview = GitRepositoryOverview.parse(ahead.output);
+        assertEquals(Integer.valueOf(1), aheadOverview.ahead);
+        assertEquals(Integer.valueOf(0), aheadOverview.behind);
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitPushUpstreamRemoteCommand(
+            clone.toString()), new HashMap<>()));
+        ShellOutput pushed = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(clone.toString()));
+        GitRepositoryOverview pushedOverview = GitRepositoryOverview.parse(pushed.output);
+        assertEquals(Integer.valueOf(0), pushedOverview.ahead);
 
         assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(
             clone.toString(), "origin/feature/mobile"), new HashMap<>()));

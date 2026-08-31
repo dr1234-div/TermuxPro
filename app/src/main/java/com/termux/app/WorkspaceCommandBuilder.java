@@ -277,6 +277,23 @@ final class WorkspaceCommandBuilder {
             + " && git pull --ff-only";
     }
 
+    /** 安全推送当前 HEAD 到已配置 upstream；不 force、不新建远端分支、不改写历史。 */
+    @NonNull
+    static String buildGitPushUpstreamRemoteCommand(@NonNull String path) {
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && if ! current=$(git symbolic-ref --short HEAD 2>/dev/null); then exit 78; fi"
+            + " && if ! upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' "
+            + "2>/dev/null); then exit 76; fi"
+            + " && remote=${upstream%%/*}"
+            + " && branch=${upstream#*/}"
+            + " && [ -n \"$remote\" ]"
+            + " && [ -n \"$branch\" ]"
+            + " && git remote get-url \"$remote\" >/dev/null"
+            + " && git push \"$remote\" \"HEAD:$branch\""
+            + " && git update-ref \"refs/remotes/$upstream\" HEAD";
+    }
+
     /**
      * 从用户显式选择的远端跟踪分支创建同名本地跟踪分支并切换。
      *

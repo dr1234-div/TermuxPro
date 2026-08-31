@@ -251,6 +251,15 @@
     <string name="git_workbench_pull_dirty_blocked">当前有 %1$d 个未提交文件，已阻止拉取。请先提交、取消暂存或处理这些文件。</string>
     <string name="git_workbench_pull_dirty_remote_blocked">远端 Git 仍检测到未提交文件，已阻止拉取。请刷新后先处理工作树。</string>
     <string name="git_workbench_pull_failed">Git 未完成快进拉取，当前工作树已保留。\n\n%1$s</string>
+    <string name="git_workbench_push">推送</string>
+    <string name="git_workbench_push_message">将 %1$d 个本地提交推送到 %2$s？这里只会普通推送到已配置上游分支，不会 force push。</string>
+    <string name="git_workbench_push_dirty_message">将 %1$d 个本地提交推送到 %2$s？%3$d 个未提交文件只会留在工作树，不会被推送。</string>
+    <string name="git_workbench_push_action">推送提交</string>
+    <string name="git_workbench_pushing">正在推送提交到 %1$s…</string>
+    <string name="git_workbench_push_not_needed">没有需要推送的本地提交。</string>
+    <string name="git_workbench_push_behind_blocked">当前分支落后上游 %1$d 个提交，已阻止推送。请先更新远端并快进拉取。</string>
+    <string name="git_workbench_push_detached_blocked">当前处于游离 HEAD，已阻止推送。请先切换到分支。</string>
+    <string name="git_workbench_push_failed">Git 未完成推送，且没有尝试 force push。\n\n%1$s</string>
     <string name="git_workbench_changes">修改</string>
     <string name="git_workbench_index_state">已暂存 %1$d · 未暂存 %2$d</string>
     <string name="git_workbench_stage_all">暂存全部</string>

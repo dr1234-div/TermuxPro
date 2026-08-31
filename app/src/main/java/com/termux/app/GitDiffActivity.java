@@ -76,6 +76,7 @@ public final class GitDiffActivity extends AppCompatActivity {
             view -> showCreateBranchDialog());
         findViewById(R.id.git_overview_fetch_button).setOnClickListener(view -> fetchUpstream());
         findViewById(R.id.git_overview_pull_button).setOnClickListener(view -> confirmPullFastForward());
+        findViewById(R.id.git_overview_push_button).setOnClickListener(view -> confirmPushUpstream());
         findViewById(R.id.git_overview_changes_button).setOnClickListener(view -> loadDiff());
         findViewById(R.id.git_overview_stage_all_button).setOnClickListener(
             view -> confirmStageAll());
@@ -239,6 +240,12 @@ public final class GitDiffActivity extends AppCompatActivity {
         Button pull = findViewById(R.id.git_overview_pull_button);
         pull.setEnabled(canPull);
         pull.setAlpha(canPull ? 1f : 0.48f);
+        boolean canPush = overview.upstream != null && overview.ahead != null
+            && overview.ahead > 0 && (overview.behind == null || overview.behind == 0)
+            && !overview.detached;
+        Button push = findViewById(R.id.git_overview_push_button);
+        push.setEnabled(canPush);
+        push.setAlpha(canPush ? 1f : 0.48f);
     }
 
     /** 模拟器截图只注入脱敏协议数据，仍走与真实 SSH 结果相同的解析和渲染路径。 */
@@ -632,6 +639,60 @@ public final class GitDiffActivity extends AppCompatActivity {
                 else if (result.exitCode == 77) showStatus(
                     getString(R.string.git_workbench_pull_dirty_remote_blocked), false);
                 else showStatus(getString(R.string.git_workbench_pull_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    private void confirmPushUpstream() {
+        if (mOverview == null || mOverview.upstream == null) {
+            showStatus(getString(R.string.git_workbench_no_upstream), false);
+            return;
+        }
+        if (mOverview.detached) {
+            showStatus(getString(R.string.git_workbench_push_detached_blocked), false);
+            return;
+        }
+        if (mOverview.ahead == null || mOverview.ahead <= 0) {
+            showStatus(getString(R.string.git_workbench_push_not_needed), false);
+            return;
+        }
+        if (mOverview.behind != null && mOverview.behind > 0) {
+            showStatus(getString(R.string.git_workbench_push_behind_blocked,
+                mOverview.behind), false);
+            return;
+        }
+        int message = mOverview.changedFiles > 0
+            ? R.string.git_workbench_push_dirty_message
+            : R.string.git_workbench_push_message;
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_push)
+            .setMessage(getString(message, mOverview.ahead, mOverview.upstream,
+                mOverview.changedFiles))
+            .setPositiveButton(R.string.git_workbench_push_action,
+                (selectionDialog, which) -> pushUpstream())
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        showStyledDialog(dialog);
+    }
+
+    private void pushUpstream() {
+        if (mOverview == null || mOverview.upstream == null) return;
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(R.string.git_workbench_pushing, mOverview.upstream));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                WorkspaceCommandBuilder.buildGitPushUpstreamRemoteCommand(target.path),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 76) showStatus(
+                    getString(R.string.git_workbench_no_upstream), false);
+                else if (result.exitCode == 78) showStatus(
+                    getString(R.string.git_workbench_push_detached_blocked), false);
+                else showStatus(getString(R.string.git_workbench_push_failed,
                     result.output.trim()), false);
             });
         });
