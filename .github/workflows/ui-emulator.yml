@@ -12,6 +12,7 @@ on:
       - 'app/src/main/**'
       - 'app/src/androidTest/**'
       - 'app/build.gradle'
+      - 'terminal-view/src/main/**'
       - '.github/workflows/ui-emulator.yml'
       - 'scripts/verify-ui-screenshots.sh'
       - 'test/plans/ui-screenshot-manifest.txt'
