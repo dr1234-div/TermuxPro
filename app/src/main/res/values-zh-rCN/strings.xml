@@ -236,8 +236,13 @@
     <string name="git_workbench_branch">当前分支：%1$s</string>
     <string name="git_workbench_detached">游离 HEAD：%1$s</string>
     <string name="git_workbench_sync">领先 %1$d · 落后 %2$d</string>
+    <string name="git_workbench_sync_with_upstream">跟踪 %1$s · 领先 %2$d · 落后 %3$d</string>
+    <string name="git_workbench_unknown_upstream">上游分支</string>
     <string name="git_workbench_no_upstream">尚未配置上游分支</string>
     <string name="git_workbench_branches">分支</string>
+    <string name="git_workbench_fetch">更新远端</string>
+    <string name="git_workbench_fetching">正在更新 %1$s 的远端状态，不会合并…</string>
+    <string name="git_workbench_fetch_failed">Git 未完成远端更新，当前工作树已保留。\n\n%1$s</string>
     <string name="git_workbench_changes">修改</string>
     <string name="git_workbench_index_state">已暂存 %1$d · 未暂存 %2$d</string>
     <string name="git_workbench_stage_all">暂存全部</string>

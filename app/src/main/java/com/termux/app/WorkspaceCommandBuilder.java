@@ -145,10 +145,11 @@ final class WorkspaceCommandBuilder {
             + " && unstaged=$((unstaged_tracked + untracked))"
             + " && if counts=$(git rev-list --left-right --count '@{upstream}...HEAD' 2>/dev/null); then "
             + "behind=${counts%%[[:space:]]*}; ahead=${counts##*[[:space:]]}; upstream=1; "
-            + "else behind=; ahead=; upstream=0; fi"
-            + " && printf 'TP_OVERVIEW\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' "
+            + "upstream_name=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true); "
+            + "else behind=; ahead=; upstream=0; upstream_name=; fi"
+            + " && printf 'TP_OVERVIEW\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' "
             + "\"$head\" \"$detached\" \"$changed\" \"$staged\" \"$unstaged\" "
-            + "\"$ahead\" \"$behind\" \"$upstream\""
+            + "\"$ahead\" \"$behind\" \"$upstream\" \"$upstream_name\""
             + " && git for-each-ref --sort=-committerdate --format='TP_LOCAL%09%(refname:short)' refs/heads"
             + " && git for-each-ref --sort=-committerdate --format='TP_REMOTE%09%(refname:short)' refs/remotes"
             + " | grep -v '/HEAD$' || true"
@@ -247,6 +248,19 @@ final class WorkspaceCommandBuilder {
             + " && staged=$(git diff --cached --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
             + " && if [ \"$staged\" -eq 0 ]; then exit 75; fi"
             + " && git commit -m " + shellQuote(trimmed);
+    }
+
+    /** 只刷新当前上游所在远端；不 merge、不 rebase、不修改工作树或 index。 */
+    @NonNull
+    static String buildGitFetchUpstreamRemoteCommand(@NonNull String path) {
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' "
+            + "2>/dev/null) || exit 76"
+            + " && remote=${upstream%%/*}"
+            + " && [ -n \"$remote\" ]"
+            + " && git remote get-url \"$remote\" >/dev/null"
+            + " && git fetch --prune \"$remote\"";
     }
 
     /**
