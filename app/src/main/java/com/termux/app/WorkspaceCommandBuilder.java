@@ -145,10 +145,11 @@ final class WorkspaceCommandBuilder {
             + " && unstaged=$((unstaged_tracked + untracked))"
             + " && if counts=$(git rev-list --left-right --count '@{upstream}...HEAD' 2>/dev/null); then "
             + "behind=${counts%%[[:space:]]*}; ahead=${counts##*[[:space:]]}; upstream=1; "
-            + "else behind=; ahead=; upstream=0; fi"
-            + " && printf 'TP_OVERVIEW\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' "
+            + "upstream_name=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true); "
+            + "else behind=; ahead=; upstream=0; upstream_name=; fi"
+            + " && printf 'TP_OVERVIEW\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' "
             + "\"$head\" \"$detached\" \"$changed\" \"$staged\" \"$unstaged\" "
-            + "\"$ahead\" \"$behind\" \"$upstream\""
+            + "\"$ahead\" \"$behind\" \"$upstream\" \"$upstream_name\""
             + " && git for-each-ref --sort=-committerdate --format='TP_LOCAL%09%(refname:short)' refs/heads"
             + " && git for-each-ref --sort=-committerdate --format='TP_REMOTE%09%(refname:short)' refs/remotes"
             + " | grep -v '/HEAD$' || true"
@@ -222,6 +223,75 @@ final class WorkspaceCommandBuilder {
             }
         }
         return true;
+    }
+
+    /** 提交说明只允许单行可见文本，避免把终端控制字符或多段脚本混入远端命令。 */
+    static boolean isSafeGitCommitMessage(@NonNull String message) {
+        String trimmed = message.trim();
+        if (trimmed.isEmpty() || trimmed.length() > 200) return false;
+        for (int index = 0; index < trimmed.length(); index++) {
+            char value = trimmed.charAt(index);
+            if (Character.isISOControl(value) || value == '\n' || value == '\r') return false;
+        }
+        return true;
+    }
+
+    /** 只提交已经暂存的内容；不自动 add、不推送、不丢弃工作区文件。 */
+    @NonNull
+    static String buildGitCommitStagedRemoteCommand(@NonNull String path, @NonNull String message) {
+        String trimmed = message.trim();
+        if (!isSafeGitCommitMessage(trimmed)) throw new IllegalArgumentException("Invalid commit message");
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && root=$(git rev-parse --show-toplevel)"
+            + " && cd -- \"$root\""
+            + " && staged=$(git diff --cached --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && if [ \"$staged\" -eq 0 ]; then exit 75; fi"
+            + " && git commit -m " + shellQuote(trimmed);
+    }
+
+    /** 只刷新当前上游所在远端；不 merge、不 rebase、不修改工作树或 index。 */
+    @NonNull
+    static String buildGitFetchUpstreamRemoteCommand(@NonNull String path) {
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && if ! upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' "
+            + "2>/dev/null); then exit 76; fi"
+            + " && remote=${upstream%%/*}"
+            + " && [ -n \"$remote\" ]"
+            + " && git remote get-url \"$remote\" >/dev/null"
+            + " && git fetch --prune \"$remote\"";
+    }
+
+    /** 仅执行快进拉取；有未提交修改、无上游或需要 merge/rebase 时失败关闭。 */
+    @NonNull
+    static String buildGitPullFastForwardRemoteCommand(@NonNull String path) {
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && staged=$(git diff --cached --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && unstaged_tracked=$(git diff --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && untracked=$(git ls-files --others --exclude-standard -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && if [ $((staged + unstaged_tracked + untracked)) -ne 0 ]; then exit 77; fi"
+            + " && if ! git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' "
+            + ">/dev/null 2>&1; then exit 76; fi"
+            + " && git pull --ff-only";
+    }
+
+    /** 安全推送当前 HEAD 到已配置 upstream；不 force、不新建远端分支、不改写历史。 */
+    @NonNull
+    static String buildGitPushUpstreamRemoteCommand(@NonNull String path) {
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && if ! current=$(git symbolic-ref --short HEAD 2>/dev/null); then exit 78; fi"
+            + " && if ! upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' "
+            + "2>/dev/null); then exit 76; fi"
+            + " && remote=${upstream%%/*}"
+            + " && branch=${upstream#*/}"
+            + " && [ -n \"$remote\" ]"
+            + " && [ -n \"$branch\" ]"
+            + " && git remote get-url \"$remote\" >/dev/null"
+            + " && git push \"$remote\" \"HEAD:$branch\""
+            + " && git update-ref \"refs/remotes/$upstream\" HEAD";
     }
 
     /**

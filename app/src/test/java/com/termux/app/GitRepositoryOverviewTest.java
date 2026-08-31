@@ -13,7 +13,7 @@ public final class GitRepositoryOverviewTest {
     @Test
     public void parsesBranchChangesUpstreamBranchesAndLog() {
         GitRepositoryOverview result = GitRepositoryOverview.parse(
-            "TP_OVERVIEW\tdev\t0\t3\t1\t2\t2\t1\t1\n"
+            "TP_OVERVIEW\tdev\t0\t3\t1\t2\t2\t1\t1\torigin/dev\n"
                 + "TP_LOCAL\tdev\nTP_LOCAL\tmaster\n"
                 + "TP_REMOTE\torigin/dev\n"
                 + "TP_REMOTE\torigin/HEAD\n"
@@ -26,6 +26,7 @@ public final class GitRepositoryOverviewTest {
         assertEquals(2, result.unstagedFiles);
         assertEquals(Integer.valueOf(2), result.ahead);
         assertEquals(Integer.valueOf(1), result.behind);
+        assertEquals("origin/dev", result.upstream);
         assertEquals(2, result.localBranches.size());
         assertEquals("origin/dev", result.remoteBranches.get(0));
         assertEquals("修复切换逻辑", result.commits.get(0).subject);
@@ -41,6 +42,7 @@ public final class GitRepositoryOverviewTest {
         assertEquals(0, result.unstagedFiles);
         assertNull(result.ahead);
         assertNull(result.behind);
+        assertNull(result.upstream);
     }
 
     @Test
@@ -51,6 +53,7 @@ public final class GitRepositoryOverviewTest {
         assertEquals(2, result.changedFiles);
         assertEquals(0, result.stagedFiles);
         assertEquals(2, result.unstagedFiles);
+        assertNull(result.upstream);
     }
 
     @Test

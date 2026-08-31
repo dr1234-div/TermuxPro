@@ -160,6 +160,36 @@
                             android:textColor="#F5F8FA" />
 
                         <Button
+                            android:id="@+id/git_overview_fetch_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="#24394A"
+                            android:minHeight="48dp"
+                            android:text="@string/git_workbench_fetch"
+                            android:textColor="#F5F8FA" />
+
+                        <Button
+                            android:id="@+id/git_overview_pull_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="#24394A"
+                            android:minHeight="48dp"
+                            android:text="@string/git_workbench_pull"
+                            android:textColor="#F5F8FA" />
+
+                        <Button
+                            android:id="@+id/git_overview_push_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="#24394A"
+                            android:minHeight="48dp"
+                            android:text="@string/git_workbench_push"
+                            android:textColor="#F5F8FA" />
+
+                        <Button
                             android:id="@+id/git_overview_changes_button"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -188,6 +218,16 @@
                             android:minHeight="48dp"
                             android:text="@string/git_workbench_unstage_all"
                             android:textColor="#F5F8FA" />
+
+                        <Button
+                            android:id="@+id/git_overview_commit_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="#68E0B7"
+                            android:minHeight="48dp"
+                            android:text="@string/git_workbench_commit"
+                            android:textColor="#06231B" />
 
                         <Button
                             android:id="@+id/git_overview_commits_button"

@@ -54,4 +54,22 @@ if ! grep -Fq "build-release-abi-apk.sh" "$project_dir/.github/workflows/release
     exit 1
 fi
 
+auto_dev_pr_file="$project_dir/.github/workflows/auto-dev-pr.yml"
+if ! grep -Fq 'should_publish_candidate=false' "$auto_dev_pr_file"; then
+    echo "自动研发 PR 工作流必须先计算候选发布开关，避免普通文档/稳定版分支误触发候选发布。" >&2
+    exit 1
+fi
+if ! grep -Fq 'candidate_version_name' "$auto_dev_pr_file"; then
+    echo "自动研发 PR 工作流必须基于版本源识别候选版本号，不能只依赖分支名。" >&2
+    exit 1
+fi
+if ! grep -Fq '不是候选版本；按普通研发 PR 合并，不创建候选 Release' "$auto_dev_pr_file"; then
+    echo "dev_release* 分支命中稳定版本号时必须降级为普通 PR 合并并给出明确日志，不能在合并后失败。" >&2
+    exit 1
+fi
+if grep -Fq '候选版本号无效' "$auto_dev_pr_file"; then
+    echo "自动研发 PR 工作流不能在 PR 已合并、dev 收尾 CI 已通过后再因稳定版本号失败。" >&2
+    exit 1
+fi
+
 echo "研发 PR 与发布 PR 的 workflow 触发策略校验通过。"

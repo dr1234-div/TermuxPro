@@ -156,8 +156,12 @@ public class WorkspaceCommandBuilderTest {
             "/srv/team's app", "feature/local-ui");
         String remoteBranch = WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(
             "/srv/team's app", "origin/feature/user's-work");
+        String fetch = WorkspaceCommandBuilder.buildGitFetchUpstreamRemoteCommand("/srv/team's app");
+        String pull = WorkspaceCommandBuilder.buildGitPullFastForwardRemoteCommand("/srv/team's app");
+        String push = WorkspaceCommandBuilder.buildGitPushUpstreamRemoteCommand("/srv/team's app");
 
         assertTrue(overview.contains("TP_OVERVIEW\\t"));
+        assertTrue(overview.contains("upstream_name=$(git rev-parse"));
         assertTrue(overview.contains("git status --porcelain=v1 -z"));
         assertTrue(overview.contains("git diff --cached --name-only -z"));
         assertTrue(overview.contains("git ls-files --others --exclude-standard -z"));
@@ -170,6 +174,22 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(newBranch.contains("git switch -c 'feature/local-ui'"));
         assertTrue(remoteBranch.contains("git show-ref --verify --quiet refs/heads/'feature/user'\\''s-work'"));
         assertTrue(remoteBranch.endsWith("git switch --track 'origin/feature/user'\\''s-work'"));
+        assertTrue(fetch.contains("git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}'"));
+        assertTrue(fetch.contains("if ! upstream=$(git rev-parse"));
+        assertTrue(fetch.contains("git fetch --prune \"$remote\""));
+        assertTrue(pull.contains("'/srv/team'\\''s app'"));
+        assertTrue(pull.contains("staged=$(git diff --cached --name-only -z"));
+        assertTrue(pull.contains("then exit 77; fi"));
+        assertTrue(pull.contains("then exit 76; fi"));
+        assertTrue(pull.endsWith("git pull --ff-only"));
+        assertTrue(push.contains("if ! current=$(git symbolic-ref --short HEAD"));
+        assertTrue(push.contains("if ! upstream=$(git rev-parse"));
+        assertTrue(push.contains("git push \"$remote\" \"HEAD:$branch\""));
+        assertTrue(push.endsWith("git update-ref \"refs/remotes/$upstream\" HEAD"));
+        String commit = WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand(
+            "/srv/team's app", "fix: user's mobile flow");
+        assertTrue(commit.contains("git diff --cached --name-only -z"));
+        assertTrue(commit.contains("git commit -m 'fix: user'\\''s mobile flow'"));
         assertThrows(IllegalArgumentException.class,
             () -> WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand("~/app", "bad\nbranch"));
         assertThrows(IllegalArgumentException.class,
@@ -178,6 +198,10 @@ public class WorkspaceCommandBuilderTest {
             () -> WorkspaceCommandBuilder.buildGitCreateBranchRemoteCommand("~/app", "bad branch"));
         assertThrows(IllegalArgumentException.class,
             () -> WorkspaceCommandBuilder.buildGitCreateBranchRemoteCommand("~/app", "-bad"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand("~/app", ""));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand("~/app", "bad\nmessage"));
     }
 
     @Test
@@ -231,6 +255,24 @@ public class WorkspaceCommandBuilderTest {
         assertEquals(75, runShell(WorkspaceCommandBuilder.buildGitUnstageAllRemoteCommand(
             repository.toString()), new HashMap<>()));
 
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitStageAllRemoteCommand(
+            repository.toString()), new HashMap<>()));
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand(
+            repository.toString(), "fix: mobile git workbench"), new HashMap<>()));
+        ShellOutput committed = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        GitRepositoryOverview committedOverview = GitRepositoryOverview.parse(committed.output);
+        assertEquals(0, committedOverview.changedFiles);
+        assertEquals("fix: mobile git workbench", committedOverview.commits.get(0).subject);
+        assertEquals(75, runShell(WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand(
+            repository.toString(), "fix: nothing staged"), new HashMap<>()));
+        assertEquals(76, runShell(WorkspaceCommandBuilder.buildGitFetchUpstreamRemoteCommand(
+            repository.toString()), new HashMap<>()));
+        assertEquals(76, runShell(WorkspaceCommandBuilder.buildGitPullFastForwardRemoteCommand(
+            repository.toString()), new HashMap<>()));
+        assertEquals(76, runShell(WorkspaceCommandBuilder.buildGitPushUpstreamRemoteCommand(
+            repository.toString()), new HashMap<>()));
+
         assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand(
             repository.toString(), "feature"), new HashMap<>()));
         ShellOutput switched = runShellCapture(
@@ -270,8 +312,45 @@ public class WorkspaceCommandBuilderTest {
         ShellOutput overview = runShellCapture(
             WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(clone.toString()));
         assertEquals(0, overview.exitCode);
-        assertTrue(GitRepositoryOverview.parse(overview.output).remoteBranches.contains(
-            "origin/feature/mobile"));
+        GitRepositoryOverview initialOverview = GitRepositoryOverview.parse(overview.output);
+        assertEquals("origin/master", initialOverview.upstream);
+        assertTrue(initialOverview.remoteBranches.contains("origin/feature/mobile"));
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitFetchUpstreamRemoteCommand(
+            clone.toString()), new HashMap<>()));
+
+        String upstreamChange = "cd -- " + WorkspaceCommandBuilder.shellQuote(seed.toString())
+            + " && printf upstream >> README.md && git add README.md"
+            + " && git commit -q -m upstream-change"
+            + " && git push -q origin master";
+        assertEquals(0, runShell(upstreamChange, new HashMap<>()));
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitFetchUpstreamRemoteCommand(
+            clone.toString()), new HashMap<>()));
+        ShellOutput behind = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(clone.toString()));
+        GitRepositoryOverview behindOverview = GitRepositoryOverview.parse(behind.output);
+        assertEquals(Integer.valueOf(1), behindOverview.behind);
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitPullFastForwardRemoteCommand(
+            clone.toString()), new HashMap<>()));
+        ShellOutput pulled = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(clone.toString()));
+        GitRepositoryOverview pulledOverview = GitRepositoryOverview.parse(pulled.output);
+        assertEquals(Integer.valueOf(0), pulledOverview.behind);
+        String localChange = "cd -- " + WorkspaceCommandBuilder.shellQuote(clone.toString())
+            + " && git config user.name test && git config user.email test@example.com"
+            + " && printf local >> README.md && git add README.md"
+            + " && git commit -q -m local-change";
+        assertEquals(0, runShell(localChange, new HashMap<>()));
+        ShellOutput ahead = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(clone.toString()));
+        GitRepositoryOverview aheadOverview = GitRepositoryOverview.parse(ahead.output);
+        assertEquals(Integer.valueOf(1), aheadOverview.ahead);
+        assertEquals(Integer.valueOf(0), aheadOverview.behind);
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitPushUpstreamRemoteCommand(
+            clone.toString()), new HashMap<>()));
+        ShellOutput pushed = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(clone.toString()));
+        GitRepositoryOverview pushedOverview = GitRepositoryOverview.parse(pushed.output);
+        assertEquals(Integer.valueOf(0), pushedOverview.ahead);
 
         assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(
             clone.toString(), "origin/feature/mobile"), new HashMap<>()));
@@ -522,8 +601,11 @@ public class WorkspaceCommandBuilderTest {
     }
 
     private static ShellOutput runShellCapture(String command) throws IOException, InterruptedException {
-        Process process = new ProcessBuilder("/bin/sh", "-c", command)
-            .redirectErrorStream(true).start();
+        ProcessBuilder builder = new ProcessBuilder("/bin/sh", "-c", command)
+            .redirectErrorStream(true);
+        // 所有测试子进程都禁止继承真实 tmux socket，避免未来新增命令时误连用户会话。
+        builder.environment().remove("TMUX");
+        Process process = builder.start();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         byte[] buffer = new byte[4096];
         int count;
