@@ -243,6 +243,15 @@
     <string name="git_workbench_guidance">切换分支不会丢弃修改；若可能覆盖当前文件，Git 会拒绝切换并保留原工作树。</string>
     <string name="git_workbench_no_commits">当前仓库还没有提交记录。</string>
     <string name="git_workbench_no_local_branches">当前没有可切换的本地分支。</string>
+    <string name="git_workbench_create_branch">新建分支</string>
+    <string name="git_workbench_create_branch_hint">例如 feature/mobile-ui</string>
+    <string name="git_workbench_create_branch_message">从当前 %1$s 新建本地分支并切换过去。不会推送远端，也不会覆盖已有分支。</string>
+    <string name="git_workbench_create_branch_dirty_message">从当前 %1$s 新建本地分支并切换过去。当前有 %2$d 个未提交文件，新分支会保留这些修改；不会推送远端，也不会覆盖已有分支。</string>
+    <string name="git_workbench_create_branch_action">创建并切换</string>
+    <string name="git_workbench_create_branch_invalid">分支名不能包含空格、控制字符、~ ^ : ? * [ \\，不能以 - 或 / 开头，不能以 /、. 或 .lock 结尾。</string>
+    <string name="git_workbench_creating_branch">正在创建并切换到 %1$s…</string>
+    <string name="git_workbench_create_branch_conflict">未创建分支：本地分支 %1$s 已存在。请刷新后从本地分支列表切换。</string>
+    <string name="git_workbench_create_branch_failed">Git 未创建分支，当前工作树已保留。\n\n%1$s</string>
     <string name="git_workbench_current_branch">%1$s  ·  当前</string>
     <string name="git_workbench_local_branch">本地  ·  %1$s</string>
     <string name="git_workbench_remote_branch">远端  ·  %1$s</string>

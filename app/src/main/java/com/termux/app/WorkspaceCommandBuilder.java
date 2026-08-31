@@ -161,6 +161,39 @@ final class WorkspaceCommandBuilder {
     }
 
     /**
+     * 从当前 HEAD 创建新的本地分支并切换。
+     *
+     * 不覆盖已有分支，不推送到远端；分支名先本地保守校验，再交给 Git 自身规则复核。
+     */
+    @NonNull
+    static String buildGitCreateBranchRemoteCommand(@NonNull String path, @NonNull String branch) {
+        if (!isSafeGitBranchName(branch)) throw new IllegalArgumentException("Invalid branch");
+        return "cd -- " + remotePathExpression(path)
+            + " && git check-ref-format --branch " + shellQuote(branch) + " >/dev/null"
+            + " && if git show-ref --verify --quiet refs/heads/" + shellQuote(branch)
+            + "; then exit 74; fi"
+            + " && git switch -c " + shellQuote(branch);
+    }
+
+    static boolean isSafeGitBranchName(@NonNull String branch) {
+        if (branch.isEmpty() || branch.length() > 128 || branch.startsWith("-")
+            || branch.startsWith("/") || branch.endsWith("/") || branch.endsWith(".")
+            || branch.endsWith(".lock") || branch.contains("..") || branch.contains("//")
+            || branch.contains("@{")) {
+            return false;
+        }
+        for (int index = 0; index < branch.length(); index++) {
+            char value = branch.charAt(index);
+            if (Character.isISOControl(value) || Character.isWhitespace(value)
+                || value == '~' || value == '^' || value == ':' || value == '?'
+                || value == '*' || value == '[' || value == '\\') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * 从用户显式选择的远端跟踪分支创建同名本地跟踪分支并切换。
      *
      * 不自动覆盖已有本地分支；如果脏工作树会被覆盖，Git 自身会拒绝并保留当前工作树。

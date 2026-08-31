@@ -8,6 +8,7 @@ import static org.robolectric.Shadows.shadowOf;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Looper;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.termux.R;
@@ -58,5 +59,34 @@ public final class GitDiffActivityTest {
             remote.getButton(AlertDialog.BUTTON_NEGATIVE).getCurrentTextColor());
         assertTrue(((TextView) remote.findViewById(android.R.id.message)).getText().toString()
             .contains("2 个未提交文件"));
+    }
+
+    @Test
+    public void newBranchDialogKeepsReadableStyleAndValidatesInput() {
+        Intent intent = GitDiffActivity.newIntent(RuntimeEnvironment.getApplication(),
+                "hdr@192.168.1.153", 22, "~/repo")
+            .putExtra(GitDiffActivity.EXTRA_UI_TEST_OVERVIEW, "TP_OVERVIEW\tdev\t0\t2\t\t\t0\n"
+                + "TP_LOCAL\tdev\n");
+        GitDiffActivity activity = Robolectric.buildActivity(GitDiffActivity.class, intent)
+            .setup().get();
+
+        AlertDialog dialog = activity.createNewBranchDialog();
+        assertNotNull(dialog);
+        dialog.show();
+        shadowOf(Looper.getMainLooper()).idle();
+        assertEquals(activity.getString(R.string.git_workbench_create_branch_action),
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).getText().toString());
+        assertEquals(activity.getColor(R.color.tp_primary),
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).getCurrentTextColor());
+        assertTrue(((TextView) dialog.findViewById(android.R.id.message)).getText().toString()
+            .contains("2 个未提交文件"));
+
+        EditText input = dialog.findViewById(android.R.id.edit);
+        assertNotNull(input);
+        input.setText("bad branch");
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        assertNotNull(input.getError());
+        assertTrue(dialog.isShowing());
+        dialog.dismiss();
     }
 }

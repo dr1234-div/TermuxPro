@@ -12,6 +12,7 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -19,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.termux.R;
 import java.util.concurrent.ExecutorService;
@@ -69,6 +71,8 @@ public final class GitDiffActivity extends AppCompatActivity {
         findViewById(R.id.git_diff_back_button).setOnClickListener(view -> navigateBack());
         findViewById(R.id.git_diff_refresh_button).setOnClickListener(view -> refreshCurrentMode());
         findViewById(R.id.git_overview_branches_button).setOnClickListener(view -> showBranches());
+        findViewById(R.id.git_overview_create_branch_button).setOnClickListener(
+            view -> showCreateBranchDialog());
         findViewById(R.id.git_overview_changes_button).setOnClickListener(view -> loadDiff());
         findViewById(R.id.git_overview_commits_button).setOnClickListener(view -> showCommits());
         mReturnWorkspace.setOnClickListener(view -> WorkspaceNavigation.returnToWorkspace(this));
@@ -307,6 +311,47 @@ public final class GitDiffActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    private void showCreateBranchDialog() {
+        AlertDialog dialog = createNewBranchDialog();
+        if (dialog != null) dialog.show();
+    }
+
+    @Nullable
+    AlertDialog createNewBranchDialog() {
+        if (mOverview == null) return null;
+        EditText input = new EditText(this);
+        input.setId(android.R.id.edit);
+        input.setSingleLine(true);
+        input.setHint(R.string.git_workbench_create_branch_hint);
+        input.setTextColor(ContextCompat.getColor(this, R.color.tp_text_primary));
+        input.setHintTextColor(ContextCompat.getColor(this, R.color.tp_text_secondary));
+        int padding = Math.round(20 * getResources().getDisplayMetrics().density);
+        input.setPadding(padding, padding / 2, padding, padding / 2);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_create_branch)
+            .setMessage(getString(mOverview.changedFiles > 0
+                ? R.string.git_workbench_create_branch_dirty_message
+                : R.string.git_workbench_create_branch_message, mOverview.head,
+                mOverview.changedFiles))
+            .setView(input)
+            .setPositiveButton(R.string.git_workbench_create_branch_action, null)
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        dialog.setOnShowListener(ignored -> {
+            TermuxProDialogStyle.apply(this, dialog);
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+                String branch = input.getText().toString().trim();
+                if (!WorkspaceCommandBuilder.isSafeGitBranchName(branch)) {
+                    input.setError(getString(R.string.git_workbench_create_branch_invalid));
+                    return;
+                }
+                dialog.dismiss();
+                createBranch(branch);
+            });
+        });
+        return dialog;
+    }
+
     private void switchBranch(@NonNull String branch) {
         if (mOverview == null || !mOverview.localBranches.contains(branch)) return;
         ConnectionTarget target = readTarget();
@@ -320,6 +365,26 @@ public final class GitDiffActivity extends AppCompatActivity {
                 if (isFinishing() || isDestroyed()) return;
                 if (result.exitCode == 0) loadOverview();
                 else showStatus(getString(R.string.git_workbench_switch_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    private void createBranch(@NonNull String branch) {
+        if (mOverview == null || !WorkspaceCommandBuilder.isSafeGitBranchName(branch)) return;
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(R.string.git_workbench_creating_branch, branch));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                WorkspaceCommandBuilder.buildGitCreateBranchRemoteCommand(target.path, branch),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 74) showStatus(getString(
+                    R.string.git_workbench_create_branch_conflict, branch), false);
+                else showStatus(getString(R.string.git_workbench_create_branch_failed,
                     result.output.trim()), false);
             });
         });
