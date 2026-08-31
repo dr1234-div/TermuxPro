@@ -59,6 +59,8 @@ GitHub API 操作统一使用 `scripts/github-cli.sh`，由它解析系统或项
 - 不向 `upstream` 推送。日常开发合入 `dev`；只有完整发布门禁通过后才能合入 `master`。
 - 分支业务名必须使用有意义的英语小驼峰：`dev_<englishCamelCase>_<YYYYMMDD>`；缺陷修复使用
   `hotfix_<englishCamelCase>_<YYYYMMDD>` 或关联 bug ID。禁止中文、空格和无意义编号。
+- `dev_release*` 分支名只保留给候选版发布列车，且版本源必须是 `x.y.z-rc.n`；稳定版证据补录、
+  发布文档或普通维护不得使用 `dev_release*` 前缀，避免误触发候选 Release 自动化。
 - 保留 GPLv3、上游版权和衍生项目声明。
 
 ## 主动迭代
