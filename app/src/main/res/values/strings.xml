@@ -476,11 +476,12 @@
     <string name="task_sessions_name_hint">For example, feature-login</string>
     <string name="task_sessions_stop_title">Stop this TermuxPro session?</string>
     <string name="task_sessions_stop_message">Only the TermuxPro session “%1$s” on %2$s:%3$d (%4$s) and its running processes will be stopped. Other tmux sessions are not affected.</string>
-    <string name="task_sessions_row">%1$s\n%2$d window(s) · %3$s · %4$s</string>
+    <string name="task_sessions_row">%1$s\n%2$d window(s) · %3$s · %4$s\nCreated %5$s · active %6$s</string>
     <string name="task_sessions_background">running in background</string>
     <string name="task_sessions_attached">attached</string>
     <string name="task_sessions_owned">created by TermuxPro</string>
     <string name="task_sessions_unknown_owner">ownership unknown</string>
+    <string name="task_sessions_time_unknown">unknown</string>
     <string name="task_sessions_unknown_owner_warning">TermuxPro cannot reliably identify who created this session. It can be attached, but not deleted here, to avoid disrupting other work.</string>
     <string name="task_sessions_target">Remote target · %1$s:%2$d · %3$s</string>
     <string name="task_sessions_owned_context">TermuxPro-owned session · %1$s:%2$d · %3$s</string>

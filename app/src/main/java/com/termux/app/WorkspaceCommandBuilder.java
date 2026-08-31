@@ -258,29 +258,35 @@ final class WorkspaceCommandBuilder {
     static String buildListTaskSessionsRemoteCommand(@NonNull String ownerToken) {
         requireOwnerToken(ownerToken);
         return "if command -v tmux >/dev/null 2>&1; then "
-            + "tmux list-sessions -F '#{session_id}:#{session_name}' 2>/dev/null | "
-            + "while IFS=: read -r sid s; do "
+            + "tmux list-sessions -F '#{session_id}' 2>/dev/null | "
+            + "while IFS= read -r sid; do "
+            + "s=$(tmux display-message -p -t \"$sid\" '#{session_name}'); "
             + "case \"$s\" in mobile-task-*) "
             + "w=$(tmux display-message -p -t \"$sid\" '#{session_windows}'); "
             + "a=$(tmux display-message -p -t \"$sid\" '#{session_attached}'); "
+            + "c=$(tmux display-message -p -t \"$sid\" '#{session_created}'); "
+            + "r=$(tmux display-message -p -t \"$sid\" '#{session_activity}'); "
             + "o=$(tmux show-options -v -t \"$sid\" " + TMUX_OWNER_OPTION + " 2>/dev/null || true); "
             + "f=$(tmux show-options -v -t \"$sid\" " + TMUX_WORKSPACE_OPTION + " 2>/dev/null || true); "
             + "[ \"$o\" = " + shellQuote(ownerToken)
-            + " ] && printf '%s\\0%s\\0%s\\0%s\\0%s\\0' \"$s\" \"$w\" \"$a\" \"$o\" \"$f\";; esac; done; fi";
+            + " ] && printf '%s\\0%s\\0%s\\0%s\\0%s\\0%s\\0%s\\0' \"$s\" \"$w\" \"$a\" \"$c\" \"$r\" \"$o\" \"$f\";; esac; done; fi";
     }
 
     /** 列出当前远端 Unix 用户的全部 tmux 会话，不读取窗格内容或命令。 */
     @NonNull
     static String buildListTmuxSessionsRemoteCommand() {
         return "if command -v tmux >/dev/null 2>&1; then "
-            + "tmux list-sessions -F '#{session_id}:#{session_name}' 2>/dev/null | "
-            + "while IFS=: read -r sid s; do "
+            + "tmux list-sessions -F '#{session_id}' 2>/dev/null | "
+            + "while IFS= read -r sid; do "
+            + "s=$(tmux display-message -p -t \"$sid\" '#{session_name}'); "
             + "w=$(tmux display-message -p -t \"$sid\" '#{session_windows}'); "
             + "a=$(tmux display-message -p -t \"$sid\" '#{session_attached}'); "
+            + "c=$(tmux display-message -p -t \"$sid\" '#{session_created}'); "
+            + "r=$(tmux display-message -p -t \"$sid\" '#{session_activity}'); "
             + "o=$(tmux show-options -v -t \"$sid\" " + TMUX_OWNER_OPTION + " 2>/dev/null || true); "
             + "f=$(tmux show-options -v -t \"$sid\" " + TMUX_WORKSPACE_OPTION + " 2>/dev/null || true); "
-            + "printf '%s\\0%s\\0%s\\0%s\\0%s\\0' \"$s\" \"$w\" \"$a\" \"$o\" \"$f\"; done; "
-            + "else printf '" + TmuxSessionParser.MISSING_MARKER + "\\0\\0\\0\\0\\0'; fi";
+            + "printf '%s\\0%s\\0%s\\0%s\\0%s\\0%s\\0%s\\0' \"$s\" \"$w\" \"$a\" \"$c\" \"$r\" \"$o\" \"$f\"; done; "
+            + "else printf '" + TmuxSessionParser.MISSING_MARKER + "\\0\\0\\0\\0\\0\\0\\0'; fi";
     }
 
     @NonNull

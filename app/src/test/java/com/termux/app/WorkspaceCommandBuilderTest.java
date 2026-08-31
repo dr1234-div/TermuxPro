@@ -282,6 +282,8 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(command.contains("#{session_name}"));
         assertTrue(command.contains("#{session_windows}"));
         assertTrue(command.contains("#{session_attached}"));
+        assertTrue(command.contains("#{session_created}"));
+        assertTrue(command.contains("#{session_activity}"));
         assertTrue(command.contains(TmuxSessionParser.MISSING_MARKER));
         assertTrue(!command.contains("mobile-task-*"));
         assertTrue(!command.contains("attach-session"));

@@ -15,14 +15,16 @@ public class TmuxSessionParserTest {
     @Test
     public void parsesAllSessionsAndKeepsOwnershipConservative() {
         List<TmuxSessionInfo> sessions = TmuxSessionParser.parse(
-            "manual\u00002\u00001\u0000\u0000\u0000"
-                + "mobile-task-a\u00001\u00000\u0000wrong\u0000" + FINGERPRINT + "\u0000"
-                + "termuxpro-work\u00003\u00000\u0000" + OWNER + "\u0000" + FINGERPRINT + "\u0000",
+            "manual\u00002\u00001\u0000100\u0000200\u0000\u0000\u0000"
+                + "mobile-task-a\u00001\u00000\u0000110\u0000210\u0000wrong\u0000" + FINGERPRINT + "\u0000"
+                + "termuxpro-work\u00003\u00000\u0000120\u0000220\u0000" + OWNER + "\u0000" + FINGERPRINT + "\u0000",
             OWNER, FINGERPRINT);
 
         assertEquals(3, sessions.size());
         assertEquals("manual", sessions.get(0).name);
         assertTrue(sessions.get(0).attached);
+        assertEquals(100L, sessions.get(0).createdEpochSeconds);
+        assertEquals(200L, sessions.get(0).activityEpochSeconds);
         assertFalse(sessions.get(0).managedByTermuxPro);
         assertFalse(sessions.get(1).managedByTermuxPro);
         assertTrue(sessions.get(2).managedByTermuxPro);
@@ -30,9 +32,22 @@ public class TmuxSessionParserTest {
 
     @Test
     public void ignoresMalformedRecordsAndDetectsMissingTmux() {
-        assertTrue(TmuxSessionParser.parse("broken\u0000x\u00000\u0000\u0000\u0000",
+        assertTrue(TmuxSessionParser.parse("broken\u0000x\u00000\u00000\u00000\u0000\u0000\u0000",
             OWNER, FINGERPRINT).isEmpty());
         assertTrue(TmuxSessionParser.reportsMissingTmux(
             TmuxSessionParser.MISSING_MARKER + "\u0000\u0000\u0000"));
+    }
+
+    @Test
+    public void keepsColonInsideSessionNameBecauseRecordsUseNulFields() {
+        List<TmuxSessionInfo> sessions = TmuxSessionParser.parse(
+            "shared:ops\u00001\u00000\u0000300\u0000400\u0000\u0000\u0000",
+            OWNER, FINGERPRINT);
+
+        assertEquals(1, sessions.size());
+        assertEquals("shared:ops", sessions.get(0).name);
+        assertEquals(300L, sessions.get(0).createdEpochSeconds);
+        assertEquals(400L, sessions.get(0).activityEpochSeconds);
+        assertFalse(sessions.get(0).managedByTermuxPro);
     }
 }

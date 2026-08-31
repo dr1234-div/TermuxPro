@@ -22,7 +22,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.termux.R;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.text.SimpleDateFormat;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -107,8 +110,8 @@ public final class TaskSessionsActivity extends AppCompatActivity {
 
     private void showPreviewForUiTest() {
         String fingerprint = WorkspaceCommandBuilder.workspaceFingerprint(mHost, mPort, mProjectPath);
-        String output = "feature-login\0002\0000\000" + mOwnerToken + "\000" + fingerprint
-            + "\000shared-support\0001\0001\000\000\000";
+        String output = "feature-login\0002\0000\0001788153600\0001788157200\000" + mOwnerToken
+            + "\000" + fingerprint + "\000shared-support\0001\0001\0001788067200\0001788150000\000\000\000";
         mProgress.setVisibility(View.GONE);
         mSessions.clear();
         mSessions.addAll(TmuxSessionParser.parse(output, mOwnerToken, fingerprint));
@@ -194,7 +197,16 @@ public final class TaskSessionsActivity extends AppCompatActivity {
             getString(R.string.task_sessions_background);
         String ownership = session.managedByTermuxPro ?
             getString(R.string.task_sessions_owned) : getString(R.string.task_sessions_unknown_owner);
-        return getString(R.string.task_sessions_row, session.name, session.windows, state, ownership);
+        String created = formatSessionTime(session.createdEpochSeconds);
+        String activity = formatSessionTime(session.activityEpochSeconds);
+        return getString(R.string.task_sessions_row, session.name, session.windows, state, ownership,
+            created, activity);
+    }
+
+    private String formatSessionTime(long epochSeconds) {
+        if (epochSeconds <= 0L) return getString(R.string.task_sessions_time_unknown);
+        return new SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
+            .format(new Date(epochSeconds * 1000L));
     }
 
     private void showActions(TmuxSessionInfo session) {
