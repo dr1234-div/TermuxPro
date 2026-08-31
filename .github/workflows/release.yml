@@ -11,6 +11,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  actions: write
   contents: write
 
 jobs:
@@ -92,3 +93,34 @@ jobs:
             --title "TermuxPro $GITHUB_REF_NAME" \
             --notes-file "${{ steps.version.outputs.dist }}/RELEASE_NOTES.md" \
             "${release_flags[@]}"
+      - name: 验收已发布候选 APK 的覆盖升级
+        if: >-
+          startsWith(github.ref, 'refs/tags/v') &&
+          (contains(github.ref_name, '-alpha.') ||
+           contains(github.ref_name, '-beta.') ||
+           contains(github.ref_name, '-rc.'))
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          requested_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          gh workflow run ui-emulator.yml --ref "$GITHUB_REF_NAME"
+          run_id=''
+          for attempt in $(seq 1 30); do
+            run_id="$(gh run list \
+              --workflow ui-emulator.yml \
+              --commit "$GITHUB_SHA" \
+              --event workflow_dispatch \
+              --limit 10 \
+              --json databaseId,createdAt \
+              --jq "[.[] | select(.createdAt >= \"$requested_at\")][0].databaseId // empty")"
+            if [[ -n "$run_id" ]]; then
+              break
+            fi
+            sleep 2
+          done
+          if [[ -z "$run_id" ]]; then
+            echo '未找到候选 APK 模拟器验收流水线。' >&2
+            exit 1
+          fi
+          echo "等待模拟器验收流水线：$run_id"
+          gh run watch "$run_id" --exit-status

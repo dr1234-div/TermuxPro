@@ -33,5 +33,12 @@ if grep -Fq 'sha256sum "$dist_apk"' "$project_dir/scripts/build-termuxpro-releas
     echo "SHA256SUMS 仍会写入构建机器绝对路径。" >&2
     exit 1
 fi
+if ! grep -Fq 'gh workflow run ui-emulator.yml --ref "$GITHUB_REF_NAME"' \
+    "$project_dir/.github/workflows/release.yml" || \
+    ! grep -Fq 'gh run watch "$run_id" --exit-status' \
+    "$project_dir/.github/workflows/release.yml"; then
+    echo "候选 Release 尚未闭环到已发布签名 APK 的模拟器验收。" >&2
+    exit 1
+fi
 
 echo "版本元数据校验通过：$version_name ($version_code)"
