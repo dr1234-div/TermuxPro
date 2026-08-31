@@ -52,6 +52,8 @@ Gradle/Java 操作统一先 source `scripts/resolve-jdk17.sh`；禁止把只有 
 临时构建产物，不能替代 GitHub Release；不得移动或覆盖已发布标签。
 `dev_*`/`hotfix_*` 分支推送后由 `auto-dev-pr.yml` 幂等创建以 `dev` 为目标的 PR，并且只有同一提交的
 完整 CI 与模拟器 UI 均成功后才自动合并；任何门禁失败均保留 PR。不得绕过 PR 门禁直接推送 `dev`。
+自动合并后必须通过 `workflow_dispatch` 对实际 merge commit 再运行一次 `dev` CI；该收尾 CI 失败时不得
+开始候选发布或下一个功能切片，必须优先修复。
 
 每天迭代不等于每天发稳定版。每个发布列车默认只发布一个 `rc.1`；只有候选版发现 P0/P1、发布门禁失败
 或产物不可安装时，才允许修复后递增 `rc.2`、`rc.3`，并记录失败证据。P2 和下一轮功能不得继续塞入
