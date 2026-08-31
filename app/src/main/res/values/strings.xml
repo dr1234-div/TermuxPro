@@ -238,9 +238,9 @@
     <!-- AI workspace home -->
     <string name="workspace_home_eyebrow">Mobile development workspace</string>
     <string name="workspace_home_title">Continue your remote project</string>
-    <string name="workspace_home_subtitle">Continue over SSH. The safe default only connects; each workspace controls whether an exact tmux session is used.</string>
-    <string name="workspace_remote_card_title">Remote workspace</string>
-    <string name="workspace_remote_card_description">Only non-sensitive connection metadata is stored here. Passwords and private keys stay in OpenSSH.</string>
+    <string name="workspace_home_subtitle">Open the remote terminal first, then use tmux, Git, files and command tools when needed. The home screen keeps only the connection path.</string>
+    <string name="workspace_remote_card_title">Server and project</string>
+    <string name="workspace_remote_card_description">Configure the SSH target, project path and connection policy. Passwords, private keys and known_hosts stay with OpenSSH.</string>
     <string name="workspace_name_hint">Workspace name</string>
     <string name="workspace_host_hint">SSH target, for example user@192.168.1.153</string>
     <string name="workspace_port_hint">SSH port (default 22)</string>
@@ -254,7 +254,7 @@
     </string-array>
     <string name="workspace_session_name_hint">Exact tmux session name</string>
     <string name="workspace_error_session_name">Use 1–64 letters, numbers, dots, underscores, or hyphens</string>
-    <string name="workspace_connect_action">Connect remote workspace</string>
+    <string name="workspace_connect_action">Open remote terminal</string>
     <string name="workspace_connection_guidance">On first connect, verify the server fingerprint in the terminal. TermuxPro never trusts fingerprints automatically.</string>
     <string name="workspace_connection_terminal_opened">The connection terminal is open. Verify the host fingerprint and authenticate there. The server is authenticated only after “SSH authenticated” appears.</string>
     <string name="workspace_connection_last_opened">SSH terminal opened %1$s. Authentication has not been verified.</string>
@@ -278,7 +278,7 @@
     <string name="workspace_open_sessions">Open terminal sessions</string>
     <string name="workspace_sessions_short">Sessions</string>
     <string name="workspace_open_workbench">Workbench</string>
-    <string name="workspace_open_workbench_description">Open the mobile development workbench</string>
+    <string name="workspace_open_workbench_description">Return to connection settings and remote entry</string>
     <string name="terminal_sessions_title">Terminal sessions</string>
     <string name="terminal_sessions_hint">Tap to switch; touch and hold to rename</string>
     <string name="workspace_command_confirm_title">Send command to current session?</string>
@@ -294,7 +294,7 @@
     <string name="workspace_setup_ready">SSH component is ready</string>
     <string name="workspace_selector_description">Saved workspaces</string>
     <string name="workspace_new_action">New</string>
-    <string name="workspace_manage_action">Manage workspace</string>
+    <string name="workspace_manage_action">Connection settings</string>
     <string name="workspace_edit_action">Edit connection</string>
     <string name="workspace_advanced_action">Advanced settings</string>
     <string name="workspace_advanced_hide_action">Hide advanced settings</string>
@@ -313,7 +313,7 @@
     <string name="workspace_default_name">Remote development</string>
     <string name="workspace_delete_title">Delete this workspace?</string>
     <string name="workspace_delete_message">Connection metadata for “%1$s” will be removed. SSH keys and remote files are not affected.</string>
-    <string name="workspace_tools_action">Project tools</string>
+    <string name="workspace_tools_action">Toolbox</string>
     <string name="workspace_git_status_action">Git status</string>
     <string name="workspace_git_diff_action">Review Git diff</string>
     <string name="workspace_project_check_action">Run project checks</string>

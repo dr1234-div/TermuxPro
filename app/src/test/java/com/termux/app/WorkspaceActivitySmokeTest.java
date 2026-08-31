@@ -8,6 +8,7 @@ import static org.robolectric.Shadows.shadowOf;
 
 import android.R.attr;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Looper;
 import android.util.TypedValue;
 import android.view.View;
@@ -23,6 +24,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.shadows.ShadowAlertDialog;
 import org.robolectric.annotation.Config;
 
@@ -37,6 +39,8 @@ public class WorkspaceActivitySmokeTest {
 
         assertEquals("TermuxPro", activity.getTitle());
         assertEquals("继续远程项目", activity.getString(R.string.workspace_home_title));
+        assertEquals("打开远程终端", activity.getString(R.string.workspace_connect_action));
+        assertEquals("连接配置", activity.getString(R.string.workspace_manage_action));
         int[] visibleViews = {R.id.workspace_setup_button};
         for (int id : visibleViews) {
             View view = activity.findViewById(id);
@@ -57,6 +61,33 @@ public class WorkspaceActivitySmokeTest {
         for (int id : hiddenViews) {
             assertEquals(View.GONE, activity.findViewById(id).getVisibility());
         }
+        activity.finish();
+    }
+
+    @Test
+    public void configuredHomeKeepsLowFrequencyToolsOutOfHomeScreen() {
+        Intent intent = new Intent(RuntimeEnvironment.getApplication(), WorkspaceActivity.class);
+        intent.putExtra(WorkspaceActivity.EXTRA_UI_TEST_SSH_READY, true);
+        WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class, intent)
+            .setup().get();
+
+        ((EditText) activity.findViewById(R.id.workspace_host_input))
+            .setText("hdr@192.168.1.153");
+        activity.findViewById(R.id.workspace_save_button).performClick();
+
+        assertEquals("服务器与项目",
+            ((TextView) activity.findViewById(R.id.workspace_remote_card_title))
+                .getText().toString());
+        assertEquals("连接配置",
+            ((TextView) activity.findViewById(R.id.workspace_manage_button)).getText().toString());
+        assertEquals(View.VISIBLE, activity.findViewById(R.id.workspace_summary).getVisibility());
+        assertEquals(View.VISIBLE, activity.findViewById(R.id.workspace_manage_button).getVisibility());
+        assertEquals(View.GONE, activity.findViewById(R.id.workspace_development_tools_card).getVisibility());
+        assertEquals(View.GONE, activity.findViewById(R.id.workspace_preview_card).getVisibility());
+        assertEquals(View.GONE, activity.findViewById(R.id.workspace_local_terminal_button).getVisibility());
+        assertEquals(View.GONE, activity.findViewById(R.id.workspace_host_input).getVisibility());
+        assertEquals(View.GONE, activity.findViewById(R.id.workspace_connection_policy_selector)
+            .getVisibility());
         activity.finish();
     }
 

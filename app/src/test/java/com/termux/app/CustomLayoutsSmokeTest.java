@@ -92,6 +92,7 @@ public class CustomLayoutsSmokeTest {
             R.layout.activity_termux, new FrameLayout(context), false);
         TextView workbench = page.findViewById(R.id.workspace_home_button);
         TextView sessions = page.findViewById(R.id.workspace_drawer_button);
+        TextView tools = page.findViewById(R.id.terminal_tools_button);
         ImageButton settings = page.findViewById(R.id.settings_button);
         float density = context.getResources().getDisplayMetrics().density;
 
@@ -103,6 +104,10 @@ public class CustomLayoutsSmokeTest {
             sessions.getContentDescription().toString());
         assertEquals(context.getString(R.string.workspace_sessions_short),
             sessions.getText().toString());
+        assertEquals(context.getString(R.string.workspace_tools_action), tools.getText().toString());
+        assertEquals(context.getString(R.string.workspace_tools_action),
+            tools.getContentDescription().toString());
+        assertTrue(tools.getLayoutParams().height >= Math.round(48 * density));
         assertTrue(settings.getLayoutParams().width >= Math.round(48 * density));
         assertTrue(settings.getLayoutParams().height >= Math.round(48 * density));
     }
