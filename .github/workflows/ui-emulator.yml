@@ -7,7 +7,7 @@ on:
   push:
     branches: ['dev_*', 'hotfix_*']
   pull_request:
-    branches: [dev, master]
+    branches: [master]
     paths:
       - 'app/src/main/**'
       - 'app/src/androidTest/**'

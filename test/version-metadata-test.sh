@@ -33,11 +33,23 @@ if grep -Fq 'sha256sum "$dist_apk"' "$project_dir/scripts/build-termuxpro-releas
     echo "SHA256SUMS 仍会写入构建机器绝对路径。" >&2
     exit 1
 fi
-if ! grep -Fq 'gh workflow run ui-emulator.yml --ref "$GITHUB_REF_NAME"' \
-    "$project_dir/.github/workflows/release.yml" || \
-    ! grep -Fq 'gh run watch "$run_id" --exit-status' \
-    "$project_dir/.github/workflows/release.yml"; then
-    echo "候选 Release 尚未闭环到已发布签名 APK 的模拟器验收。" >&2
+release_workflow="$project_dir/.github/workflows/release.yml"
+if grep -Fq 'gh workflow run ui-emulator.yml' "$release_workflow"; then
+    echo "Release 仍通过跨工作流调度验收，存在并发关联和竞态风险。" >&2
+    exit 1
+fi
+gate_line="$(grep -n '验收待发布签名 APK 的覆盖升级' "$release_workflow" | cut -d: -f1)"
+publish_line="$(grep -n '创建 GitHub Release' "$release_workflow" | cut -d: -f1)"
+if [[ -z "$gate_line" || -z "$publish_line" || "$gate_line" -ge "$publish_line" ]]; then
+    echo "Release 必须先验收待发布签名 APK，再创建公开 GitHub Release。" >&2
+    exit 1
+fi
+if ! grep -Fq './scripts/select-stable-baseline-tag.sh "$version_name"' "$release_workflow"; then
+    echo "Release 未显式选择低于候选版本的稳定基线。" >&2
+    exit 1
+fi
+if grep -Fq 'actions: write' "$release_workflow"; then
+    echo "Release 不应再申请跨工作流调度所需的 actions: write 权限。" >&2
     exit 1
 fi
 
