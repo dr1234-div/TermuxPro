@@ -18,7 +18,11 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.LocaleList;
 import android.provider.MediaStore;
+import android.view.Gravity;
+import android.view.ContextThemeWrapper;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -68,8 +72,24 @@ public final class UiRenderingInstrumentedTest {
                 assertTrue("截图工作区必须具有持久化 ID", !workspaceId.isEmpty());
                 new WorkspaceConnectionStateStore(activity).save(workspaceId,
                     new WorkspaceConnectionState(WorkspaceConnectionState.Status.VERIFIED,
-                        null, 1_700_000_000_000L));
+                        null, System.currentTimeMillis()));
                 ((WorkspaceActivity) activity).onResume();
+            });
+        capture(context, "workspace-connection-expired", new Intent(workspaceIntent),
+            activity -> {
+                ((android.widget.EditText) activity.findViewById(
+                    com.termux.R.id.workspace_host_input)).setText("hdr@192.168.1.153");
+                activity.findViewById(com.termux.R.id.workspace_save_button).performClick();
+                String workspaceId = activity.getSharedPreferences("ai_terminal_workspace", 0)
+                    .getString("active_profile", "");
+                new WorkspaceConnectionStateStore(activity).save(workspaceId,
+                    new WorkspaceConnectionState(WorkspaceConnectionState.Status.VERIFIED,
+                        null, System.currentTimeMillis()
+                            - WorkspaceConnectionState.VERIFICATION_TTL_MS - 1L));
+                ((WorkspaceActivity) activity).onResume();
+                assertTrue(((TextView) activity.findViewById(
+                    com.termux.R.id.workspace_connection_feedback)).getText().toString()
+                    .contains("检查结果已过期"));
             });
         capture(context, "ai-session-choice", new Intent(workspaceIntent), activity -> {
             ((android.widget.EditText) activity.findViewById(
@@ -79,9 +99,37 @@ public final class UiRenderingInstrumentedTest {
                 .getString("active_profile", "");
             new WorkspaceConnectionStateStore(activity).save(workspaceId,
                 new WorkspaceConnectionState(WorkspaceConnectionState.Status.VERIFIED,
-                    null, 1_700_000_000_000L));
+                    null, System.currentTimeMillis()));
             ((WorkspaceActivity) activity).onResume();
             activity.findViewById(com.termux.R.id.workspace_claude_button).performClick();
+        });
+        capture(context, "terminal-feedback", new Intent(workspaceIntent), activity -> {
+            TextView feedback = (TextView) activity.getLayoutInflater().inflate(
+                com.termux.R.layout.view_terminal_feedback, null, false);
+            int margin = Math.round(16 * activity.getResources().getDisplayMetrics().density);
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP);
+            params.setMargins(margin, margin * 5, margin, 0);
+            activity.addContentView(feedback, params);
+            new TerminalFeedbackController(feedback).show("已切换到会话：TermuxPro 日常迭代", true);
+            assertTrue(feedback.getVisibility() == View.VISIBLE);
+            assertTrue(!feedback.getText().toString().isEmpty());
+        });
+        capture(context, "terminal-navigation", new Intent(workspaceIntent), activity -> {
+            Context terminalContext = new ContextThemeWrapper(activity,
+                com.termux.R.style.Theme_TermuxActivity_DayNight_NoActionBar);
+            View terminal = LayoutInflater.from(terminalContext).inflate(
+                com.termux.R.layout.activity_termux, null, false);
+            activity.addContentView(terminal, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+            androidx.drawerlayout.widget.DrawerLayout drawer = terminal.findViewById(
+                com.termux.R.id.drawer_layout);
+            drawer.openDrawer(Gravity.LEFT, false);
+            TextView workbench = terminal.findViewById(com.termux.R.id.workspace_home_button);
+            assertTrue(workbench.getText().toString().contains("工作台"));
+            assertTrue(!terminal.findViewById(com.termux.R.id.workspace_drawer_button)
+                .getContentDescription().toString().isEmpty());
         });
         capture(context, "remote-files",
             RemoteFilesActivity.newIntent(context, "invalid", 0, "~/project"), activity ->
@@ -110,20 +158,68 @@ public final class UiRenderingInstrumentedTest {
                     com.termux.R.id.connection_diagnostic_return_workspace_button);
                 });
         capture(context, "task-sessions",
-            TaskSessionsActivity.newIntent(context, "invalid", 0, "~/project",
-                "11111111-2222-3333-4444-555555555555"), activity -> {
+            TaskSessionsActivity.newIntent(context, "dev@example.com", 22, "~/project",
+                "11111111-2222-3333-4444-555555555555")
+                .putExtra(TaskSessionsActivity.EXTRA_UI_TEST_SESSIONS, true), activity -> {
                 assertToolbarActionsVisible(activity,
                     com.termux.R.id.task_sessions_back_button,
                     com.termux.R.id.task_sessions_refresh_button);
-                assertReadableRecoveryMessage(activity,
-                    com.termux.R.id.task_sessions_status,
-                    com.termux.R.id.task_sessions_recovery_button);
+                TextView status = activity.findViewById(com.termux.R.id.task_sessions_status);
+                TextView create = activity.findViewById(com.termux.R.id.task_sessions_create_button);
+                assertTrue(status.getText().length() > 0);
+                assertTrue(create.getVisibility() == View.VISIBLE);
+                assertTrue(create.getText().length() > 0);
                 });
+        Intent sessionPreview = TaskSessionsActivity.newIntent(context, "dev@example.com", 22,
+            "~/project", "11111111-2222-3333-4444-555555555555")
+            .putExtra(TaskSessionsActivity.EXTRA_UI_TEST_SESSIONS, true);
+        capture(context, "task-sessions-create", new Intent(sessionPreview), activity ->
+            activity.findViewById(com.termux.R.id.task_sessions_create_button).performClick());
+        capture(context, "task-sessions-rename", new Intent(sessionPreview), activity ->
+            ((TaskSessionsActivity) activity).showRenameDialogForTesting());
+        capture(context, "task-sessions-stop", new Intent(sessionPreview), activity ->
+            ((TaskSessionsActivity) activity).showStopDialogForTesting());
         capture(context, "git-diff",
-            GitDiffActivity.newIntent(context, "invalid", 0, "~/project"), activity ->
-                assertReadableRecoveryState(activity, com.termux.R.id.git_diff_status_state,
-                    com.termux.R.id.git_diff_status_message,
-                    com.termux.R.id.git_diff_return_workspace_button));
+            GitDiffActivity.newIntent(context, "invalid", 0, "~/project"), activity -> {
+                ((GitDiffActivity) activity).showOverviewForTesting("~/project",
+                    "TP_OVERVIEW\tdev\t0\t3\t2\t1\t1\n"
+                        + "TP_LOCAL\tdev\nTP_LOCAL\tmaster\n"
+                        + "TP_REMOTE\torigin/dev\n"
+                        + "TP_LOG\ta1b2c3d\t2 小时前\t完善 Git 工作台\n");
+                assertTrue(activity.findViewById(com.termux.R.id.git_overview_scroll)
+                    .getVisibility() == View.VISIBLE);
+            });
+        context.getSharedPreferences(WorkspaceTargetStore.PREFERENCES_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(WorkspaceTargetStore.KEY_PROFILES,
+                "[{\"id\":\"ui-commands\",\"name\":\"移动端项目\","
+                    + "\"host\":\"hdr@192.168.1.153\",\"port\":\"22\","
+                    + "\"path\":\"~/project\"}]")
+            .putString(WorkspaceTargetStore.KEY_ACTIVE_PROFILE, "ui-commands")
+            .commit();
+        CustomCommandStore customCommands = new CustomCommandStore(context);
+        customCommands.clear("ui-commands");
+        customCommands.save("ui-commands", new CustomCommand("ui-git-status", "查看 Git 状态",
+            "git status --short --branch", "", "Git", true,
+            CustomCommand.Confirmation.ALWAYS));
+        customCommands.save("ui-commands", new CustomCommand("ui-frontend-test", "运行前端测试",
+            "pnpm test", "~/project/web", "测试", true,
+            CustomCommand.Confirmation.DANGEROUS_ONLY));
+        assertTrue("截图夹具必须持久化两条快捷指令",
+            new CustomCommandStore(context).list("ui-commands").size() == 2);
+        WorkspaceTarget commandTarget = WorkspaceTargetStore.readActive(context);
+        assertNotNull("截图夹具必须具有当前工作区", commandTarget);
+        assertTrue("截图夹具工作区必须可用", commandTarget.isConfigured());
+        capture(context, "custom-commands", new Intent(context, CustomCommandsActivity.class),
+            activity -> {
+                assertToolbarActionsVisible(activity, com.termux.R.id.custom_commands_back,
+                    com.termux.R.id.custom_commands_add);
+                assertTrue(((android.widget.LinearLayout) activity.findViewById(
+                    com.termux.R.id.custom_commands_list)).getChildCount() == 2);
+            });
+        capture(context, "custom-command-editor",
+            new Intent(context, CustomCommandsActivity.class), activity ->
+                activity.findViewById(com.termux.R.id.custom_commands_add).performClick());
         capture(context, "remote-file-preview",
             RemoteFilePreviewActivity.newIntent(context, "invalid", 0, "~/project", "README.md"),
             activity -> assertReadableRecoveryState(activity,

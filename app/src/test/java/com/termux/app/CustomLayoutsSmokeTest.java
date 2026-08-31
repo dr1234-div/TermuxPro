@@ -40,7 +40,8 @@ public class CustomLayoutsSmokeTest {
             R.layout.activity_project_tasks,
             R.layout.activity_connection_diagnostic,
             R.layout.activity_ssh_keys,
-            R.layout.activity_task_sessions
+            R.layout.activity_task_sessions,
+            R.layout.activity_custom_commands
         };
         LayoutInflater inflater = LayoutInflater.from(context);
         for (int layout : layouts) {
@@ -52,6 +53,8 @@ public class CustomLayoutsSmokeTest {
             R.style.Theme_TermuxActivity_DayNight_NoActionBar);
         assertNotNull(LayoutInflater.from(terminalContext).inflate(
             R.layout.activity_termux, new FrameLayout(terminalContext), false));
+        assertNotNull(LayoutInflater.from(context).inflate(
+            R.layout.dialog_tmux_session_name, new FrameLayout(context), false));
     }
 
     @Test
@@ -67,6 +70,44 @@ public class CustomLayoutsSmokeTest {
     }
 
     @Test
+    public void terminalFeedbackUsesExplicitReadableColorsAndStartsHidden() {
+        Context context = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
+            R.style.Theme_TermuxActivity_DayNight_NoActionBar);
+        View page = LayoutInflater.from(context).inflate(
+            R.layout.activity_termux, new FrameLayout(context), false);
+        TextView feedback = page.findViewById(R.id.terminal_feedback_banner);
+
+        assertNotNull(feedback.getBackground());
+        assertEquals(context.getColor(R.color.tp_text_primary), feedback.getCurrentTextColor());
+        assertEquals(View.GONE, feedback.getVisibility());
+        assertEquals(View.ACCESSIBILITY_LIVE_REGION_POLITE,
+            feedback.getAccessibilityLiveRegion());
+    }
+
+    @Test
+    public void terminalNavigationUsesPersistentLabelsAndAccessibleTargets() {
+        Context context = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
+            R.style.Theme_TermuxActivity_DayNight_NoActionBar);
+        View page = LayoutInflater.from(context).inflate(
+            R.layout.activity_termux, new FrameLayout(context), false);
+        TextView workbench = page.findViewById(R.id.workspace_home_button);
+        TextView sessions = page.findViewById(R.id.workspace_drawer_button);
+        ImageButton settings = page.findViewById(R.id.settings_button);
+        float density = context.getResources().getDisplayMetrics().density;
+
+        assertEquals(context.getString(R.string.workspace_open_workbench),
+            workbench.getText().toString());
+        assertEquals(context.getString(R.string.workspace_open_workbench_description),
+            workbench.getContentDescription().toString());
+        assertEquals(context.getString(R.string.workspace_open_sessions),
+            sessions.getContentDescription().toString());
+        assertEquals(context.getString(R.string.workspace_sessions_short),
+            sessions.getText().toString());
+        assertTrue(settings.getLayoutParams().width >= Math.round(48 * density));
+        assertTrue(settings.getLayoutParams().height >= Math.round(48 * density));
+    }
+
+    @Test
     public void toolbarsAndWorkspaceActionsRemainUsableWithLargeFonts() {
         Context context = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
             R.style.Theme_TermuxPro_DayNight_NoActionBar);
@@ -77,7 +118,8 @@ public class CustomLayoutsSmokeTest {
             R.layout.activity_remote_file_preview,
             R.layout.activity_project_tasks,
             R.layout.activity_connection_diagnostic,
-            R.layout.activity_task_sessions
+            R.layout.activity_task_sessions,
+            R.layout.activity_custom_commands
         };
         int[] refreshButtons = {
             R.id.git_diff_refresh_button,
@@ -85,19 +127,35 @@ public class CustomLayoutsSmokeTest {
             R.id.remote_file_refresh_button,
             R.id.project_tasks_refresh_button,
             R.id.connection_diagnostic_refresh_button,
-            R.id.task_sessions_refresh_button
+            R.id.task_sessions_refresh_button,
+            R.id.custom_commands_add
         };
         float density = context.getResources().getDisplayMetrics().density;
         for (int index = 0; index < layouts.length; index++) {
             View page = inflater.inflate(layouts[index], new FrameLayout(context), false);
             View refresh = page.findViewById(refreshButtons[index]);
-            assertTrue(refresh instanceof ImageButton);
-            assertEquals(48, Math.round(refresh.getLayoutParams().width / density));
-            assertEquals(48, Math.round(refresh.getLayoutParams().height / density));
+            if (index == 0 || index == layouts.length - 1) {
+                assertTrue(refresh instanceof TextView);
+                assertTrue(refresh.getMinimumWidth() >= Math.round(48 * density));
+            } else {
+                assertTrue(refresh instanceof ImageButton);
+                assertEquals(48, Math.round(refresh.getLayoutParams().width / density));
+            }
+            if (index == layouts.length - 1) {
+                assertTrue(refresh.getMinimumHeight() >= Math.round(48 * density));
+                assertEquals(ViewGroup.LayoutParams.WRAP_CONTENT,
+                    refresh.getLayoutParams().height);
+            } else {
+                assertEquals(48, Math.round(refresh.getLayoutParams().height / density));
+            }
             View toolbar = (View) refresh.getParent();
             assertEquals(56, Math.round(toolbar.getMinimumHeight() / density));
             assertEquals(ViewGroup.LayoutParams.WRAP_CONTENT, toolbar.getLayoutParams().height);
         }
+        View sessions = inflater.inflate(R.layout.activity_task_sessions, new FrameLayout(context), false);
+        View createSession = sessions.findViewById(R.id.task_sessions_create_button);
+        assertTrue(createSession instanceof TextView);
+        assertTrue(createSession.getMinimumHeight() >= Math.round(48 * density));
 
         View workspace = inflater.inflate(R.layout.activity_workspace, new FrameLayout(context), false);
         LinearLayout actions = workspace.findViewById(R.id.workspace_management_actions);
@@ -123,7 +181,8 @@ public class CustomLayoutsSmokeTest {
             R.layout.activity_remote_file_preview,
             R.layout.activity_project_tasks,
             R.layout.activity_connection_diagnostic,
-            R.layout.activity_task_sessions
+            R.layout.activity_task_sessions,
+            R.layout.activity_custom_commands
         };
         int[] backButtons = {
             R.id.git_diff_back_button,
@@ -131,7 +190,8 @@ public class CustomLayoutsSmokeTest {
             R.id.remote_file_back_button,
             R.id.project_tasks_back_button,
             R.id.connection_diagnostic_back_button,
-            R.id.task_sessions_back_button
+            R.id.task_sessions_back_button,
+            R.id.custom_commands_back
         };
         int[] actionButtons = {
             R.id.git_diff_refresh_button,
@@ -139,7 +199,8 @@ public class CustomLayoutsSmokeTest {
             R.id.remote_file_refresh_button,
             R.id.project_tasks_refresh_button,
             R.id.connection_diagnostic_refresh_button,
-            R.id.task_sessions_refresh_button
+            R.id.task_sessions_refresh_button,
+            R.id.custom_commands_add
         };
         float density = context.getResources().getDisplayMetrics().density;
         int width = Math.round(205 * density);
@@ -157,6 +218,12 @@ public class CustomLayoutsSmokeTest {
                 action.getLeft() >= 0 && action.getRight() <= width);
             assertEquals(View.VISIBLE, back.getVisibility());
             assertEquals(View.VISIBLE, action.getVisibility());
+            if (layouts[index] == R.layout.activity_custom_commands) {
+                TextView title = page.findViewById(R.id.custom_commands_title);
+                assertEquals("快捷指令标题在超大字体下仍保持单行", 1, title.getMaxLines());
+                assertEquals("快捷指令标题应按可用宽度缩放", TextView.AUTO_SIZE_TEXT_TYPE_UNIFORM,
+                    title.getAutoSizeTextType());
+            }
         }
     }
 }

@@ -90,6 +90,9 @@ public class WorkspaceActivitySmokeTest {
         activity.findViewById(R.id.workspace_advanced_button).performClick();
         assertEquals(View.VISIBLE,
             activity.findViewById(R.id.workspace_connection_policy_selector).getVisibility());
+        assertEquals(View.GONE,
+            activity.findViewById(R.id.workspace_session_name_input).getVisibility());
+        ((Spinner) activity.findViewById(R.id.workspace_connection_policy_selector)).setSelection(2);
         assertEquals(View.VISIBLE,
             activity.findViewById(R.id.workspace_session_name_input).getVisibility());
         activity.finish();
@@ -173,12 +176,37 @@ public class WorkspaceActivitySmokeTest {
         String workspaceId = new JSONArray(profiles).getJSONObject(0).getString("id");
         new WorkspaceConnectionStateStore(activity).save(workspaceId,
             new WorkspaceConnectionState(WorkspaceConnectionState.Status.VERIFIED,
-                null, 1_700_000_000_000L));
+                null, System.currentTimeMillis()));
 
         activity.onResume();
         TextView feedback = activity.findViewById(R.id.workspace_connection_feedback);
-        assertTrue(feedback.getText().toString().contains("已验证"));
+        assertTrue(feedback.getText().toString().contains("最近验证"));
         assertTrue(feedback.getText().toString().contains("SSH 身份认证"));
+        assertEquals(View.VISIBLE,
+            activity.findViewById(R.id.workspace_ai_actions).getVisibility());
+        activity.finish();
+    }
+
+    @Test
+    public void expiredVerificationIsHonestWithoutBlockingSafeAiLaunch() throws JSONException {
+        WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
+        ((EditText) activity.findViewById(R.id.workspace_host_input))
+            .setText("hdr@192.168.1.153");
+        activity.findViewById(R.id.workspace_save_button).performClick();
+        String profiles = activity.getSharedPreferences("ai_terminal_workspace", 0)
+            .getString("profiles_v2", "[]");
+        String workspaceId = new JSONArray(profiles).getJSONObject(0).getString("id");
+        new WorkspaceConnectionStateStore(activity).save(workspaceId,
+            new WorkspaceConnectionState(WorkspaceConnectionState.Status.VERIFIED,
+                null, System.currentTimeMillis() - WorkspaceConnectionState.VERIFICATION_TTL_MS - 1L));
+
+        activity.onResume();
+        assertTrue(((TextView) activity.findViewById(R.id.workspace_summary_details))
+            .getText().toString().contains("验证已过期"));
+        assertTrue(((TextView) activity.findViewById(R.id.workspace_connection_feedback))
+            .getText().toString().contains("检查结果已过期"));
+        assertEquals(View.VISIBLE,
+            activity.findViewById(R.id.workspace_connection_diagnostic_primary).getVisibility());
         assertEquals(View.VISIBLE,
             activity.findViewById(R.id.workspace_ai_actions).getVisibility());
         activity.finish();

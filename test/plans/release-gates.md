@@ -4,6 +4,10 @@
 
 - 全模块 JVM/Robolectric 测试、Lint、Debug 和 Release 构建通过。
 - APK 包名、版本、Launcher、ARM64 ABI、SHA-256 及发布证书校验通过。
+- GitHub Release 创建前，必须先用即将上传的同一份正式签名 APK 在隔离模拟器完成“上个稳定版 →
+  当前候选版/稳定版”的覆盖升级，验证 UID 保持、版本、桌面名称、Launcher 启动、进程存活、
+  AndroidRuntime 无致命崩溃，并上传当前 APK 的 UI 层级、截图、包状态和脱敏日志；Debug
+  instrumentation 不能替代该证据。
 - Android 运行时门禁按变更风险分层：API 21 最低兼容、API 28 目标行为和当前 API 35+ 至少各有
   自动化覆盖；360dp、深色、默认/200% 字体、软键盘 resize、Activity/进程恢复和网络重连相关用例通过。
 - 只有涉及物理键盘/输入法厂商实现、锁屏保活、通知、存储、网络切换、PTY 或 OEM ROM 行为的变更，

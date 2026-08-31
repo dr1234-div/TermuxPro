@@ -1,12 +1,15 @@
 package com.termux.app;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Assume;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -16,6 +19,25 @@ import java.util.Map;
 import java.util.UUID;
 
 public class WorkspaceCommandBuilderTest {
+
+    @Test
+    public void buildsCustomCommandForExplicitTargetAndDirectory() {
+        String result = WorkspaceCommandBuilder.buildCustomCommandSshCommand(
+            "developer@example.com", 2222, "~/project", "~/project/mobile app",
+            "git status --short && printf '%s\\n' \"done\"");
+
+        assertTrue(result.contains("-p 2222 -- 'developer@example.com'"));
+        assertTrue(result.contains("Command directory is unavailable"));
+        assertTrue(result.contains("mobile app"));
+        assertTrue(result.contains("git status --short"));
+        assertFalse(result.contains("tmux"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void rejectsSecretInCustomCommand() {
+        WorkspaceCommandBuilder.buildCustomCommandSshCommand(
+            "developer@example.com", 22, "~/project", "", "TOKEN=plain-secret npm test");
+    }
     private static final String OWNER = "11111111-2222-3333-4444-555555555555";
 
     @Test
@@ -126,6 +148,56 @@ public class WorkspaceCommandBuilderTest {
     }
 
     @Test
+    public void gitOverviewAndBranchSwitchUseStableProtocolAndShellQuoting() {
+        String overview = WorkspaceCommandBuilder.buildGitOverviewRemoteCommand("~/team app");
+        String branch = WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand(
+            "/srv/team's app", "feature/user's-work");
+
+        assertTrue(overview.contains("TP_OVERVIEW\\t"));
+        assertTrue(overview.contains("git status --porcelain=v1 -z"));
+        assertTrue(overview.contains("refs/heads"));
+        assertTrue(overview.contains("git log -20"));
+        assertTrue(branch.contains("'/srv/team'\\''s app'"));
+        assertTrue(branch.endsWith("'feature/user'\\''s-work'"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand("~/app", "bad\nbranch"));
+    }
+
+    @Test
+    public void gitOverviewRunsAgainstRealRepositoryIncludingUnbornHead() throws Exception {
+        Assume.assumeTrue(new File("/usr/bin/git").canExecute());
+        Path repository = Files.createTempDirectory("termuxpro git repo");
+        assertEquals(0, runShell("git init -q -- " + WorkspaceCommandBuilder.shellQuote(
+            repository.toString()), new HashMap<>()));
+
+        ShellOutput unborn = runShellCapture(WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(
+            repository.toString()));
+        assertEquals(0, unborn.exitCode);
+        GitRepositoryOverview unbornOverview = GitRepositoryOverview.parse(unborn.output);
+        assertEquals("master", unbornOverview.head);
+        assertTrue(unbornOverview.commits.isEmpty());
+
+        String setup = "cd -- " + WorkspaceCommandBuilder.shellQuote(repository.toString())
+            + " && git config user.name test && git config user.email test@example.com"
+            + " && printf content > README.md && git add README.md && git commit -q -m initial"
+            + " && git branch feature && printf changed >> README.md";
+        assertEquals(0, runShell(setup, new HashMap<>()));
+        ShellOutput populated = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        assertEquals(0, populated.exitCode);
+        GitRepositoryOverview overview = GitRepositoryOverview.parse(populated.output);
+        assertEquals(1, overview.changedFiles);
+        assertTrue(overview.localBranches.contains("feature"));
+        assertEquals(1, overview.commits.size());
+
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand(
+            repository.toString(), "feature"), new HashMap<>()));
+        ShellOutput switched = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        assertEquals("feature", GitRepositoryOverview.parse(switched.output).head);
+    }
+
+    @Test
     public void fileCommandsQuoteProjectAndRelativePaths() {
         String list = WorkspaceCommandBuilder.buildListFilesRemoteCommand("~/team app", "./src dir");
         String read = WorkspaceCommandBuilder.buildReadFileRemoteCommand("~/team app", "./a'; rm -rf x");
@@ -231,6 +303,30 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(stop.contains("#{pid}:#{session_id}:#{session_created}:#{session_name}"));
     }
 
+    @Test
+    public void managedTmuxLifecycleCreatesAndRenamesWithoutServerWideKill() {
+        String create = WorkspaceCommandBuilder.buildCreateTaskSessionRemoteCommand(
+            "feature-login", OWNER, "dev@example.com", 22, "~/repo");
+        String rename = WorkspaceCommandBuilder.buildRenameTaskSessionRemoteCommand(
+            "feature-login", "feature-done", OWNER, "dev@example.com", 22, "~/repo");
+
+        assertTrue(create.contains("tmux new-session -d -s 'feature-login'"));
+        assertTrue(create.contains(WorkspaceCommandBuilder.TMUX_OWNER_OPTION));
+        assertTrue(create.contains(WorkspaceCommandBuilder.TMUX_WORKSPACE_OPTION));
+        assertTrue(create.contains("has-session -t '=feature-login'"));
+        assertTrue(rename.contains("rename-session -t '$sid' 'feature-done'"));
+        assertTrue(rename.contains("if-shell -F -t \"$sid\""));
+        assertTrue(rename.contains("session ownership changed"));
+        assertFalse(create.contains("kill-server"));
+        assertFalse(rename.contains("kill-server"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void managedTmuxCreateRejectsUnsafeName() {
+        WorkspaceCommandBuilder.buildCreateTaskSessionRemoteCommand(
+            "unsafe; touch /tmp/pwned", OWNER, "dev@example.com", 22, "~/repo");
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void managedPolicyRejectsMissingOwnerToken() {
         WorkspaceCommandBuilder.buildSshCommand("dev@example.com", 22, "~/repo", null,
@@ -243,6 +339,12 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(!first.equals(WorkspaceCommandBuilder.workspaceFingerprint("dev@example.com", 22, "~/other")));
         assertTrue(!first.equals(WorkspaceCommandBuilder.workspaceFingerprint("other@example.com", 22, "~/repo")));
         assertTrue(!first.equals(WorkspaceCommandBuilder.workspaceFingerprint("dev@example.com", 2222, "~/repo")));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void createRejectsDotBeforeTmuxCanSilentlyRewriteIt() {
+        WorkspaceCommandBuilder.buildCreateTaskSessionRemoteCommand(
+            "feature.2", OWNER, "fixture-host", 22, ".");
     }
 
     @Test
@@ -275,14 +377,27 @@ public class WorkspaceCommandBuilderTest {
             assertEquals(0, runShell(stop, environment));
             assertTrue(runShell("tmux has-session -t termuxpro-guard", environment) != 0);
 
-            String create = WorkspaceCommandBuilder.buildCreateManagedTmuxSessionCommand(
-                "termuxpro-created", null, OWNER, fingerprint);
-            // attach 会等待终端；超时只终止客户端，之前同一服务端命令队列写入的标记必须已经生效。
-            runShell("timeout 2 /bin/sh -c " + WorkspaceCommandBuilder.shellQuote(create), environment);
+            String createdFingerprint = WorkspaceCommandBuilder.workspaceFingerprint("fixture-host", 22, ".");
+            String create = WorkspaceCommandBuilder.buildCreateTaskSessionRemoteCommand(
+                "termuxpro-created", OWNER, "fixture-host", 22, ".");
+            assertEquals(0, runShell(create, environment));
             assertEquals(0, runShell("test \"$(tmux show-options -v -t termuxpro-created "
                 + WorkspaceCommandBuilder.TMUX_OWNER_OPTION + ")\" = '" + OWNER + "'", environment));
             assertEquals(0, runShell("test \"$(tmux show-options -v -t termuxpro-created "
-                + WorkspaceCommandBuilder.TMUX_WORKSPACE_OPTION + ")\" = '" + fingerprint + "'", environment));
+                + WorkspaceCommandBuilder.TMUX_WORKSPACE_OPTION + ")\" = '" + createdFingerprint + "'", environment));
+            String rename = WorkspaceCommandBuilder.buildRenameTaskSessionRemoteCommand(
+                "termuxpro-created", "termuxpro-renamed", OWNER, "fixture-host", 22, ".");
+            assertEquals(0, runShell(rename, environment));
+            assertEquals(0, runShell("tmux has-session -t '=termuxpro-renamed'", environment));
+            String stopRenamed = WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(
+                "termuxpro-renamed", OWNER, "fixture-host", 22, ".");
+            assertEquals(0, runShell(stopRenamed, environment));
+            assertTrue(runShell("tmux has-session -t '=termuxpro-renamed'", environment) != 0);
+
+            assertThrows(IllegalArgumentException.class, () ->
+                WorkspaceCommandBuilder.buildCreateTaskSessionRemoteCommand(
+                    "feature.2", OWNER, "fixture-host", 22, "."));
+            assertTrue(runShell("tmux has-session -t '=feature_2'", environment) != 0);
         } finally {
             runShell("/usr/bin/tmux -L " + WorkspaceCommandBuilder.shellQuote(socketName)
                 + " kill-server 2>/dev/null || true", new HashMap<>());
@@ -314,5 +429,25 @@ public class WorkspaceCommandBuilderTest {
             // 消费有限测试输出，避免子进程因管道写满而阻塞。
         }
         return process.waitFor();
+    }
+
+    private static ShellOutput runShellCapture(String command) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder("/bin/sh", "-c", command)
+            .redirectErrorStream(true).start();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        byte[] buffer = new byte[4096];
+        int count;
+        while ((count = process.getInputStream().read(buffer)) != -1) output.write(buffer, 0, count);
+        return new ShellOutput(process.waitFor(), new String(output.toByteArray(), StandardCharsets.UTF_8));
+    }
+
+    private static final class ShellOutput {
+        final int exitCode;
+        final String output;
+
+        ShellOutput(int exitCode, String output) {
+            this.exitCode = exitCode;
+            this.output = output;
+        }
     }
 }

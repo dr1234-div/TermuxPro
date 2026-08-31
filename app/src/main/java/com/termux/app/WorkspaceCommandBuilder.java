@@ -88,6 +88,36 @@ final class WorkspaceCommandBuilder {
             + " -- " + shellQuote(host);
     }
 
+    /**
+     * 在明确的 SSH 工作区中执行用户已确认的快捷指令。
+     *
+     * 命令正文属于用户主动配置的脚本，不与应用生成的控制语句拼接；目标和目录分别转义，并在目录不可用
+     * 时直接失败，避免静默退回 HOME 后误执行。
+     */
+    @NonNull
+    static String buildCustomCommandSshCommand(@NonNull String host, int port,
+                                               @NonNull String workspacePath,
+                                               @NonNull String workingDirectory,
+                                               @NonNull String command) {
+        if (!SshTargetValidator.isValid(host) || port < 1 || port > 65535) {
+            throw new IllegalArgumentException("Invalid SSH target");
+        }
+        if (command.trim().isEmpty() || command.length() > 4096
+            || CustomCommandValidator.containsPossibleSecret(command)) {
+            throw new IllegalArgumentException("Invalid custom command");
+        }
+        String targetDirectory = workingDirectory.trim().isEmpty()
+            ? workspacePath : workingDirectory;
+        String remote = "if ! cd -- " + remotePathExpression(targetDirectory)
+            + "; then printf '\\n[TermuxPro] Command directory is unavailable: %s\\n' "
+            + shellQuote(targetDirectory) + " >&2; exit 2; fi; exec ${SHELL:-sh} -lc "
+            + shellQuote(command);
+        return "ssh -t -o ControlMaster=auto -o ControlPersist=600 -o ControlPath="
+            + shellQuote(CONTROL_PATH)
+            + " -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o TCPKeepAlive=yes -p "
+            + port + " -- " + shellQuote(host) + " " + shellQuote(remote);
+    }
+
     /** 为原生审查页面构造只读 Git 命令，路径按远端 Shell 规则安全转义。 */
     @NonNull
     static String buildGitDiffRemoteCommand(@NonNull String path) {
@@ -98,6 +128,35 @@ final class WorkspaceCommandBuilder {
             + " && printf '\\n--- STAGED DIFF ---\\n'"
             + " && git diff --cached --no-ext-diff --no-color --stat"
             + " && git diff --cached --no-ext-diff --no-color";
+    }
+
+    /** 输出供原生 Git 工作台解析的稳定协议，不依赖用户 locale 或 Git 彩色配置。 */
+    @NonNull
+    static String buildGitOverviewRemoteCommand(@NonNull String path) {
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && head=$(git symbolic-ref --quiet --short HEAD 2>/dev/null)"
+            + " && if [ -n \"$head\" ]; then detached=0; else detached=1; "
+            + "head=$(git rev-parse --short HEAD 2>/dev/null || printf 'unborn'); fi"
+            + " && changed=$(git status --porcelain=v1 -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && if counts=$(git rev-list --left-right --count '@{upstream}...HEAD' 2>/dev/null); then "
+            + "behind=${counts%%[[:space:]]*}; ahead=${counts##*[[:space:]]}; upstream=1; "
+            + "else behind=; ahead=; upstream=0; fi"
+            + " && printf 'TP_OVERVIEW\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' "
+            + "\"$head\" \"$detached\" \"$changed\" \"$ahead\" \"$behind\" \"$upstream\""
+            + " && git for-each-ref --sort=-committerdate --format='TP_LOCAL%09%(refname:short)' refs/heads"
+            + " && git for-each-ref --sort=-committerdate --format='TP_REMOTE%09%(refname:short)' refs/remotes"
+            + " && (git log -20 --date=relative --pretty=format:'TP_LOG%x09%h%x09%ar%x09%s'"
+            + " 2>/dev/null || true)";
+    }
+
+    /** 只允许调用方从已读取的本地分支列表中选择目标；这里仍执行完整 Shell 转义。 */
+    @NonNull
+    static String buildGitSwitchBranchRemoteCommand(@NonNull String path, @NonNull String branch) {
+        if (branch.isEmpty() || branch.indexOf('\n') >= 0 || branch.indexOf('\r') >= 0) {
+            throw new IllegalArgumentException("Invalid branch");
+        }
+        return "cd -- " + remotePathExpression(path) + " && git switch -- " + shellQuote(branch);
     }
 
     /** 列出项目内单层目录，使用 NUL 分隔以支持空格、Tab 和换行文件名。 */
@@ -257,14 +316,56 @@ final class WorkspaceCommandBuilder {
             workspaceFingerprint(host, port, projectPath));
     }
 
+    /** 新建归属于当前工作区的后台 tmux 会话；同名存在时失败，不会进入或覆盖现有会话。 */
+    @NonNull
+    static String buildCreateTaskSessionRemoteCommand(@NonNull String sessionName,
+                                                       @NonNull String expectedOwnerToken,
+                                                       @NonNull String host,
+                                                       int port,
+                                                       @NonNull String projectPath) {
+        requireSessionName(sessionName);
+        requireOwnerToken(expectedOwnerToken);
+        String target = exactTmuxTarget(sessionName);
+        return "command -v tmux >/dev/null 2>&1 || exit 127; cd -- "
+            + remotePathExpression(projectPath) + " || exit 2; "
+            + "tmux has-session -t " + shellQuote(target) + " 2>/dev/null && exit 74; "
+            + "tmux new-session -d -s " + shellQuote(sessionName)
+            + " \\; set-option -t " + shellQuote(sessionName) + " " + TMUX_OWNER_OPTION + " "
+            + shellQuote(expectedOwnerToken)
+            + " \\; set-option -t " + shellQuote(sessionName) + " " + TMUX_WORKSPACE_OPTION + " "
+            + shellQuote(workspaceFingerprint(host, port, projectPath));
+    }
+
+    /** 仅重命名再次核验为当前工作区所有的会话；未知归属会话没有对应写操作。 */
+    @NonNull
+    static String buildRenameTaskSessionRemoteCommand(@NonNull String sessionName,
+                                                       @NonNull String newName,
+                                                       @NonNull String expectedOwnerToken,
+                                                       @NonNull String host,
+                                                       int port,
+                                                       @NonNull String projectPath) {
+        requireSessionName(newName);
+        requireOwnerToken(expectedOwnerToken);
+        String target = exactTmuxTarget(newName);
+        return "tmux has-session -t " + shellQuote(target) + " 2>/dev/null && exit 74; "
+            + resolveTmuxSessionHandle(sessionName) + " [ -n \"$sid\" ] || exit 72; "
+            + managedSessionCommand("rename-session -t '$sid' " + shellQuote(newName),
+            expectedOwnerToken, workspaceFingerprint(host, port, projectPath));
+    }
+
     @NonNull
     private static String managedSessionAction(@NonNull String tmuxAction, @NonNull String ownerToken,
                                                 @NonNull String workspaceFingerprint) {
+        return managedSessionCommand(tmuxAction + " -t '$sid'", ownerToken, workspaceFingerprint);
+    }
+
+    @NonNull
+    private static String managedSessionCommand(@NonNull String success, @NonNull String ownerToken,
+                                                 @NonNull String workspaceFingerprint) {
         String identity = "#{&&:#{==:#{pid},$server_pid},#{==:#{session_created},$created}}";
         String ownership = "#{&&:#{==:#{" + TMUX_OWNER_OPTION + "}," + ownerToken
             + "},#{==:#{" + TMUX_WORKSPACE_OPTION + "}," + workspaceFingerprint + "}}";
         String condition = "#{&&:" + identity + "," + ownership + "}";
-        String success = tmuxAction + " -t '$sid'";
         String failure = "run-shell \"printf '[TermuxPro] Refused: session ownership changed.\\n' "
             + ">&2; exit 73\"";
         return "exec tmux if-shell -F -t \"$sid\" \"" + condition + "\" \""
@@ -293,6 +394,12 @@ final class WorkspaceCommandBuilder {
     private static void requireOwnerToken(@NonNull String ownerToken) {
         if (!WorkspaceOwnershipStore.isValid(ownerToken)) {
             throw new IllegalArgumentException("Invalid workspace owner token");
+        }
+    }
+
+    private static void requireSessionName(@NonNull String sessionName) {
+        if (!TmuxSessionNameValidator.isValid(sessionName)) {
+            throw new IllegalArgumentException("Invalid tmux session name");
         }
     }
 

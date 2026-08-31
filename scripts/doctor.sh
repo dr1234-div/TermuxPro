@@ -5,11 +5,7 @@ project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$project_dir/.tooling/android-sdk}}"
 failed=0
 
-bundled_jdk="$project_dir/.tooling/jdk-deb/full/usr/lib/jvm/java-17-openjdk-amd64"
-if [[ -x "$bundled_jdk/bin/javac" ]]; then
-    export JAVA_HOME="$bundled_jdk"
-    export PATH="$JAVA_HOME/bin:$PATH"
-fi
+source "$project_dir/scripts/resolve-jdk17.sh"
 
 check_file() {
     if [[ ! -e "$1" ]]; then

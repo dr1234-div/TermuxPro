@@ -8,6 +8,9 @@ import java.util.List;
 /** 不包含主机或凭据的工作区连接事实，用于避免把“打开终端”误报成“连接成功”。 */
 final class WorkspaceConnectionState {
 
+    static final long VERIFICATION_TTL_MS = 24L * 60L * 60L * 1000L;
+    private static final long CLOCK_SKEW_TOLERANCE_MS = 5L * 60L * 1000L;
+
     enum Status { TERMINAL_OPENED, VERIFIED, ACTION_REQUIRED, FAILED, UNKNOWN }
 
     final Status status;
@@ -23,6 +26,17 @@ final class WorkspaceConnectionState {
 
     static WorkspaceConnectionState terminalOpened(long timestamp) {
         return new WorkspaceConnectionState(Status.TERMINAL_OPENED, null, timestamp);
+    }
+
+    boolean hasVerifiedFact() {
+        return status == Status.VERIFIED;
+    }
+
+    /** 诊断结果只是带时效的历史事实，不能永久代表当前 SSH 连接。 */
+    boolean isVerificationFresh(long now) {
+        if (!hasVerifiedFact() || timestamp > now + CLOCK_SKEW_TOLERANCE_MS) return false;
+        long age = Math.max(0L, now - timestamp);
+        return age <= VERIFICATION_TTL_MS;
     }
 
     static WorkspaceConnectionState fromStages(@NonNull List<SshDiagnosticStages.Item> stages,

@@ -19,80 +19,107 @@
         <LinearLayout
             android:id="@+id/terminal_workspace_header"
             android:layout_width="match_parent"
-            android:layout_height="54dp"
+            android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:background="#111E2A"
             android:gravity="center_vertical"
+            android:minHeight="54dp"
             android:orientation="horizontal"
             android:paddingHorizontal="8dp">
 
-            <ImageButton
+            <TextView
                 android:id="@+id/workspace_drawer_button"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
                 android:contentDescription="@string/workspace_open_sessions"
-                android:src="@drawable/ic_new_session"
-                app:tint="#AFC1CF" />
+                android:focusable="true"
+                android:gravity="center"
+                android:minHeight="48dp"
+                android:paddingHorizontal="8dp"
+                android:text="@string/workspace_sessions_short"
+                android:textColor="#D8E4EC"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/workspace_home_button"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:contentDescription="@string/workspace_open_workbench_description"
+                android:focusable="true"
                 android:gravity="center_vertical"
                 android:paddingStart="8dp"
-                android:text="@string/application_name"
+                android:text="@string/workspace_open_workbench"
                 android:textColor="#F5F8FA"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/terminal_prompt_button"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:minWidth="0dp"
-                android:paddingHorizontal="9dp"
-                android:text="@string/workspace_prompt_action"
-                android:textAllCaps="false"
-                android:textColor="#D8E4EC"
-                android:textSize="12sp"
-                android:backgroundTint="#24394A" />
+            <HorizontalScrollView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:fillViewport="false"
+                android:scrollbars="none">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/terminal_claude_button"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:minWidth="0dp"
-                android:layout_marginStart="5dp"
-                android:paddingHorizontal="8dp"
-                android:text="Claude"
-                android:textAllCaps="false"
-                android:textColor="#D8E4EC"
-                android:textSize="12sp"
-                android:backgroundTint="#24394A" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/terminal_codex_button"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_marginStart="5dp"
-                android:minWidth="0dp"
-                android:paddingHorizontal="8dp"
-                android:text="Codex"
-                android:textAllCaps="false"
-                android:textColor="#062118"
-                android:textSize="12sp"
-                android:backgroundTint="#68E0B7" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/terminal_prompt_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:backgroundTint="#24394A"
+                        android:minWidth="0dp"
+                        android:paddingHorizontal="9dp"
+                        android:text="@string/workspace_prompt_action"
+                        android:textAllCaps="false"
+                        android:textColor="#D8E4EC"
+                        android:textSize="12sp" />
 
-            <ImageButton
-                android:id="@+id/terminal_tools_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="2dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/workspace_tools_action"
-                android:src="@drawable/ic_workspace_tools" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/terminal_claude_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="5dp"
+                        android:backgroundTint="#24394A"
+                        android:minWidth="0dp"
+                        android:paddingHorizontal="8dp"
+                        android:text="Claude"
+                        android:textAllCaps="false"
+                        android:textColor="#D8E4EC"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/terminal_codex_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="5dp"
+                        android:backgroundTint="#68E0B7"
+                        android:minWidth="0dp"
+                        android:paddingHorizontal="8dp"
+                        android:text="Codex"
+                        android:textAllCaps="false"
+                        android:textColor="#062118"
+                        android:textSize="12sp" />
+
+                    <ImageButton
+                        android:id="@+id/terminal_tools_button"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="2dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/workspace_tools_action"
+                        android:src="@drawable/ic_workspace_tools" />
+                </LinearLayout>
+            </HorizontalScrollView>
         </LinearLayout>
 
         <androidx.drawerlayout.widget.DrawerLayout
@@ -127,16 +154,39 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:gravity="center_vertical"
+                    android:minHeight="56dp"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/terminal_sessions_title"
+                        android:textColor="?attr/termuxActivityDrawerImageTint"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
                     <ImageButton
                         android:id="@+id/settings_button"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
                         android:src="@drawable/ic_settings"
                         android:background="@null"
                         android:contentDescription="@string/action_open_settings"
                         app:tint="?attr/termuxActivityDrawerImageTint" />
                 </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:alpha="0.72"
+                    android:paddingHorizontal="16dp"
+                    android:paddingBottom="10dp"
+                    android:text="@string/terminal_sessions_hint"
+                    android:textColor="?attr/termuxActivityDrawerImageTint"
+                    android:textSize="13sp" />
 
                 <ListView
                     android:id="@+id/terminal_sessions_list"
@@ -180,6 +230,14 @@
             android:layout_height="37.5dp"
             android:background="@color/black"
             android:layout_alignParentBottom="true" />
+
+        <include
+            layout="@layout/view_terminal_feedback"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/terminal_workspace_header"
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginTop="12dp" />
 
     </RelativeLayout>
 

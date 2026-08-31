@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#08131C"
@@ -16,14 +15,21 @@
         android:orientation="horizontal"
         android:paddingHorizontal="10dp">
 
-        <ImageButton
+        <TextView
             android:id="@+id/git_diff_back_button"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
             android:contentDescription="@string/git_diff_back"
-            android:src="@drawable/ic_arrow_back"
-            app:tint="#AFC1CF" />
+            android:focusable="true"
+            android:gravity="center"
+            android:minWidth="48dp"
+            android:paddingHorizontal="8dp"
+            android:text="@string/git_diff_back"
+            android:textColor="#AFC1CF"
+            android:textSize="15sp"
+            android:textStyle="bold" />
 
         <TextView
             android:layout_width="0dp"
@@ -40,14 +46,21 @@
             android:textSize="18sp"
             android:textStyle="bold" />
 
-        <ImageButton
+        <TextView
             android:id="@+id/git_diff_refresh_button"
-            android:layout_width="48dp"
+            android:layout_width="wrap_content"
             android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
             android:contentDescription="@string/git_diff_refresh"
-            android:src="@drawable/ic_refresh"
-            app:tint="#68E0B7" />
+            android:focusable="true"
+            android:gravity="center"
+            android:minWidth="48dp"
+            android:paddingHorizontal="8dp"
+            android:text="@string/git_diff_refresh"
+            android:textColor="#68E0B7"
+            android:textSize="15sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <ProgressBar
@@ -61,6 +74,104 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
+
+        <ScrollView
+            android:id="@+id/git_overview_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:id="@+id/git_overview_head"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#F5F8FA"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/git_overview_path"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="#91A6B7"
+                    android:textIsSelectable="true"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/git_overview_changes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:textColor="#D8E4EC"
+                    android:textSize="17sp" />
+
+                <TextView
+                    android:id="@+id/git_overview_sync"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="#B4C3CF"
+                    android:textSize="15sp" />
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="28dp"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/git_overview_branches_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="#24394A"
+                            android:minHeight="48dp"
+                            android:text="@string/git_workbench_branches"
+                            android:textColor="#F5F8FA" />
+
+                        <Button
+                            android:id="@+id/git_overview_changes_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="#68E0B7"
+                            android:minHeight="48dp"
+                            android:text="@string/git_workbench_changes"
+                            android:textColor="#06231B" />
+
+                        <Button
+                            android:id="@+id/git_overview_commits_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="#24394A"
+                            android:minHeight="48dp"
+                            android:text="@string/git_workbench_commits"
+                            android:textColor="#F5F8FA" />
+                    </LinearLayout>
+                </HorizontalScrollView>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="28dp"
+                    android:text="@string/git_workbench_guidance"
+                    android:textColor="#91A6B7"
+                    android:textSize="14sp" />
+            </LinearLayout>
+        </ScrollView>
 
         <HorizontalScrollView
             android:id="@+id/git_diff_scroll"
