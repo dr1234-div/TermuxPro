@@ -9,12 +9,13 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
   create:
     runs-on: ubuntu-24.04
+    timeout-minutes: 60
     steps:
       - name: 创建或复用 dev PR
         env:
@@ -24,13 +25,46 @@ jobs:
           COMMIT_TITLE: ${{ github.event.head_commit.message }}
           COMMIT_SHA: ${{ github.sha }}
         run: |
+          title="${COMMIT_TITLE%%$'\n'*}"
           existing="$(gh pr list --repo "$REPOSITORY" --base dev --head "$HEAD_BRANCH" \
             --state open --json number --jq '.[0].number // empty')"
           if [[ -n "$existing" ]]; then
             echo "研发 PR #$existing 已存在。"
-            exit 0
+            pr_number="$existing"
+          else
+            pr_url="$(gh pr create --repo "$REPOSITORY" --base dev --head "$HEAD_BRANCH" \
+              --title "$title" \
+              --body "由 TermuxPro 自治研发流水线创建。完整变更、测试证据与验收结果以本 PR 的提交和 Checks 为准。\n\n触发提交：\`$COMMIT_SHA\`")"
+            pr_number="${pr_url##*/}"
           fi
-          title="${COMMIT_TITLE%%$'\n'*}"
-          gh pr create --repo "$REPOSITORY" --base dev --head "$HEAD_BRANCH" \
-            --title "$title" \
-            --body "由 TermuxPro 自治研发流水线创建。完整变更、测试证据与验收结果以本 PR 的提交和 Checks 为准。\n\n触发提交：\`$COMMIT_SHA\`"
+
+          wait_for_workflow() {
+            workflow="$1"
+            label="$2"
+            for attempt in $(seq 1 180); do
+              record="$(gh run list --repo "$REPOSITORY" --commit "$COMMIT_SHA" \
+                --workflow "$workflow" --limit 1 --json status,conclusion,databaseId \
+                --jq '.[0] // empty')"
+              if [[ -n "$record" ]]; then
+                status="$(jq -r '.status' <<<"$record")"
+                conclusion="$(jq -r '.conclusion // ""' <<<"$record")"
+                echo "$label：$status ${conclusion:-等待结论}"
+                if [[ "$status" == 'completed' ]]; then
+                  [[ "$conclusion" == 'success' ]] && return 0
+                  echo "$label 未通过，保留 PR #$pr_number。" >&2
+                  return 1
+                fi
+              else
+                echo "$label 尚未创建，等待触发。"
+              fi
+              sleep 20
+            done
+            echo "$label 等待超时，保留 PR #$pr_number。" >&2
+            return 1
+          }
+
+          wait_for_workflow '.github/workflows/ci.yml' '完整 CI'
+          wait_for_workflow '.github/workflows/ui-emulator.yml' '模拟器 UI'
+          gh pr merge "$pr_number" --repo "$REPOSITORY" --merge \
+            --subject "Merge pull request #$pr_number from ${{ github.repository_owner }}/$HEAD_BRANCH" \
+            --body "$title"
