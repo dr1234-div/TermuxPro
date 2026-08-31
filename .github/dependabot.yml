@@ -2,8 +2,9 @@ version: 2
 updates:
 - package-ecosystem: github-actions
   directory: /
+  target-branch: dev
   schedule:
     interval: daily
   commit-message:
-    # Prefix all commit messages with "Changed: "
-    prefix: "Changed"
+    prefix: "ci"
+    prefix-development: "ci"

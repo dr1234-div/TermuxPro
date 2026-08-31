@@ -142,6 +142,8 @@
 - 可控 SSH fixture 已覆盖真实密钥认证、tmux 有/无、输出截断和拒绝连接；继续补 DNS、超时、主机密钥变化及 Android UI 状态自动化。
 - GitHub Runner 模拟器每日/按 UI PR 运行 360dp 深色默认字体与 200% 字体截图回归，本地共享服务器不启动模拟器。
 - 修正模拟器定时巡检：当前工作流只在 `dev`，GitHub cron 依赖默认分支上的 workflow，现阶段不得宣称每日自动执行；选择默认分支可用的受控触发方案，并用连续 scheduled 运行证明。
+- 依赖更新进入研发线：Dependabot 的 GitHub Actions 更新必须以 `dev` 为目标并使用 `ci` 提交前缀，避免
+  机器人 PR 直接打到 `master` 干扰稳定发布线；旧的 `master` 目标机器人 PR 不作为发布输入。
 
 ## P2
 
