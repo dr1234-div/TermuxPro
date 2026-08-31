@@ -1,5 +1,6 @@
 package com.termux.app;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -10,13 +11,17 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.activity.OnBackPressedCallback;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.termux.R;
 import java.util.concurrent.ExecutorService;
@@ -28,6 +33,7 @@ public final class GitDiffActivity extends AppCompatActivity {
     private static final String EXTRA_HOST = "host";
     private static final String EXTRA_PORT = "port";
     private static final String EXTRA_PATH = "path";
+    static final String EXTRA_UI_TEST_OVERVIEW = "ui_test_overview";
     private static final int MAX_OUTPUT_BYTES = 1_500_000;
 
     private final ExecutorService mExecutor = Executors.newSingleThreadExecutor();
@@ -66,7 +72,13 @@ public final class GitDiffActivity extends AppCompatActivity {
         findViewById(R.id.git_diff_back_button).setOnClickListener(view -> navigateBack());
         findViewById(R.id.git_diff_refresh_button).setOnClickListener(view -> refreshCurrentMode());
         findViewById(R.id.git_overview_branches_button).setOnClickListener(view -> showBranches());
+        findViewById(R.id.git_overview_create_branch_button).setOnClickListener(
+            view -> showCreateBranchDialog());
         findViewById(R.id.git_overview_changes_button).setOnClickListener(view -> loadDiff());
+        findViewById(R.id.git_overview_stage_all_button).setOnClickListener(
+            view -> confirmStageAll());
+        findViewById(R.id.git_overview_unstage_all_button).setOnClickListener(
+            view -> confirmUnstageAll());
         findViewById(R.id.git_overview_commits_button).setOnClickListener(view -> showCommits());
         mReturnWorkspace.setOnClickListener(view -> WorkspaceNavigation.returnToWorkspace(this));
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -75,7 +87,13 @@ public final class GitDiffActivity extends AppCompatActivity {
                 navigateBack();
             }
         });
-        loadOverview();
+        String uiTestOverview = getIntent().getStringExtra(EXTRA_UI_TEST_OVERVIEW);
+        if (uiTestOverview == null) {
+            loadOverview();
+        } else {
+            String path = getIntent().getStringExtra(EXTRA_PATH);
+            showOverviewForTesting(path == null ? "" : path, uiTestOverview);
+        }
     }
 
     private void refreshCurrentMode() {
@@ -179,6 +197,7 @@ public final class GitDiffActivity extends AppCompatActivity {
     }
 
     private void showOverview(@NonNull String path, @NonNull GitRepositoryOverview overview) {
+        mOverview = overview;
         mProgress.setVisibility(View.GONE);
         mStatusState.setVisibility(View.GONE);
         mContentScroll.setVisibility(View.GONE);
@@ -189,6 +208,14 @@ public final class GitDiffActivity extends AppCompatActivity {
         ((TextView) findViewById(R.id.git_overview_path)).setText(path);
         ((TextView) findViewById(R.id.git_overview_changes)).setText(getResources().getQuantityString(
             R.plurals.git_workbench_changed_files, overview.changedFiles, overview.changedFiles));
+        ((TextView) findViewById(R.id.git_overview_index_state)).setText(getString(
+            R.string.git_workbench_index_state, overview.stagedFiles, overview.unstagedFiles));
+        Button stageAll = findViewById(R.id.git_overview_stage_all_button);
+        stageAll.setEnabled(overview.unstagedFiles > 0);
+        stageAll.setAlpha(overview.unstagedFiles > 0 ? 1f : 0.48f);
+        Button unstageAll = findViewById(R.id.git_overview_unstage_all_button);
+        unstageAll.setEnabled(overview.stagedFiles > 0);
+        unstageAll.setAlpha(overview.stagedFiles > 0 ? 1f : 0.48f);
         TextView sync = findViewById(R.id.git_overview_sync);
         if (overview.ahead == null || overview.behind == null) {
             sync.setText(R.string.git_workbench_no_upstream);
@@ -222,10 +249,16 @@ public final class GitDiffActivity extends AppCompatActivity {
     }
 
     private void showBranches() {
+        AlertDialog dialog = createBranchesDialog();
+        if (dialog != null) showStyledDialog(dialog);
+    }
+
+    @Nullable
+    AlertDialog createBranchesDialog() {
         if (mOverview == null || (mOverview.localBranches.isEmpty()
             && mOverview.remoteBranches.isEmpty())) {
             showStatus(getString(R.string.git_workbench_no_local_branches), false);
-            return;
+            return null;
         }
         int localCount = mOverview.localBranches.size();
         String[] labels = new String[localCount + mOverview.remoteBranches.size()];
@@ -239,35 +272,129 @@ public final class GitDiffActivity extends AppCompatActivity {
             labels[localCount + index] = getString(R.string.git_workbench_remote_branch,
                 mOverview.remoteBranches.get(index));
         }
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
             .setTitle(R.string.git_workbench_switch_branch)
-            .setItems(labels, (dialog, which) -> {
+            .setAdapter(new ArrayAdapter<>(this, R.layout.item_termuxpro_list, labels),
+                (selectionDialog, which) -> {
                 if (which < localCount) confirmSwitch(mOverview.localBranches.get(which));
-                else showRemoteBranch(mOverview.remoteBranches.get(which - localCount));
+                else confirmTrackRemoteBranch(mOverview.remoteBranches.get(which - localCount));
             })
             .setNegativeButton(android.R.string.cancel, null)
-            .show();
+            .create();
+        return dialog;
     }
 
-    private void showRemoteBranch(@NonNull String branch) {
-        new AlertDialog.Builder(this)
+    private void confirmTrackRemoteBranch(@NonNull String branch) {
+        AlertDialog dialog = createTrackRemoteBranchDialog(branch);
+        if (dialog != null) showStyledDialog(dialog);
+    }
+
+    @Nullable
+    AlertDialog createTrackRemoteBranchDialog(@NonNull String branch) {
+        if (mOverview == null || GitRepositoryOverview.isRemoteHead(branch)) return null;
+        int message = mOverview.changedFiles > 0
+            ? R.string.git_workbench_track_remote_dirty_message
+            : R.string.git_workbench_track_remote_message;
+        AlertDialog dialog = new AlertDialog.Builder(this)
             .setTitle(branch)
-            .setMessage(R.string.git_workbench_remote_branch_guidance)
-            .setPositiveButton(android.R.string.ok, null)
-            .show();
+            .setMessage(getString(message, mOverview.head, branch, mOverview.changedFiles))
+            .setPositiveButton(R.string.git_workbench_track_remote_action,
+                (selectionDialog, which) -> trackRemoteBranch(branch))
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        return dialog;
     }
 
     private void confirmSwitch(@NonNull String branch) {
         if (mOverview == null || branch.equals(mOverview.head)) return;
         int message = mOverview.changedFiles > 0
             ? R.string.git_workbench_switch_dirty_message : R.string.git_workbench_switch_message;
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
             .setTitle(R.string.git_workbench_switch_branch)
             .setMessage(getString(message, mOverview.head, branch, mOverview.changedFiles))
             .setPositiveButton(R.string.git_workbench_switch_action,
-                (dialog, which) -> switchBranch(branch))
+                (selectionDialog, which) -> switchBranch(branch))
             .setNegativeButton(android.R.string.cancel, null)
-            .show();
+            .create();
+        showStyledDialog(dialog);
+    }
+
+    private void confirmStageAll() {
+        if (mOverview == null || mOverview.unstagedFiles <= 0) {
+            showStatus(getString(R.string.git_workbench_no_unstaged_changes), false);
+            return;
+        }
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_stage_all)
+            .setMessage(getString(R.string.git_workbench_stage_all_message,
+                mOverview.unstagedFiles))
+            .setPositiveButton(R.string.git_workbench_stage_all_action,
+                (selectionDialog, which) -> runIndexOperation(true))
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        showStyledDialog(dialog);
+    }
+
+    private void confirmUnstageAll() {
+        if (mOverview == null || mOverview.stagedFiles <= 0) {
+            showStatus(getString(R.string.git_workbench_no_staged_changes), false);
+            return;
+        }
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_unstage_all)
+            .setMessage(getString(R.string.git_workbench_unstage_all_message,
+                mOverview.stagedFiles))
+            .setPositiveButton(R.string.git_workbench_unstage_all_action,
+                (selectionDialog, which) -> runIndexOperation(false))
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        showStyledDialog(dialog);
+    }
+
+    void showStyledDialog(@NonNull AlertDialog dialog) {
+        dialog.setOnShowListener(ignored -> TermuxProDialogStyle.apply(this, dialog));
+        dialog.show();
+    }
+
+    private void showCreateBranchDialog() {
+        AlertDialog dialog = createNewBranchDialog();
+        if (dialog != null) dialog.show();
+    }
+
+    @Nullable
+    AlertDialog createNewBranchDialog() {
+        if (mOverview == null) return null;
+        EditText input = new EditText(this);
+        input.setId(android.R.id.edit);
+        input.setSingleLine(true);
+        input.setHint(R.string.git_workbench_create_branch_hint);
+        input.setTextColor(ContextCompat.getColor(this, R.color.tp_text_primary));
+        input.setHintTextColor(ContextCompat.getColor(this, R.color.tp_text_secondary));
+        int padding = Math.round(20 * getResources().getDisplayMetrics().density);
+        input.setPadding(padding, padding / 2, padding, padding / 2);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_create_branch)
+            .setMessage(getString(mOverview.changedFiles > 0
+                ? R.string.git_workbench_create_branch_dirty_message
+                : R.string.git_workbench_create_branch_message, mOverview.head,
+                mOverview.changedFiles))
+            .setView(input)
+            .setPositiveButton(R.string.git_workbench_create_branch_action, null)
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        dialog.setOnShowListener(ignored -> {
+            TermuxProDialogStyle.apply(this, dialog);
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+                String branch = input.getText().toString().trim();
+                if (!WorkspaceCommandBuilder.isSafeGitBranchName(branch)) {
+                    input.setError(getString(R.string.git_workbench_create_branch_invalid));
+                    return;
+                }
+                dialog.dismiss();
+                createBranch(branch);
+            });
+        });
+        return dialog;
     }
 
     private void switchBranch(@NonNull String branch) {
@@ -283,6 +410,75 @@ public final class GitDiffActivity extends AppCompatActivity {
                 if (isFinishing() || isDestroyed()) return;
                 if (result.exitCode == 0) loadOverview();
                 else showStatus(getString(R.string.git_workbench_switch_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    private void createBranch(@NonNull String branch) {
+        if (mOverview == null || !WorkspaceCommandBuilder.isSafeGitBranchName(branch)) return;
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(R.string.git_workbench_creating_branch, branch));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                WorkspaceCommandBuilder.buildGitCreateBranchRemoteCommand(target.path, branch),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 74) showStatus(getString(
+                    R.string.git_workbench_create_branch_conflict, branch), false);
+                else showStatus(getString(R.string.git_workbench_create_branch_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    private void trackRemoteBranch(@NonNull String branch) {
+        if (mOverview == null || !mOverview.remoteBranches.contains(branch)
+            || GitRepositoryOverview.isRemoteHead(branch)) {
+            return;
+        }
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(R.string.git_workbench_switching, branch));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(target.path, branch),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 74) showStatus(getString(
+                    R.string.git_workbench_track_remote_conflict, branch), false);
+                else showStatus(getString(R.string.git_workbench_switch_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    private void runIndexOperation(boolean stage) {
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(stage
+            ? R.string.git_workbench_staging_all
+            : R.string.git_workbench_unstaging_all));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                stage
+                    ? WorkspaceCommandBuilder.buildGitStageAllRemoteCommand(target.path)
+                    : WorkspaceCommandBuilder.buildGitUnstageAllRemoteCommand(target.path),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 75) showStatus(getString(stage
+                    ? R.string.git_workbench_no_unstaged_changes
+                    : R.string.git_workbench_no_staged_changes), false);
+                else showStatus(getString(stage
+                    ? R.string.git_workbench_stage_all_failed
+                    : R.string.git_workbench_unstage_all_failed,
                     result.output.trim()), false);
             });
         });

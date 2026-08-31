@@ -648,8 +648,12 @@ public final class WorkspaceActivity extends AppCompatActivity {
 
         View summary = findViewById(R.id.workspace_summary);
         summary.setVisibility(configured && !showEditor ? View.VISIBLE : View.GONE);
+        findViewById(R.id.workspace_selector).setVisibility(
+            mProfiles.size() > 1 ? View.VISIBLE : View.GONE);
         findViewById(R.id.workspace_manage_button).setVisibility(
             showEditor ? View.GONE : View.VISIBLE);
+        findViewById(R.id.workspace_new_button).setVisibility(
+            configured && !showEditor ? View.VISIBLE : View.GONE);
         if (configured) {
             ((TextView) findViewById(R.id.workspace_summary_target)).setText(profile.name);
             WorkspaceConnectionState state = mConnectionStateStore.read(profile.id);

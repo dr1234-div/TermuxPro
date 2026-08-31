@@ -139,13 +139,19 @@ final class WorkspaceCommandBuilder {
             + " && if [ -n \"$head\" ]; then detached=0; else detached=1; "
             + "head=$(git rev-parse --short HEAD 2>/dev/null || printf 'unborn'); fi"
             + " && changed=$(git status --porcelain=v1 -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && staged=$(git diff --cached --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && unstaged_tracked=$(git diff --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && untracked=$(git ls-files --others --exclude-standard -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && unstaged=$((unstaged_tracked + untracked))"
             + " && if counts=$(git rev-list --left-right --count '@{upstream}...HEAD' 2>/dev/null); then "
             + "behind=${counts%%[[:space:]]*}; ahead=${counts##*[[:space:]]}; upstream=1; "
             + "else behind=; ahead=; upstream=0; fi"
-            + " && printf 'TP_OVERVIEW\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' "
-            + "\"$head\" \"$detached\" \"$changed\" \"$ahead\" \"$behind\" \"$upstream\""
+            + " && printf 'TP_OVERVIEW\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\t%s\\n' "
+            + "\"$head\" \"$detached\" \"$changed\" \"$staged\" \"$unstaged\" "
+            + "\"$ahead\" \"$behind\" \"$upstream\""
             + " && git for-each-ref --sort=-committerdate --format='TP_LOCAL%09%(refname:short)' refs/heads"
             + " && git for-each-ref --sort=-committerdate --format='TP_REMOTE%09%(refname:short)' refs/remotes"
+            + " | grep -v '/HEAD$' || true"
             + " && (git log -20 --date=relative --pretty=format:'TP_LOG%x09%h%x09%ar%x09%s'"
             + " 2>/dev/null || true)";
     }
@@ -157,6 +163,90 @@ final class WorkspaceCommandBuilder {
             throw new IllegalArgumentException("Invalid branch");
         }
         return "cd -- " + remotePathExpression(path) + " && git switch -- " + shellQuote(branch);
+    }
+
+    /**
+     * 从当前 HEAD 创建新的本地分支并切换。
+     *
+     * 不覆盖已有分支，不推送到远端；分支名先本地保守校验，再交给 Git 自身规则复核。
+     */
+    @NonNull
+    static String buildGitCreateBranchRemoteCommand(@NonNull String path, @NonNull String branch) {
+        if (!isSafeGitBranchName(branch)) throw new IllegalArgumentException("Invalid branch");
+        return "cd -- " + remotePathExpression(path)
+            + " && git check-ref-format --branch " + shellQuote(branch) + " >/dev/null"
+            + " && if git show-ref --verify --quiet refs/heads/" + shellQuote(branch)
+            + "; then exit 74; fi"
+            + " && git switch -c " + shellQuote(branch);
+    }
+
+    /** 暂存当前 Git 仓库的全部工作区改动；只改 index，不提交也不推送。 */
+    @NonNull
+    static String buildGitStageAllRemoteCommand(@NonNull String path) {
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && root=$(git rev-parse --show-toplevel)"
+            + " && cd -- \"$root\""
+            + " && unstaged_tracked=$(git diff --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && untracked=$(git ls-files --others --exclude-standard -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && if [ $((unstaged_tracked + untracked)) -eq 0 ]; then exit 75; fi"
+            + " && git add -A -- .";
+    }
+
+    /** 取消暂存当前 Git 仓库的全部 staged 改动；保留工作区文件，不执行 reset --hard。 */
+    @NonNull
+    static String buildGitUnstageAllRemoteCommand(@NonNull String path) {
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && root=$(git rev-parse --show-toplevel)"
+            + " && cd -- \"$root\""
+            + " && staged=$(git diff --cached --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && if [ \"$staged\" -eq 0 ]; then exit 75; fi"
+            + " && if git rev-parse --verify HEAD >/dev/null 2>&1; then "
+            + "git restore --staged -- .; else git rm -r --cached -- . >/dev/null; fi";
+    }
+
+    static boolean isSafeGitBranchName(@NonNull String branch) {
+        if (branch.isEmpty() || branch.length() > 128 || branch.startsWith("-")
+            || branch.startsWith("/") || branch.endsWith("/") || branch.endsWith(".")
+            || branch.endsWith(".lock") || branch.contains("..") || branch.contains("//")
+            || branch.contains("@{")) {
+            return false;
+        }
+        for (int index = 0; index < branch.length(); index++) {
+            char value = branch.charAt(index);
+            if (Character.isISOControl(value) || Character.isWhitespace(value)
+                || value == '~' || value == '^' || value == ':' || value == '?'
+                || value == '*' || value == '[' || value == '\\') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 从用户显式选择的远端跟踪分支创建同名本地跟踪分支并切换。
+     *
+     * 不自动覆盖已有本地分支；如果脏工作树会被覆盖，Git 自身会拒绝并保留当前工作树。
+     */
+    @NonNull
+    static String buildGitTrackRemoteBranchCommand(@NonNull String path, @NonNull String remoteBranch) {
+        if (remoteBranch.isEmpty()
+            || remoteBranch.indexOf('\n') >= 0
+            || remoteBranch.indexOf('\r') >= 0
+            || remoteBranch.endsWith("/HEAD")
+            || remoteBranch.indexOf('/') <= 0
+            || remoteBranch.startsWith("-")) {
+            throw new IllegalArgumentException("Invalid remote branch");
+        }
+        String localBranch = remoteBranch.substring(remoteBranch.indexOf('/') + 1);
+        if (localBranch.isEmpty() || localBranch.startsWith("-")) {
+            throw new IllegalArgumentException("Invalid local branch");
+        }
+        return "cd -- " + remotePathExpression(path)
+            + " && if git show-ref --verify --quiet refs/heads/" + shellQuote(localBranch)
+            + "; then exit 74; fi"
+            + " && git switch --track " + shellQuote(remoteBranch);
     }
 
     /** 列出项目内单层目录，使用 NUL 分隔以支持空格、Tab 和换行文件名。 */
