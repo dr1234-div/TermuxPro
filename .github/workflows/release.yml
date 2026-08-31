@@ -11,13 +11,12 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  actions: write
   contents: write
 
 jobs:
   release:
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -76,6 +75,69 @@ jobs:
           path: ${{ steps.version.outputs.dist }}/
           if-no-files-found: error
           retention-days: 30
+      - name: 安装模拟器系统镜像
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            'platform-tools' 'emulator' 'platforms;android-36' 'build-tools;36.0.0' \
+            'system-images;android-35;google_apis;x86_64'
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+      - name: 创建并启动发布验收模拟器
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          export ANDROID_AVD_HOME="$RUNNER_TEMP/android-avd"
+          if [[ -e /dev/kvm ]]; then
+            sudo chmod 666 /dev/kvm
+          fi
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd \
+            --force --name termuxpro-release --package 'system-images;android-35;google_apis;x86_64'
+          "$ANDROID_HOME/emulator/emulator" @termuxpro-release \
+            -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect \
+            -memory 2048 > "$RUNNER_TEMP/termuxpro-release-emulator.log" 2>&1 &
+          emulator_pid=$!
+          if ! timeout 120s adb wait-for-device; then
+            echo '发布验收模拟器设备发现超时' >&2
+            cat "$RUNNER_TEMP/termuxpro-release-emulator.log" >&2
+            exit 1
+          fi
+          for attempt in $(seq 1 90); do
+            if ! kill -0 "$emulator_pid" 2>/dev/null; then
+              echo '发布验收模拟器在启动期间退出' >&2
+              cat "$RUNNER_TEMP/termuxpro-release-emulator.log" >&2
+              exit 1
+            fi
+            if [[ "$(adb shell getprop sys.boot_completed | tr -d '\r')" == "1" ]]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo '发布验收模拟器启动超时' >&2
+          cat "$RUNNER_TEMP/termuxpro-release-emulator.log" >&2
+          exit 1
+      - name: 验收待发布签名 APK 的覆盖升级
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version_name="${{ steps.version.outputs.name }}"
+          version_code="${{ steps.version.outputs.code }}"
+          baseline_tag="$(gh release list --exclude-pre-releases --exclude-drafts --limit 100 \
+            --json tagName --jq '.[].tagName' \
+            | ./scripts/select-stable-baseline-tag.sh "$version_name")"
+          if [[ -z "$baseline_tag" ]]; then
+            echo "未找到低于 $version_name 的稳定 Release 基线。" >&2
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/release-baseline" test-artifacts/release-apk
+          gh release download "$baseline_tag" --pattern '*.apk' --pattern 'SHA256SUMS' \
+            --dir "$RUNNER_TEMP/release-baseline"
+          (cd "$RUNNER_TEMP/release-baseline" && sha256sum -c SHA256SUMS)
+          baseline_apk="$(find "$RUNNER_TEMP/release-baseline" -maxdepth 1 -name '*.apk' -print -quit)"
+          candidate_apk="${{ steps.version.outputs.dist }}/termuxpro-${version_name}-arm64-v8a.apk"
+          export AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          ./scripts/verify-release-apk-on-device.sh "$baseline_apk" "$candidate_apk" \
+            "$version_name" "$version_code" test-artifacts/release-apk
       - name: 创建 GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
@@ -93,34 +155,16 @@ jobs:
             --title "TermuxPro $GITHUB_REF_NAME" \
             --notes-file "${{ steps.version.outputs.dist }}/RELEASE_NOTES.md" \
             "${release_flags[@]}"
-      - name: 验收已发布候选 APK 的覆盖升级
-        if: >-
-          startsWith(github.ref, 'refs/tags/v') &&
-          (contains(github.ref_name, '-alpha.') ||
-           contains(github.ref_name, '-beta.') ||
-           contains(github.ref_name, '-rc.'))
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          requested_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          gh workflow run ui-emulator.yml --ref "$GITHUB_REF_NAME"
-          run_id=''
-          for attempt in $(seq 1 30); do
-            run_id="$(gh run list \
-              --workflow ui-emulator.yml \
-              --commit "$GITHUB_SHA" \
-              --event workflow_dispatch \
-              --limit 10 \
-              --json databaseId,createdAt \
-              --jq "[.[] | select(.createdAt >= \"$requested_at\")][0].databaseId // empty")"
-            if [[ -n "$run_id" ]]; then
-              break
-            fi
-            sleep 2
-          done
-          if [[ -z "$run_id" ]]; then
-            echo '未找到候选 APK 模拟器验收流水线。' >&2
-            exit 1
-          fi
-          echo "等待模拟器验收流水线：$run_id"
-          gh run watch "$run_id" --exit-status
+      - name: 上传发布验收证据
+        if: always() && startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v7
+        with:
+          name: termuxpro-release-device-gate-${{ github.run_number }}
+          path: |
+            test-artifacts/release-apk/
+            ${{ runner.temp }}/termuxpro-release-emulator.log
+          if-no-files-found: warn
+          retention-days: 30
+      - name: 关闭发布验收模拟器
+        if: always() && startsWith(github.ref, 'refs/tags/v')
+        run: adb emu kill || true
