@@ -255,12 +255,26 @@ final class WorkspaceCommandBuilder {
     static String buildGitFetchUpstreamRemoteCommand(@NonNull String path) {
         return "cd -- " + remotePathExpression(path)
             + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
-            + " && upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' "
-            + "2>/dev/null) || exit 76"
+            + " && if ! upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' "
+            + "2>/dev/null); then exit 76; fi"
             + " && remote=${upstream%%/*}"
             + " && [ -n \"$remote\" ]"
             + " && git remote get-url \"$remote\" >/dev/null"
             + " && git fetch --prune \"$remote\"";
+    }
+
+    /** 仅执行快进拉取；有未提交修改、无上游或需要 merge/rebase 时失败关闭。 */
+    @NonNull
+    static String buildGitPullFastForwardRemoteCommand(@NonNull String path) {
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && staged=$(git diff --cached --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && unstaged_tracked=$(git diff --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && untracked=$(git ls-files --others --exclude-standard -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && if [ $((staged + unstaged_tracked + untracked)) -ne 0 ]; then exit 77; fi"
+            + " && if ! git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' "
+            + ">/dev/null 2>&1; then exit 76; fi"
+            + " && git pull --ff-only";
     }
 
     /**

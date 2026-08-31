@@ -361,6 +361,14 @@
     <string name="git_workbench_fetch">Fetch</string>
     <string name="git_workbench_fetching">Fetching %1$s without merging…</string>
     <string name="git_workbench_fetch_failed">Git did not fetch the upstream remote. Your working tree was preserved.\n\n%1$s</string>
+    <string name="git_workbench_pull">Pull FF</string>
+    <string name="git_workbench_pull_message">Fast-forward %1$d commit(s) from %2$s? This will not merge or rebase, and it only runs when the working tree is clean.</string>
+    <string name="git_workbench_pull_action">Fast-forward</string>
+    <string name="git_workbench_pulling">Fast-forwarding from %1$s…</string>
+    <string name="git_workbench_pull_not_needed">The current branch is not behind its upstream.</string>
+    <string name="git_workbench_pull_dirty_blocked">Pull is blocked because the working tree has %1$d uncommitted file(s). Commit, unstage, or handle the files first.</string>
+    <string name="git_workbench_pull_dirty_remote_blocked">Pull is blocked because remote Git still reports uncommitted files. Refresh and handle the working tree first.</string>
+    <string name="git_workbench_pull_failed">Git did not fast-forward. Your working tree was preserved.\n\n%1$s</string>
     <string name="git_workbench_changes">Changes</string>
     <string name="git_workbench_index_state">Staged %1$d · unstaged %2$d</string>
     <string name="git_workbench_stage_all">Stage all</string>

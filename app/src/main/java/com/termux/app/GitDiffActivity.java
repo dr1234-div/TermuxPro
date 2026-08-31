@@ -75,6 +75,7 @@ public final class GitDiffActivity extends AppCompatActivity {
         findViewById(R.id.git_overview_create_branch_button).setOnClickListener(
             view -> showCreateBranchDialog());
         findViewById(R.id.git_overview_fetch_button).setOnClickListener(view -> fetchUpstream());
+        findViewById(R.id.git_overview_pull_button).setOnClickListener(view -> confirmPullFastForward());
         findViewById(R.id.git_overview_changes_button).setOnClickListener(view -> loadDiff());
         findViewById(R.id.git_overview_stage_all_button).setOnClickListener(
             view -> confirmStageAll());
@@ -234,6 +235,10 @@ public final class GitDiffActivity extends AppCompatActivity {
         Button fetch = findViewById(R.id.git_overview_fetch_button);
         fetch.setEnabled(overview.upstream != null);
         fetch.setAlpha(overview.upstream != null ? 1f : 0.48f);
+        boolean canPull = overview.upstream != null && overview.behind != null && overview.behind > 0;
+        Button pull = findViewById(R.id.git_overview_pull_button);
+        pull.setEnabled(canPull);
+        pull.setAlpha(canPull ? 1f : 0.48f);
     }
 
     /** 模拟器截图只注入脱敏协议数据，仍走与真实 SSH 结果相同的解析和渲染路径。 */
@@ -580,6 +585,53 @@ public final class GitDiffActivity extends AppCompatActivity {
                 else if (result.exitCode == 76) showStatus(
                     getString(R.string.git_workbench_no_upstream), false);
                 else showStatus(getString(R.string.git_workbench_fetch_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    private void confirmPullFastForward() {
+        if (mOverview == null || mOverview.upstream == null) {
+            showStatus(getString(R.string.git_workbench_no_upstream), false);
+            return;
+        }
+        if (mOverview.behind == null || mOverview.behind <= 0) {
+            showStatus(getString(R.string.git_workbench_pull_not_needed), false);
+            return;
+        }
+        if (mOverview.changedFiles > 0) {
+            showStatus(getString(R.string.git_workbench_pull_dirty_blocked,
+                mOverview.changedFiles), false);
+            return;
+        }
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_pull)
+            .setMessage(getString(R.string.git_workbench_pull_message,
+                mOverview.behind, mOverview.upstream))
+            .setPositiveButton(R.string.git_workbench_pull_action,
+                (selectionDialog, which) -> pullFastForward())
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        showStyledDialog(dialog);
+    }
+
+    private void pullFastForward() {
+        if (mOverview == null || mOverview.upstream == null) return;
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(R.string.git_workbench_pulling, mOverview.upstream));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                WorkspaceCommandBuilder.buildGitPullFastForwardRemoteCommand(target.path),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 76) showStatus(
+                    getString(R.string.git_workbench_no_upstream), false);
+                else if (result.exitCode == 77) showStatus(
+                    getString(R.string.git_workbench_pull_dirty_remote_blocked), false);
+                else showStatus(getString(R.string.git_workbench_pull_failed,
                     result.output.trim()), false);
             });
         });

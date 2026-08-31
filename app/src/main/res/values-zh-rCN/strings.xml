@@ -243,6 +243,14 @@
     <string name="git_workbench_fetch">更新远端</string>
     <string name="git_workbench_fetching">正在更新 %1$s 的远端状态，不会合并…</string>
     <string name="git_workbench_fetch_failed">Git 未完成远端更新，当前工作树已保留。\n\n%1$s</string>
+    <string name="git_workbench_pull">快进拉取</string>
+    <string name="git_workbench_pull_message">从 %2$s 快进 %1$d 个提交？不会 merge、不会 rebase，且只在工作树干净时执行。</string>
+    <string name="git_workbench_pull_action">确认快进</string>
+    <string name="git_workbench_pulling">正在从 %1$s 快进更新…</string>
+    <string name="git_workbench_pull_not_needed">当前分支没有落后上游，不需要拉取。</string>
+    <string name="git_workbench_pull_dirty_blocked">当前有 %1$d 个未提交文件，已阻止拉取。请先提交、取消暂存或处理这些文件。</string>
+    <string name="git_workbench_pull_dirty_remote_blocked">远端 Git 仍检测到未提交文件，已阻止拉取。请刷新后先处理工作树。</string>
+    <string name="git_workbench_pull_failed">Git 未完成快进拉取，当前工作树已保留。\n\n%1$s</string>
     <string name="git_workbench_changes">修改</string>
     <string name="git_workbench_index_state">已暂存 %1$d · 未暂存 %2$d</string>
     <string name="git_workbench_stage_all">暂存全部</string>

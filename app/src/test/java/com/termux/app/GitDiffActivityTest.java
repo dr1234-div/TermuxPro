@@ -108,12 +108,14 @@ public final class GitDiffActivityTest {
         assertTrue(sync.getText().toString().contains("领先 4"));
         assertTrue(sync.getText().toString().contains("落后 1"));
         assertTrue(((Button) activity.findViewById(R.id.git_overview_fetch_button)).isEnabled());
+        assertTrue(((Button) activity.findViewById(R.id.git_overview_pull_button)).isEnabled());
         assertTrue(((Button) activity.findViewById(R.id.git_overview_stage_all_button)).isEnabled());
         assertTrue(((Button) activity.findViewById(R.id.git_overview_unstage_all_button)).isEnabled());
         assertTrue(((Button) activity.findViewById(R.id.git_overview_commit_button)).isEnabled());
 
         activity.showOverviewForTesting("~/repo", "TP_OVERVIEW\tdev\t0\t0\t0\t0\t\t\t0\n");
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_fetch_button)).isEnabled());
+        assertTrue(!((Button) activity.findViewById(R.id.git_overview_pull_button)).isEnabled());
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_stage_all_button)).isEnabled());
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_unstage_all_button)).isEnabled());
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_commit_button)).isEnabled());
