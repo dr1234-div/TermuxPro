@@ -50,8 +50,6 @@ Gradle/Java 操作统一先 source `scripts/resolve-jdk17.sh`；禁止把只有 
 `vX.Y.Z-rc.N` 完成真机回归后，经 `dev → master` 发布 PR 合并，最后在 `master` 创建稳定标签
 `vX.Y.Z`。稳定 Release 成功后将 `dev` 快进到 `master` 并确认收尾 CI 通过。Actions Artifact 只是
 临时构建产物，不能替代 GitHub Release；不得移动或覆盖已发布标签。
-`dev_*`/`hotfix_*` 分支推送后由 `auto-dev-pr.yml` 幂等创建以 `dev` 为目标的 PR；本地 GitHub CLI
-授权不可用时不得绕过 PR 门禁直接推送 `dev`，也不得反复要求用户重新授权。
 
 每天迭代不等于每天发稳定版。每个发布列车默认只发布一个 `rc.1`；只有候选版发现 P0/P1、发布门禁失败
 或产物不可安装时，才允许修复后递增 `rc.2`、`rc.3`，并记录失败证据。P2 和下一轮功能不得继续塞入

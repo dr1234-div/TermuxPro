@@ -2,7 +2,7 @@ name: TermuxPro CI
 
 on:
   push:
-    branches: [dev, master]
+    branches: [dev, master, 'dev_*', 'hotfix_*']
   pull_request:
     branches: [dev, master]
 
