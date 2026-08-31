@@ -316,14 +316,56 @@ final class WorkspaceCommandBuilder {
             workspaceFingerprint(host, port, projectPath));
     }
 
+    /** 新建归属于当前工作区的后台 tmux 会话；同名存在时失败，不会进入或覆盖现有会话。 */
+    @NonNull
+    static String buildCreateTaskSessionRemoteCommand(@NonNull String sessionName,
+                                                       @NonNull String expectedOwnerToken,
+                                                       @NonNull String host,
+                                                       int port,
+                                                       @NonNull String projectPath) {
+        requireSessionName(sessionName);
+        requireOwnerToken(expectedOwnerToken);
+        String target = exactTmuxTarget(sessionName);
+        return "command -v tmux >/dev/null 2>&1 || exit 127; cd -- "
+            + remotePathExpression(projectPath) + " || exit 2; "
+            + "tmux has-session -t " + shellQuote(target) + " 2>/dev/null && exit 74; "
+            + "tmux new-session -d -s " + shellQuote(sessionName)
+            + " \\; set-option -t " + shellQuote(sessionName) + " " + TMUX_OWNER_OPTION + " "
+            + shellQuote(expectedOwnerToken)
+            + " \\; set-option -t " + shellQuote(sessionName) + " " + TMUX_WORKSPACE_OPTION + " "
+            + shellQuote(workspaceFingerprint(host, port, projectPath));
+    }
+
+    /** 仅重命名再次核验为当前工作区所有的会话；未知归属会话没有对应写操作。 */
+    @NonNull
+    static String buildRenameTaskSessionRemoteCommand(@NonNull String sessionName,
+                                                       @NonNull String newName,
+                                                       @NonNull String expectedOwnerToken,
+                                                       @NonNull String host,
+                                                       int port,
+                                                       @NonNull String projectPath) {
+        requireSessionName(newName);
+        requireOwnerToken(expectedOwnerToken);
+        String target = exactTmuxTarget(newName);
+        return "tmux has-session -t " + shellQuote(target) + " 2>/dev/null && exit 74; "
+            + resolveTmuxSessionHandle(sessionName) + " [ -n \"$sid\" ] || exit 72; "
+            + managedSessionCommand("rename-session -t '$sid' " + shellQuote(newName),
+            expectedOwnerToken, workspaceFingerprint(host, port, projectPath));
+    }
+
     @NonNull
     private static String managedSessionAction(@NonNull String tmuxAction, @NonNull String ownerToken,
                                                 @NonNull String workspaceFingerprint) {
+        return managedSessionCommand(tmuxAction + " -t '$sid'", ownerToken, workspaceFingerprint);
+    }
+
+    @NonNull
+    private static String managedSessionCommand(@NonNull String success, @NonNull String ownerToken,
+                                                 @NonNull String workspaceFingerprint) {
         String identity = "#{&&:#{==:#{pid},$server_pid},#{==:#{session_created},$created}}";
         String ownership = "#{&&:#{==:#{" + TMUX_OWNER_OPTION + "}," + ownerToken
             + "},#{==:#{" + TMUX_WORKSPACE_OPTION + "}," + workspaceFingerprint + "}}";
         String condition = "#{&&:" + identity + "," + ownership + "}";
-        String success = tmuxAction + " -t '$sid'";
         String failure = "run-shell \"printf '[TermuxPro] Refused: session ownership changed.\\n' "
             + ">&2; exit 73\"";
         return "exec tmux if-shell -F -t \"$sid\" \"" + condition + "\" \""
@@ -352,6 +394,12 @@ final class WorkspaceCommandBuilder {
     private static void requireOwnerToken(@NonNull String ownerToken) {
         if (!WorkspaceOwnershipStore.isValid(ownerToken)) {
             throw new IllegalArgumentException("Invalid workspace owner token");
+        }
+    }
+
+    private static void requireSessionName(@NonNull String sessionName) {
+        if (!TmuxSessionNameValidator.isValid(sessionName)) {
+            throw new IllegalArgumentException("Invalid tmux session name");
         }
     }
 

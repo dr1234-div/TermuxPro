@@ -303,6 +303,30 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(stop.contains("#{pid}:#{session_id}:#{session_created}:#{session_name}"));
     }
 
+    @Test
+    public void managedTmuxLifecycleCreatesAndRenamesWithoutServerWideKill() {
+        String create = WorkspaceCommandBuilder.buildCreateTaskSessionRemoteCommand(
+            "feature-login", OWNER, "dev@example.com", 22, "~/repo");
+        String rename = WorkspaceCommandBuilder.buildRenameTaskSessionRemoteCommand(
+            "feature-login", "feature-done", OWNER, "dev@example.com", 22, "~/repo");
+
+        assertTrue(create.contains("tmux new-session -d -s 'feature-login'"));
+        assertTrue(create.contains(WorkspaceCommandBuilder.TMUX_OWNER_OPTION));
+        assertTrue(create.contains(WorkspaceCommandBuilder.TMUX_WORKSPACE_OPTION));
+        assertTrue(create.contains("has-session -t '=feature-login'"));
+        assertTrue(rename.contains("rename-session -t '$sid' 'feature-done'"));
+        assertTrue(rename.contains("if-shell -F -t \"$sid\""));
+        assertTrue(rename.contains("session ownership changed"));
+        assertFalse(create.contains("kill-server"));
+        assertFalse(rename.contains("kill-server"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void managedTmuxCreateRejectsUnsafeName() {
+        WorkspaceCommandBuilder.buildCreateTaskSessionRemoteCommand(
+            "unsafe; touch /tmp/pwned", OWNER, "dev@example.com", 22, "~/repo");
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void managedPolicyRejectsMissingOwnerToken() {
         WorkspaceCommandBuilder.buildSshCommand("dev@example.com", 22, "~/repo", null,
@@ -315,6 +339,12 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(!first.equals(WorkspaceCommandBuilder.workspaceFingerprint("dev@example.com", 22, "~/other")));
         assertTrue(!first.equals(WorkspaceCommandBuilder.workspaceFingerprint("other@example.com", 22, "~/repo")));
         assertTrue(!first.equals(WorkspaceCommandBuilder.workspaceFingerprint("dev@example.com", 2222, "~/repo")));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void createRejectsDotBeforeTmuxCanSilentlyRewriteIt() {
+        WorkspaceCommandBuilder.buildCreateTaskSessionRemoteCommand(
+            "feature.2", OWNER, "fixture-host", 22, ".");
     }
 
     @Test
@@ -347,14 +377,27 @@ public class WorkspaceCommandBuilderTest {
             assertEquals(0, runShell(stop, environment));
             assertTrue(runShell("tmux has-session -t termuxpro-guard", environment) != 0);
 
-            String create = WorkspaceCommandBuilder.buildCreateManagedTmuxSessionCommand(
-                "termuxpro-created", null, OWNER, fingerprint);
-            // attach 会等待终端；超时只终止客户端，之前同一服务端命令队列写入的标记必须已经生效。
-            runShell("timeout 2 /bin/sh -c " + WorkspaceCommandBuilder.shellQuote(create), environment);
+            String createdFingerprint = WorkspaceCommandBuilder.workspaceFingerprint("fixture-host", 22, ".");
+            String create = WorkspaceCommandBuilder.buildCreateTaskSessionRemoteCommand(
+                "termuxpro-created", OWNER, "fixture-host", 22, ".");
+            assertEquals(0, runShell(create, environment));
             assertEquals(0, runShell("test \"$(tmux show-options -v -t termuxpro-created "
                 + WorkspaceCommandBuilder.TMUX_OWNER_OPTION + ")\" = '" + OWNER + "'", environment));
             assertEquals(0, runShell("test \"$(tmux show-options -v -t termuxpro-created "
-                + WorkspaceCommandBuilder.TMUX_WORKSPACE_OPTION + ")\" = '" + fingerprint + "'", environment));
+                + WorkspaceCommandBuilder.TMUX_WORKSPACE_OPTION + ")\" = '" + createdFingerprint + "'", environment));
+            String rename = WorkspaceCommandBuilder.buildRenameTaskSessionRemoteCommand(
+                "termuxpro-created", "termuxpro-renamed", OWNER, "fixture-host", 22, ".");
+            assertEquals(0, runShell(rename, environment));
+            assertEquals(0, runShell("tmux has-session -t '=termuxpro-renamed'", environment));
+            String stopRenamed = WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(
+                "termuxpro-renamed", OWNER, "fixture-host", 22, ".");
+            assertEquals(0, runShell(stopRenamed, environment));
+            assertTrue(runShell("tmux has-session -t '=termuxpro-renamed'", environment) != 0);
+
+            assertThrows(IllegalArgumentException.class, () ->
+                WorkspaceCommandBuilder.buildCreateTaskSessionRemoteCommand(
+                    "feature.2", OWNER, "fixture-host", 22, "."));
+            assertTrue(runShell("tmux has-session -t '=feature_2'", environment) != 0);
         } finally {
             runShell("/usr/bin/tmux -L " + WorkspaceCommandBuilder.shellQuote(socketName)
                 + " kill-server 2>/dev/null || true", new HashMap<>());

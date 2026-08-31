@@ -158,15 +158,27 @@ public final class UiRenderingInstrumentedTest {
                     com.termux.R.id.connection_diagnostic_return_workspace_button);
                 });
         capture(context, "task-sessions",
-            TaskSessionsActivity.newIntent(context, "invalid", 0, "~/project",
-                "11111111-2222-3333-4444-555555555555"), activity -> {
+            TaskSessionsActivity.newIntent(context, "dev@example.com", 22, "~/project",
+                "11111111-2222-3333-4444-555555555555")
+                .putExtra(TaskSessionsActivity.EXTRA_UI_TEST_SESSIONS, true), activity -> {
                 assertToolbarActionsVisible(activity,
                     com.termux.R.id.task_sessions_back_button,
                     com.termux.R.id.task_sessions_refresh_button);
-                assertReadableRecoveryMessage(activity,
-                    com.termux.R.id.task_sessions_status,
-                    com.termux.R.id.task_sessions_recovery_button);
+                TextView status = activity.findViewById(com.termux.R.id.task_sessions_status);
+                TextView create = activity.findViewById(com.termux.R.id.task_sessions_create_button);
+                assertTrue(status.getText().length() > 0);
+                assertTrue(create.getVisibility() == View.VISIBLE);
+                assertTrue(create.getText().length() > 0);
                 });
+        Intent sessionPreview = TaskSessionsActivity.newIntent(context, "dev@example.com", 22,
+            "~/project", "11111111-2222-3333-4444-555555555555")
+            .putExtra(TaskSessionsActivity.EXTRA_UI_TEST_SESSIONS, true);
+        capture(context, "task-sessions-create", new Intent(sessionPreview), activity ->
+            activity.findViewById(com.termux.R.id.task_sessions_create_button).performClick());
+        capture(context, "task-sessions-rename", new Intent(sessionPreview), activity ->
+            ((TaskSessionsActivity) activity).showRenameDialogForTesting());
+        capture(context, "task-sessions-stop", new Intent(sessionPreview), activity ->
+            ((TaskSessionsActivity) activity).showStopDialogForTesting());
         capture(context, "git-diff",
             GitDiffActivity.newIntent(context, "invalid", 0, "~/project"), activity -> {
                 ((GitDiffActivity) activity).showOverviewForTesting("~/project",

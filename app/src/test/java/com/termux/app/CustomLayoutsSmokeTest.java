@@ -53,6 +53,8 @@ public class CustomLayoutsSmokeTest {
             R.style.Theme_TermuxActivity_DayNight_NoActionBar);
         assertNotNull(LayoutInflater.from(terminalContext).inflate(
             R.layout.activity_termux, new FrameLayout(terminalContext), false));
+        assertNotNull(LayoutInflater.from(context).inflate(
+            R.layout.dialog_tmux_session_name, new FrameLayout(context), false));
     }
 
     @Test
@@ -150,6 +152,10 @@ public class CustomLayoutsSmokeTest {
             assertEquals(56, Math.round(toolbar.getMinimumHeight() / density));
             assertEquals(ViewGroup.LayoutParams.WRAP_CONTENT, toolbar.getLayoutParams().height);
         }
+        View sessions = inflater.inflate(R.layout.activity_task_sessions, new FrameLayout(context), false);
+        View createSession = sessions.findViewById(R.id.task_sessions_create_button);
+        assertTrue(createSession instanceof TextView);
+        assertTrue(createSession.getMinimumHeight() >= Math.round(48 * density));
 
         View workspace = inflater.inflate(R.layout.activity_workspace, new FrameLayout(context), false);
         LinearLayout actions = workspace.findViewById(R.id.workspace_management_actions);

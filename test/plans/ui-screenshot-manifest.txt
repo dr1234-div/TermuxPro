@@ -9,6 +9,9 @@ remote-file-preview
 remote-files
 ssh-keys
 task-sessions
+task-sessions-create
+task-sessions-rename
+task-sessions-stop
 terminal-feedback
 terminal-navigation
 workspace

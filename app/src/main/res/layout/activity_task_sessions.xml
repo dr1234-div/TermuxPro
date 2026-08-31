@@ -61,6 +61,15 @@
         android:layout_height="3dp"
         android:indeterminate="true" />
     <TextView
+        android:id="@+id/task_sessions_target"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        android:textColor="@color/tp_text_primary"
+        android:textSize="14sp" />
+    <TextView
         android:id="@+id/task_sessions_status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -76,9 +85,20 @@
         android:minHeight="48dp"
         android:text="@string/return_to_workspace"
         android:textAllCaps="false"
-        android:textColor="#08131C"
+        android:textColor="@color/tp_on_primary"
         android:visibility="gone"
-        app:backgroundTint="#68E0B7" />
+        app:backgroundTint="@color/tp_primary" />
+    <Button
+        android:id="@+id/task_sessions_create_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="12dp"
+        android:minHeight="48dp"
+        android:text="@string/task_sessions_create"
+        android:textAllCaps="false"
+        android:textColor="@color/tp_primary"
+        app:backgroundTint="@color/tp_surface_elevated" />
     <ListView
         android:id="@+id/task_sessions_list"
         android:layout_width="match_parent"

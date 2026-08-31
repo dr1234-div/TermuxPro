@@ -552,7 +552,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
             mPathInput.setError(getString(R.string.workspace_error_path));
             return;
         }
-        if (requiresSessionName(policy) && !sessionName.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,63}")) {
+        if (requiresSessionName(policy) && !TmuxSessionNameValidator.isValid(sessionName)) {
             mSessionNameInput.setError(getString(R.string.workspace_error_session_name));
             return;
         }
