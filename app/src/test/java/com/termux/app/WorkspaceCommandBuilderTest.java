@@ -152,6 +152,8 @@ public class WorkspaceCommandBuilderTest {
         String overview = WorkspaceCommandBuilder.buildGitOverviewRemoteCommand("~/team app");
         String branch = WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand(
             "/srv/team's app", "feature/user's-work");
+        String newBranch = WorkspaceCommandBuilder.buildGitCreateBranchRemoteCommand(
+            "/srv/team's app", "feature/local-ui");
         String remoteBranch = WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(
             "/srv/team's app", "origin/feature/user's-work");
 
@@ -162,12 +164,18 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(overview.contains("git log -20"));
         assertTrue(branch.contains("'/srv/team'\\''s app'"));
         assertTrue(branch.endsWith("'feature/user'\\''s-work'"));
+        assertTrue(newBranch.contains("git check-ref-format --branch 'feature/local-ui'"));
+        assertTrue(newBranch.contains("git switch -c 'feature/local-ui'"));
         assertTrue(remoteBranch.contains("git show-ref --verify --quiet refs/heads/'feature/user'\\''s-work'"));
         assertTrue(remoteBranch.endsWith("git switch --track 'origin/feature/user'\\''s-work'"));
         assertThrows(IllegalArgumentException.class,
             () -> WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand("~/app", "bad\nbranch"));
         assertThrows(IllegalArgumentException.class,
             () -> WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand("~/app", "origin/HEAD"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitCreateBranchRemoteCommand("~/app", "bad branch"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitCreateBranchRemoteCommand("~/app", "-bad"));
     }
 
     @Test
@@ -202,6 +210,16 @@ public class WorkspaceCommandBuilderTest {
         ShellOutput switched = runShellCapture(
             WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
         assertEquals("feature", GitRepositoryOverview.parse(switched.output).head);
+
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitCreateBranchRemoteCommand(
+            repository.toString(), "mobile-ui"), new HashMap<>()));
+        ShellOutput created = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        GitRepositoryOverview createdOverview = GitRepositoryOverview.parse(created.output);
+        assertEquals("mobile-ui", createdOverview.head);
+        assertTrue(createdOverview.localBranches.contains("mobile-ui"));
+        assertEquals(74, runShell(WorkspaceCommandBuilder.buildGitCreateBranchRemoteCommand(
+            repository.toString(), "mobile-ui"), new HashMap<>()));
     }
 
     @Test
