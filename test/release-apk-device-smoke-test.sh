@@ -22,6 +22,17 @@ case "$*" in
   'shell dumpsys package com.termux') printf 'versionCode=40001 minSdk=24\nversionName=0.4.0-rc.1\n' ;;
   'shell monkey -p com.termux -c android.intent.category.LAUNCHER 1') echo 'Events injected: 1' ;;
   'shell pidof com.termux') echo 1234 ;;
+  'shell getprop ro.product.manufacturer') echo Google ;;
+  'shell getprop ro.product.model') echo sdk_gphone64_x86_64 ;;
+  'shell getprop ro.build.version.release') echo 15 ;;
+  'shell getprop ro.build.version.sdk') echo 35 ;;
+  'shell getprop ro.product.cpu.abilist') echo x86_64,arm64-v8a ;;
+  'shell settings get secure default_input_method') echo com.google.android.inputmethod.latin/.LatinIME ;;
+  'logcat -d -v brief AndroidRuntime:E *:S')
+    if [[ "${FAKE_FATAL:-}" == "1" ]]; then
+      printf 'E/AndroidRuntime: FATAL EXCEPTION: main\n'
+    fi
+    ;;
   'pull '*) printf '<hierarchy package="com.termux"/>\n' > "${3:-/dev/null}" ;;
   'exec-out screencap -p') printf 'PNG' ;;
   *) : ;;
@@ -35,6 +46,24 @@ ADB="$temp_dir/fake-adb" AAPT="$temp_dir/fake-aapt" \
 grep -Fqx 'baselineUid=10123' "$temp_dir/evidence/result.txt"
 grep -Fqx 'candidateUid=10123' "$temp_dir/evidence/result.txt"
 grep -Fqx 'versionName=0.4.0-rc.1' "$temp_dir/evidence/result.txt"
+grep -Fqx 'deviceManufacturer=Google' "$temp_dir/evidence/android-runtime.txt"
+grep -Fqx 'deviceModel=sdk_gphone64_x86_64' "$temp_dir/evidence/android-runtime.txt"
+grep -Fqx 'androidRelease=15' "$temp_dir/evidence/android-runtime.txt"
+grep -Fqx 'androidSdk=35' "$temp_dir/evidence/android-runtime.txt"
+grep -Fqx 'supportedAbis=x86_64,arm64-v8a' "$temp_dir/evidence/android-runtime.txt"
+grep -Fqx 'defaultInputMethod=com.google.android.inputmethod.latin/.LatinIME' "$temp_dir/evidence/android-runtime.txt"
+grep -Fqx 'androidRuntimeFatalException=false' "$temp_dir/evidence/android-runtime.txt"
+grep -Fqx 'androidRuntimeLog=EMPTY_NO_FATAL_EXCEPTION' "$temp_dir/evidence/android-runtime.txt"
+
+if FAKE_FATAL=1 ADB="$temp_dir/fake-adb" AAPT="$temp_dir/fake-aapt" \
+  "$project_dir/scripts/verify-release-apk-on-device.sh" \
+  "$temp_dir/stable.apk" "$temp_dir/candidate.apk" 0.4.0-rc.1 40001 \
+  "$temp_dir/fatal" >/tmp/termuxpro-release-fatal.log 2>&1; then
+    echo 'AndroidRuntime Fatal Exception 不应通过。' >&2
+    exit 1
+fi
+grep -Fq '候选 APK 启动后出现 AndroidRuntime FATAL EXCEPTION' /tmp/termuxpro-release-fatal.log
+grep -Fqx 'androidRuntimeFatalException=true' "$temp_dir/fatal/android-runtime.txt"
 
 if FAKE_LABEL=Wrong ADB="$temp_dir/fake-adb" AAPT="$temp_dir/fake-aapt" \
   "$project_dir/scripts/verify-release-apk-on-device.sh" \

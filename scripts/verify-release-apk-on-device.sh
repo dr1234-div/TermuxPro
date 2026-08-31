@@ -45,6 +45,10 @@ require_regex() {
     fi
 }
 
+read_adb_shell_line() {
+    "$adb_bin" shell "$@" 2>/dev/null | tr -d '\r' | sed -n '1p' || true
+}
+
 install_apk() {
     local mode="${1:?}"
     local apk="${2:?}"
@@ -104,8 +108,29 @@ require_regex "$pid_output" '[0-9]' "候选 APK 启动后未检测到 com.termux
 sleep 3
 
 android_runtime="$($adb_bin logcat -d -v brief AndroidRuntime:E '*:S' | tr -d '\r')"
-printf '%s\n' "$android_runtime" > "$evidence_dir/android-runtime.txt"
+fatal_exception=false
 if grep -Fq 'FATAL EXCEPTION' <<<"$android_runtime"; then
+    fatal_exception=true
+fi
+{
+    printf 'deviceManufacturer=%s\n' "$(read_adb_shell_line getprop ro.product.manufacturer)"
+    printf 'deviceModel=%s\n' "$(read_adb_shell_line getprop ro.product.model)"
+    printf 'androidRelease=%s\n' "$(read_adb_shell_line getprop ro.build.version.release)"
+    printf 'androidSdk=%s\n' "$(read_adb_shell_line getprop ro.build.version.sdk)"
+    printf 'supportedAbis=%s\n' "$(read_adb_shell_line getprop ro.product.cpu.abilist)"
+    printf 'defaultInputMethod=%s\n' "$(read_adb_shell_line settings get secure default_input_method)"
+    printf 'packageName=com.termux\n'
+    printf 'versionName=%s\n' "$expected_name"
+    printf 'versionCode=%s\n' "$expected_code"
+    printf 'processPid=%s\n' "$pid_output"
+    printf 'androidRuntimeFatalException=%s\n' "$fatal_exception"
+    if [[ -n "$android_runtime" ]]; then
+        printf 'androidRuntimeLog<<EOF\n%s\nEOF\n' "$android_runtime"
+    else
+        printf 'androidRuntimeLog=EMPTY_NO_FATAL_EXCEPTION\n'
+    fi
+} > "$evidence_dir/android-runtime.txt"
+if [[ "$fatal_exception" == true ]]; then
     echo '候选 APK 启动后出现 AndroidRuntime FATAL EXCEPTION。' >&2
     exit 1
 fi
