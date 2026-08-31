@@ -17,6 +17,10 @@ if ! grep -Fq "TERMUX_SPLIT_APKS_FOR_RELEASE_BUILDS=1" "$script"; then
     echo "ABI 验收构建必须启用 split APK，确保能生成 x86_64 门禁 APK。" >&2
     exit 1
 fi
+if ! grep -Fq ":app:downloadBootstraps" "$script"; then
+    echo "ABI 验收基线从干净 worktree 构建时必须先下载 bootstrap，否则 NDK incbin 会缺文件。" >&2
+    exit 1
+fi
 if ! grep -Fq 'native-code: '"'"'$abi'"'" "$script"; then
     echo "ABI 验收构建必须校验 APK native-code 与目标 ABI 一致。" >&2
     exit 1

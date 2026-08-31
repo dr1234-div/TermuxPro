@@ -41,7 +41,7 @@ gradle_args=(--no-daemon --max-workers=2)
 if [[ "${TERMUXPRO_OFFLINE:-0}" == "1" ]]; then
     gradle_args+=(--offline)
 fi
-./gradlew "${gradle_args[@]}" :app:assembleRelease
+./gradlew "${gradle_args[@]}" :app:downloadBootstraps :app:assembleRelease
 
 apk="app/build/outputs/apk/release/termux-app_apt-android-7-release_${abi}.apk"
 if [[ ! -f "$apk" ]]; then
