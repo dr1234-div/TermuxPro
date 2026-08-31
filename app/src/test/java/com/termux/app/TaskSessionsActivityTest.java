@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.EditText;
+import android.widget.TextView;
 
 
 import com.termux.R;
@@ -36,6 +37,11 @@ public class TaskSessionsActivityTest {
         View create = activity.findViewById(R.id.task_sessions_create_button);
         assertEquals(2, sessions.getAdapter().getCount());
         assertEquals(View.VISIBLE, create.getVisibility());
+        TextView ownedRow = (TextView) sessions.getAdapter().getView(0, null, sessions);
+        String rowText = ownedRow.getText().toString();
+        assertTrue(rowText.contains("TermuxPro 创建"));
+        assertTrue(rowText.contains("创建 "));
+        assertTrue(rowText.contains("活跃 "));
 
         create.performClick();
         AlertDialog dialog = (AlertDialog) ShadowDialog.getLatestDialog();

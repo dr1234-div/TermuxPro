@@ -110,14 +110,19 @@
                         android:textColor="#062118"
                         android:textSize="12sp" />
 
-                    <ImageButton
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/terminal_tools_button"
-                        android:layout_width="48dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="48dp"
                         android:layout_marginStart="2dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:backgroundTint="#24394A"
                         android:contentDescription="@string/workspace_tools_action"
-                        android:src="@drawable/ic_workspace_tools" />
+                        android:minWidth="0dp"
+                        android:paddingHorizontal="9dp"
+                        android:text="@string/workspace_tools_action"
+                        android:textAllCaps="false"
+                        android:textColor="#D8E4EC"
+                        android:textSize="12sp" />
                 </LinearLayout>
             </HorizontalScrollView>
         </LinearLayout>

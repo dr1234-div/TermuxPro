@@ -86,18 +86,6 @@ import java.util.Arrays;
 public final class TermuxActivity extends AppCompatActivity implements ServiceConnection,
     ForegroundFeedbackHost {
 
-    private static final int TOOL_GIT_STATUS = 1;
-    private static final int TOOL_GIT_DIFF = 2;
-    private static final int TOOL_PROJECT_CHECK = 3;
-    private static final int TOOL_TMUX_SESSIONS = 4;
-    private static final int TOOL_INTERRUPT = 5;
-    private static final int TOOL_KEYS_SHELL = 6;
-    private static final int TOOL_KEYS_AI = 7;
-    private static final int TOOL_KEYS_VIM = 8;
-    private static final int TOOL_AI_CONFIRM = 9;
-    private static final int TOOL_AI_REJECT = 10;
-    private static final int TOOL_SEARCH_OUTPUT = 11;
-    private static final int TOOL_CUSTOM_COMMANDS = 12;
     private static final int TERMINAL_SEARCH_MAX_CHARS = 1_000_000;
     private static final int TERMINAL_SEARCH_MAX_MATCHES = 100;
     private static final String UI_PREFERENCES = "ai_terminal_ui";
@@ -705,34 +693,22 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
     private void showProjectTools(View anchor) {
         PopupMenu popup = new PopupMenu(this, anchor);
-        popup.getMenu().add(Menu.NONE, TOOL_SEARCH_OUTPUT, Menu.NONE, R.string.terminal_search_action);
-        popup.getMenu().add(Menu.NONE, TOOL_CUSTOM_COMMANDS, Menu.NONE,
-            R.string.terminal_custom_commands_action);
-        popup.getMenu().add(Menu.NONE, TOOL_GIT_STATUS, Menu.NONE, R.string.workspace_git_status_action);
-        popup.getMenu().add(Menu.NONE, TOOL_GIT_DIFF, Menu.NONE, R.string.workspace_git_diff_action);
-        popup.getMenu().add(Menu.NONE, TOOL_PROJECT_CHECK, Menu.NONE, R.string.workspace_project_check_action);
-        popup.getMenu().add(Menu.NONE, TOOL_TMUX_SESSIONS, Menu.NONE, R.string.workspace_tmux_sessions_action);
-        popup.getMenu().add(Menu.NONE, TOOL_AI_CONFIRM, Menu.NONE, R.string.ai_action_confirm_selection);
-        popup.getMenu().add(Menu.NONE, TOOL_AI_REJECT, Menu.NONE, R.string.ai_action_reject_or_back);
-        popup.getMenu().add(Menu.NONE, TOOL_INTERRUPT, Menu.NONE, R.string.workspace_interrupt_action);
-        popup.getMenu().add(Menu.NONE, TOOL_KEYS_SHELL, Menu.NONE, R.string.workspace_keys_shell_action);
-        popup.getMenu().add(Menu.NONE, TOOL_KEYS_AI, Menu.NONE, R.string.workspace_keys_ai_action);
-        popup.getMenu().add(Menu.NONE, TOOL_KEYS_VIM, Menu.NONE, R.string.workspace_keys_vim_action);
+        TerminalProjectToolsMenu.populate(this, popup.getMenu());
         popup.setOnMenuItemClickListener(item -> {
             switch (item.getItemId()) {
-                case TOOL_SEARCH_OUTPUT:
+                case TerminalProjectToolsMenu.TOOL_SEARCH_OUTPUT:
                     showTerminalSearch();
                     return true;
-                case TOOL_CUSTOM_COMMANDS:
+                case TerminalProjectToolsMenu.TOOL_CUSTOM_COMMANDS:
                     startActivity(new Intent(this, CustomCommandsActivity.class));
                     return true;
-                case TOOL_GIT_STATUS:
+                case TerminalProjectToolsMenu.TOOL_GIT_STATUS:
                     confirmAndSendCommand("git status --short --branch");
                     return true;
-                case TOOL_GIT_DIFF:
+                case TerminalProjectToolsMenu.TOOL_GIT_DIFF:
                     confirmAndSendCommand("git diff --color=always --stat && git diff --color=always");
                     return true;
-                case TOOL_PROJECT_CHECK:
+                case TerminalProjectToolsMenu.TOOL_PROJECT_CHECK:
                     confirmAndSendCommand("if [ -f package.json ]; then " +
                         "if command -v pnpm >/dev/null 2>&1; then pnpm test; " +
                         "elif command -v npm >/dev/null 2>&1; then npm test; fi; " +
@@ -741,27 +717,27 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                         "elif [ -x ./gradlew ]; then ./gradlew test; " +
                         "else printf 'No supported project check was detected.\\n'; fi");
                     return true;
-                case TOOL_TMUX_SESSIONS:
+                case TerminalProjectToolsMenu.TOOL_TMUX_SESSIONS:
                     confirmAndSendCommand("tmux list-sessions");
                     return true;
-                case TOOL_AI_CONFIRM:
+                case TerminalProjectToolsMenu.TOOL_AI_CONFIRM:
                     confirmAiSelection();
                     return true;
-                case TOOL_AI_REJECT:
+                case TerminalProjectToolsMenu.TOOL_AI_REJECT:
                     sendTerminalAction(AiTerminalAction.Type.REJECT_OR_BACK);
                     return true;
-                case TOOL_INTERRUPT:
+                case TerminalProjectToolsMenu.TOOL_INTERRUPT:
                     sendTerminalAction(AiTerminalAction.Type.INTERRUPT);
                     return true;
-                case TOOL_KEYS_SHELL:
+                case TerminalProjectToolsMenu.TOOL_KEYS_SHELL:
                     applyExtraKeysPreset(TermuxTerminalExtraKeys.PRESET_SHELL,
                         R.string.workspace_keys_shell_applied);
                     return true;
-                case TOOL_KEYS_AI:
+                case TerminalProjectToolsMenu.TOOL_KEYS_AI:
                     applyExtraKeysPreset(TermuxTerminalExtraKeys.PRESET_AI,
                         R.string.workspace_keys_ai_applied);
                     return true;
-                case TOOL_KEYS_VIM:
+                case TerminalProjectToolsMenu.TOOL_KEYS_VIM:
                     applyExtraKeysPreset(TermuxTerminalExtraKeys.PRESET_VIM,
                         R.string.workspace_keys_vim_applied);
                     return true;

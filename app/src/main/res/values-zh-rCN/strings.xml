@@ -120,9 +120,9 @@
     <string name="donate_preference_title">捐赠</string>
     <string name="workspace_home_eyebrow">移动开发工作台</string>
     <string name="workspace_home_title">继续远程项目</string>
-    <string name="workspace_home_subtitle">通过 SSH 继续远程开发；默认仅连接服务器，是否进入 tmux 由每个工作区单独配置。</string>
-    <string name="workspace_remote_card_title">远程工作区</string>
-    <string name="workspace_remote_card_description">这里只保存非敏感连接信息。密码和私钥仍由 OpenSSH 管理。</string>
+    <string name="workspace_home_subtitle">先进入远程终端，再按需打开 tmux、Git、文件和快捷指令工具；首页只保留连接路径。</string>
+    <string name="workspace_remote_card_title">服务器与项目</string>
+    <string name="workspace_remote_card_description">配置 SSH 地址、项目目录和连接后策略。密码、私钥与 known_hosts 仍由 OpenSSH 管理。</string>
     <string name="workspace_name_hint">工作区名称</string>
     <string name="workspace_host_hint">SSH 地址，例如 hdr@192.168.1.153</string>
     <string name="workspace_port_hint">SSH 端口（默认 22）</string>
@@ -136,7 +136,7 @@
     </string-array>
     <string name="workspace_session_name_hint">精确的 tmux 会话名称</string>
     <string name="workspace_error_session_name">请输入 1–64 位字母、数字、点、下划线或连字符</string>
-    <string name="workspace_connect_action">连接远程工作区</string>
+    <string name="workspace_connect_action">打开远程终端</string>
     <string name="workspace_connection_guidance">首次连接请在终端核对服务器指纹；TermuxPro 不会自动信任未知指纹。</string>
     <string name="workspace_connection_terminal_opened">连接终端已打开。请在终端中核对主机指纹并完成认证；只有出现“SSH authenticated”后才表示服务器已认证。</string>
     <string name="workspace_connection_last_opened">%1$s 已打开 SSH 终端，尚未验证身份认证是否成功。</string>
@@ -160,7 +160,7 @@
     <string name="workspace_open_sessions">打开终端会话列表</string>
     <string name="workspace_sessions_short">会话</string>
     <string name="workspace_open_workbench">工作台</string>
-    <string name="workspace_open_workbench_description">打开移动开发工作台</string>
+    <string name="workspace_open_workbench_description">返回连接配置与远程入口</string>
     <string name="terminal_sessions_title">终端会话</string>
     <string name="terminal_sessions_hint">点击切换会话，长按可重命名</string>
     <string name="workspace_command_confirm_title">发送命令到当前会话？</string>
@@ -176,7 +176,7 @@
     <string name="workspace_setup_ready">SSH 连接组件已就绪</string>
     <string name="workspace_selector_description">已保存的工作区</string>
     <string name="workspace_new_action">新建</string>
-    <string name="workspace_manage_action">管理工作区</string>
+    <string name="workspace_manage_action">连接配置</string>
     <string name="workspace_edit_action">编辑连接</string>
     <string name="workspace_advanced_action">高级设置</string>
     <string name="workspace_advanced_hide_action">收起高级设置</string>
@@ -195,7 +195,7 @@
     <string name="workspace_default_name">远程开发</string>
     <string name="workspace_delete_title">删除这个工作区？</string>
     <string name="workspace_delete_message">将删除“%1$s”的连接信息，不会影响 SSH 密钥和远端文件。</string>
-    <string name="workspace_tools_action">项目工具</string>
+    <string name="workspace_tools_action">工具箱</string>
     <string name="workspace_git_status_action">Git 状态</string>
     <string name="workspace_git_diff_action">审查 Git Diff</string>
     <string name="workspace_project_check_action">运行项目检查</string>
@@ -306,7 +306,7 @@
     <string name="connection_error_refused">服务器拒绝连接，请确认 SSH 服务已启动且端口填写正确。</string>
     <string name="connection_error_no_route">当前网络无法到达服务器，请检查 Wi-Fi、VPN 或路由。</string>
     <string name="connection_error_host_key_changed">服务器指纹已变化，可能是服务器重装或安全风险。请停止连接并向管理员核对新指纹。</string>
-    <string name="connection_error_host_key_unverified">服务器指纹尚未确认。请先点击“连接远程工作区”，在交互终端中核对并确认指纹。</string>
+    <string name="connection_error_host_key_unverified">服务器指纹尚未确认。请先点击“打开远程终端”，在交互终端中核对并确认指纹。</string>
     <string name="connection_error_auth">身份验证未完成或失败。请先在连接终端中输入正确的密码、密钥口令或配置公钥。</string>
     <string name="connection_error_closed">服务器在认证前关闭了连接，请检查 SSH 服务策略或稍后重试。</string>
     <string name="ai_action_confirm_selection">AI：确认当前选项</string>
@@ -357,11 +357,12 @@
     <string name="task_sessions_name_hint">例如 feature-login</string>
     <string name="task_sessions_stop_title">停止这个 TermuxPro 会话？</string>
     <string name="task_sessions_stop_message">仅停止 %2$s:%3$d（%4$s）上由 TermuxPro 管理的会话“%1$s”及其中进程，不影响其他 tmux 会话。</string>
-    <string name="task_sessions_row">%1$s\n%2$d 个窗口 · %3$s · %4$s</string>
+    <string name="task_sessions_row">%1$s\n%2$d 个窗口 · %3$s · %4$s\n创建 %5$s · 活跃 %6$s</string>
     <string name="task_sessions_background">后台运行</string>
     <string name="task_sessions_attached">已连接</string>
     <string name="task_sessions_owned">TermuxPro 创建</string>
     <string name="task_sessions_unknown_owner">归属未知</string>
+    <string name="task_sessions_time_unknown">未知</string>
     <string name="task_sessions_unknown_owner_warning">无法可靠判断该会话由谁创建。TermuxPro 只允许进入，不提供删除操作，避免影响其他工作。</string>
     <string name="task_sessions_target">远端目标 · %1$s:%2$d · %3$s</string>
     <string name="task_sessions_owned_context">TermuxPro 自有会话 · %1$s:%2$d · %3$s</string>
@@ -417,5 +418,9 @@
     <string name="custom_commands_delete_message">只会删除当前工作区中的这条快捷指令，不会执行其命令。</string>
     <string name="custom_commands_copy_suffix">%1$s 副本</string>
     <string name="custom_commands_invalid_workspace">当前没有可用的远程工作区。请先返回工作台配置服务器和项目目录。</string>
+    <string name="terminal_tools_section_context">当前上下文</string>
+    <string name="terminal_tools_section_project">项目与 Git</string>
+    <string name="terminal_tools_section_ai">AI 安全操作</string>
+    <string name="terminal_tools_section_keyboard">键区切换</string>
     <string name="terminal_custom_commands_action">快捷指令</string>
 </resources>
