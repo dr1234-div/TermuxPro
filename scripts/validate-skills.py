@@ -48,4 +48,23 @@ claude_text = SKILLS[1].read_text(encoding="utf-8")
 if ".agents/skills/termuxpro-development/SKILL.md" not in claude_text:
     fail("Claude Skill 未指向共用 Skill")
 
+# 额度规则曾因“每日额度”和“平台总额度窗口”混淆而导致持续 Goal 被错误阻塞。
+# 对关键语义做最低限度的回归校验，避免后续维护时再次退化为需要人工恢复。
+quota_rules = {
+    "每个自然日独立拥有最多 10%": "缺少每日独立额度定义",
+    "跨入下一个自然日": "缺少跨日续跑定义",
+    "不要求用户恢复": "缺少无人值守自动恢复要求",
+    "总剩余额度门禁": "缺少总剩余额度独立门禁",
+    "不得因此把 Goal 标记为 `blocked`": "缺少每日额度不得阻塞 Goal 的约束",
+}
+common_skill_text = SKILLS[0].read_text(encoding="utf-8")
+for phrase, message in quota_rules.items():
+    if phrase not in common_skill_text:
+        fail(message)
+
+agents_text = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+for phrase in ("每个自然日独立拥有最多 10%", "跨入下一个自然日", "不要求用户恢复", "总剩余额度"):
+    if phrase not in agents_text:
+        fail(f"AGENTS.md 未固化额度规则：{phrase}")
+
 print("TermuxPro Skills 校验通过。")
