@@ -252,6 +252,13 @@
     <string name="git_workbench_no_staged_changes">没有可取消暂存的改动。</string>
     <string name="git_workbench_stage_all_failed">Git 未完成暂存，当前工作树已保留。\n\n%1$s</string>
     <string name="git_workbench_unstage_all_failed">Git 未完成取消暂存，当前工作树已保留。\n\n%1$s</string>
+    <string name="git_workbench_commit">提交</string>
+    <string name="git_workbench_commit_hint">例如 fix: 优化手机终端体验</string>
+    <string name="git_workbench_commit_message">提交 %1$d 个已暂存文件；%2$d 个未暂存文件不会进入本次提交。不会推送远端。</string>
+    <string name="git_workbench_commit_action">提交已暂存</string>
+    <string name="git_workbench_commit_invalid">请输入 1 到 200 个字符的单行提交说明，不能包含控制字符。</string>
+    <string name="git_workbench_committing">正在提交已暂存修改…</string>
+    <string name="git_workbench_commit_failed">Git 未创建提交，已暂存和未暂存文件都已保留。\n\n%1$s</string>
     <string name="git_workbench_commits">提交记录</string>
     <string name="git_workbench_guidance">切换分支不会丢弃修改；若可能覆盖当前文件，Git 会拒绝切换并保留原工作树。</string>
     <string name="git_workbench_no_commits">当前仓库还没有提交记录。</string>

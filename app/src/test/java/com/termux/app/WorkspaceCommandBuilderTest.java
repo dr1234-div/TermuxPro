@@ -170,6 +170,10 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(newBranch.contains("git switch -c 'feature/local-ui'"));
         assertTrue(remoteBranch.contains("git show-ref --verify --quiet refs/heads/'feature/user'\\''s-work'"));
         assertTrue(remoteBranch.endsWith("git switch --track 'origin/feature/user'\\''s-work'"));
+        String commit = WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand(
+            "/srv/team's app", "fix: user's mobile flow");
+        assertTrue(commit.contains("git diff --cached --name-only -z"));
+        assertTrue(commit.contains("git commit -m 'fix: user'\\''s mobile flow'"));
         assertThrows(IllegalArgumentException.class,
             () -> WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand("~/app", "bad\nbranch"));
         assertThrows(IllegalArgumentException.class,
@@ -178,6 +182,10 @@ public class WorkspaceCommandBuilderTest {
             () -> WorkspaceCommandBuilder.buildGitCreateBranchRemoteCommand("~/app", "bad branch"));
         assertThrows(IllegalArgumentException.class,
             () -> WorkspaceCommandBuilder.buildGitCreateBranchRemoteCommand("~/app", "-bad"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand("~/app", ""));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand("~/app", "bad\nmessage"));
     }
 
     @Test
@@ -230,6 +238,18 @@ public class WorkspaceCommandBuilderTest {
         assertEquals(1, unstagedOverview.unstagedFiles);
         assertEquals(75, runShell(WorkspaceCommandBuilder.buildGitUnstageAllRemoteCommand(
             repository.toString()), new HashMap<>()));
+
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitStageAllRemoteCommand(
+            repository.toString()), new HashMap<>()));
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand(
+            repository.toString(), "fix: mobile git workbench"), new HashMap<>()));
+        ShellOutput committed = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        GitRepositoryOverview committedOverview = GitRepositoryOverview.parse(committed.output);
+        assertEquals(0, committedOverview.changedFiles);
+        assertEquals("fix: mobile git workbench", committedOverview.commits.get(0).subject);
+        assertEquals(75, runShell(WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand(
+            repository.toString(), "fix: nothing staged"), new HashMap<>()));
 
         assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand(
             repository.toString(), "feature"), new HashMap<>()));
