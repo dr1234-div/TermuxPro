@@ -74,6 +74,7 @@ public final class GitDiffActivity extends AppCompatActivity {
         findViewById(R.id.git_overview_branches_button).setOnClickListener(view -> showBranches());
         findViewById(R.id.git_overview_create_branch_button).setOnClickListener(
             view -> showCreateBranchDialog());
+        findViewById(R.id.git_overview_fetch_button).setOnClickListener(view -> fetchUpstream());
         findViewById(R.id.git_overview_changes_button).setOnClickListener(view -> loadDiff());
         findViewById(R.id.git_overview_stage_all_button).setOnClickListener(
             view -> confirmStageAll());
@@ -225,8 +226,14 @@ public final class GitDiffActivity extends AppCompatActivity {
         if (overview.ahead == null || overview.behind == null) {
             sync.setText(R.string.git_workbench_no_upstream);
         } else {
-            sync.setText(getString(R.string.git_workbench_sync, overview.ahead, overview.behind));
+            sync.setText(getString(R.string.git_workbench_sync_with_upstream,
+                overview.upstream == null ? getString(R.string.git_workbench_unknown_upstream)
+                    : overview.upstream,
+                overview.ahead, overview.behind));
         }
+        Button fetch = findViewById(R.id.git_overview_fetch_button);
+        fetch.setEnabled(overview.upstream != null);
+        fetch.setAlpha(overview.upstream != null ? 1f : 0.48f);
     }
 
     /** 模拟器截图只注入脱敏协议数据，仍走与真实 SSH 结果相同的解析和渲染路径。 */
@@ -550,6 +557,29 @@ public final class GitDiffActivity extends AppCompatActivity {
                 else if (result.exitCode == 75) showStatus(
                     getString(R.string.git_workbench_no_staged_changes), false);
                 else showStatus(getString(R.string.git_workbench_commit_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    private void fetchUpstream() {
+        if (mOverview == null || mOverview.upstream == null) {
+            showStatus(getString(R.string.git_workbench_no_upstream), false);
+            return;
+        }
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(R.string.git_workbench_fetching, mOverview.upstream));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                WorkspaceCommandBuilder.buildGitFetchUpstreamRemoteCommand(target.path),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 76) showStatus(
+                    getString(R.string.git_workbench_no_upstream), false);
+                else showStatus(getString(R.string.git_workbench_fetch_failed,
                     result.output.trim()), false);
             });
         });

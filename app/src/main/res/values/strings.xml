@@ -354,8 +354,13 @@
     <string name="git_workbench_branch">Branch: %1$s</string>
     <string name="git_workbench_detached">Detached HEAD: %1$s</string>
     <string name="git_workbench_sync">Ahead %1$d · behind %2$d</string>
+    <string name="git_workbench_sync_with_upstream">Tracking %1$s · ahead %2$d · behind %3$d</string>
+    <string name="git_workbench_unknown_upstream">upstream</string>
     <string name="git_workbench_no_upstream">No upstream branch is configured</string>
     <string name="git_workbench_branches">Branches</string>
+    <string name="git_workbench_fetch">Fetch</string>
+    <string name="git_workbench_fetching">Fetching %1$s without merging…</string>
+    <string name="git_workbench_fetch_failed">Git did not fetch the upstream remote. Your working tree was preserved.\n\n%1$s</string>
     <string name="git_workbench_changes">Changes</string>
     <string name="git_workbench_index_state">Staged %1$d · unstaged %2$d</string>
     <string name="git_workbench_stage_all">Stage all</string>

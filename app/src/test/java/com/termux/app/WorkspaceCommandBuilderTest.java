@@ -156,8 +156,10 @@ public class WorkspaceCommandBuilderTest {
             "/srv/team's app", "feature/local-ui");
         String remoteBranch = WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(
             "/srv/team's app", "origin/feature/user's-work");
+        String fetch = WorkspaceCommandBuilder.buildGitFetchUpstreamRemoteCommand("/srv/team's app");
 
         assertTrue(overview.contains("TP_OVERVIEW\\t"));
+        assertTrue(overview.contains("upstream_name=$(git rev-parse"));
         assertTrue(overview.contains("git status --porcelain=v1 -z"));
         assertTrue(overview.contains("git diff --cached --name-only -z"));
         assertTrue(overview.contains("git ls-files --others --exclude-standard -z"));
@@ -170,6 +172,8 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(newBranch.contains("git switch -c 'feature/local-ui'"));
         assertTrue(remoteBranch.contains("git show-ref --verify --quiet refs/heads/'feature/user'\\''s-work'"));
         assertTrue(remoteBranch.endsWith("git switch --track 'origin/feature/user'\\''s-work'"));
+        assertTrue(fetch.contains("git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}'"));
+        assertTrue(fetch.contains("git fetch --prune \"$remote\""));
         String commit = WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand(
             "/srv/team's app", "fix: user's mobile flow");
         assertTrue(commit.contains("git diff --cached --name-only -z"));
@@ -250,6 +254,8 @@ public class WorkspaceCommandBuilderTest {
         assertEquals("fix: mobile git workbench", committedOverview.commits.get(0).subject);
         assertEquals(75, runShell(WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand(
             repository.toString(), "fix: nothing staged"), new HashMap<>()));
+        assertEquals(76, runShell(WorkspaceCommandBuilder.buildGitFetchUpstreamRemoteCommand(
+            repository.toString()), new HashMap<>()));
 
         assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand(
             repository.toString(), "feature"), new HashMap<>()));
@@ -290,8 +296,11 @@ public class WorkspaceCommandBuilderTest {
         ShellOutput overview = runShellCapture(
             WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(clone.toString()));
         assertEquals(0, overview.exitCode);
-        assertTrue(GitRepositoryOverview.parse(overview.output).remoteBranches.contains(
-            "origin/feature/mobile"));
+        GitRepositoryOverview initialOverview = GitRepositoryOverview.parse(overview.output);
+        assertEquals("origin/master", initialOverview.upstream);
+        assertTrue(initialOverview.remoteBranches.contains("origin/feature/mobile"));
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitFetchUpstreamRemoteCommand(
+            clone.toString()), new HashMap<>()));
 
         assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(
             clone.toString(), "origin/feature/mobile"), new HashMap<>()));

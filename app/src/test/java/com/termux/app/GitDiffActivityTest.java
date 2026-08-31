@@ -95,19 +95,25 @@ public final class GitDiffActivityTest {
     public void overviewShowsIndexSplitAndDisablesUnavailableIndexActions() {
         Intent intent = GitDiffActivity.newIntent(RuntimeEnvironment.getApplication(),
                 "hdr@192.168.1.153", 22, "~/repo")
-            .putExtra(GitDiffActivity.EXTRA_UI_TEST_OVERVIEW, "TP_OVERVIEW\tdev\t0\t3\t2\t1\t\t\t0\n"
+            .putExtra(GitDiffActivity.EXTRA_UI_TEST_OVERVIEW, "TP_OVERVIEW\tdev\t0\t3\t2\t1\t4\t1\t1\torigin/dev\n"
                 + "TP_LOCAL\tdev\n");
         GitDiffActivity activity = Robolectric.buildActivity(GitDiffActivity.class, intent)
             .setup().get();
 
         TextView index = activity.findViewById(R.id.git_overview_index_state);
+        TextView sync = activity.findViewById(R.id.git_overview_sync);
         assertTrue(index.getText().toString().contains("已暂存 2"));
         assertTrue(index.getText().toString().contains("未暂存 1"));
+        assertTrue(sync.getText().toString().contains("跟踪 origin/dev"));
+        assertTrue(sync.getText().toString().contains("领先 4"));
+        assertTrue(sync.getText().toString().contains("落后 1"));
+        assertTrue(((Button) activity.findViewById(R.id.git_overview_fetch_button)).isEnabled());
         assertTrue(((Button) activity.findViewById(R.id.git_overview_stage_all_button)).isEnabled());
         assertTrue(((Button) activity.findViewById(R.id.git_overview_unstage_all_button)).isEnabled());
         assertTrue(((Button) activity.findViewById(R.id.git_overview_commit_button)).isEnabled());
 
         activity.showOverviewForTesting("~/repo", "TP_OVERVIEW\tdev\t0\t0\t0\t0\t\t\t0\n");
+        assertTrue(!((Button) activity.findViewById(R.id.git_overview_fetch_button)).isEnabled());
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_stage_all_button)).isEnabled());
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_unstage_all_button)).isEnabled());
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_commit_button)).isEnabled());
