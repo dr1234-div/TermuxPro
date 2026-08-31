@@ -7,6 +7,13 @@ project_config="$project_dir/.tooling/gh-config"
 if [[ -f "$project_config/hosts.yml" ]]; then
     export GH_CONFIG_DIR="$project_config"
 fi
+export GH_REPO="${GH_REPO:-heydarey/TermuxPro}"
+
+if [[ "${1:-}" == "repo" && "${2:-}" == "view" ]]; then
+    if [[ -z "${3:-}" || "${3:-}" == -* ]]; then
+        set -- repo view "$GH_REPO" "${@:3}"
+    fi
+fi
 
 if command -v gh >/dev/null 2>&1; then
     exec gh "$@"
