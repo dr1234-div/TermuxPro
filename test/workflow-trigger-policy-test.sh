@@ -3,6 +3,16 @@ set -euo pipefail
 
 project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+dependabot_file="$project_dir/.github/dependabot.yml"
+if ! grep -Fq "target-branch: dev" "$dependabot_file"; then
+    echo "Dependabot 依赖更新必须先进入 dev，禁止直接向 master 创建研发 PR。" >&2
+    exit 1
+fi
+if ! grep -Fq 'prefix: "ci"' "$dependabot_file"; then
+    echo "Dependabot GitHub Actions 更新提交必须使用 ci 前缀，保持提交语义清晰。" >&2
+    exit 1
+fi
+
 for workflow in ci ui-emulator; do
     file="$project_dir/.github/workflows/$workflow.yml"
     if ! grep -Fq "branches: [master]" "$file"; then
