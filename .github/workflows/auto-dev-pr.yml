@@ -1,0 +1,39 @@
+name: 自动创建研发 PR
+
+on:
+  push:
+    branches:
+      - 'dev_*'
+      - 'hotfix_*'
+
+concurrency:
+  group: auto-dev-pr-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  create:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 创建或复用 dev PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_BRANCH: ${{ github.ref_name }}
+          COMMIT_TITLE: ${{ github.event.head_commit.message }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          existing="$(gh pr list --repo "$REPOSITORY" --base dev --head "$HEAD_BRANCH" \
+            --state open --json number --jq '.[0].number // empty')"
+          if [[ -n "$existing" ]]; then
+            echo "研发 PR #$existing 已存在。"
+            exit 0
+          fi
+
+          title="${COMMIT_TITLE%%$'\n'*}"
+          gh pr create --repo "$REPOSITORY" --base dev --head "$HEAD_BRANCH" \
+            --title "$title" \
+            --body "由 TermuxPro 自治研发流水线创建。完整变更、测试证据与验收结果以本 PR 的提交和 Checks 为准。\n\n触发提交：\`$COMMIT_SHA\`"
