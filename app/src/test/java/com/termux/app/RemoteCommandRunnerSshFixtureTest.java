@@ -38,6 +38,8 @@ public class RemoteCommandRunnerSshFixtureTest {
             "-o", "UserKnownHostsFile=" + knownHosts,
             "-o", "ControlMaster=no"
         ));
+        RemoteCommandRunner.Result workspace = runner.run(target, port, "mkdir -p ~/repo", 4096);
+        assertEquals(workspace.output, 0, workspace.exitCode);
     }
 
     @After
