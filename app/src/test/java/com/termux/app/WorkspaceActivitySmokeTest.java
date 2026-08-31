@@ -40,7 +40,7 @@ public class WorkspaceActivitySmokeTest {
         assertEquals("TermuxPro", activity.getTitle());
         assertEquals("继续远程项目", activity.getString(R.string.workspace_home_title));
         assertEquals("打开远程终端", activity.getString(R.string.workspace_connect_action));
-        assertEquals("连接配置", activity.getString(R.string.workspace_manage_action));
+        assertEquals("服务器与项目", activity.getString(R.string.workspace_manage_action));
         int[] visibleViews = {R.id.workspace_setup_button};
         for (int id : visibleViews) {
             View view = activity.findViewById(id);
@@ -78,7 +78,7 @@ public class WorkspaceActivitySmokeTest {
         assertEquals("服务器与项目",
             ((TextView) activity.findViewById(R.id.workspace_remote_card_title))
                 .getText().toString());
-        assertEquals("连接配置",
+        assertEquals("服务器与项目",
             ((TextView) activity.findViewById(R.id.workspace_manage_button)).getText().toString());
         assertEquals(View.VISIBLE, activity.findViewById(R.id.workspace_summary).getVisibility());
         assertEquals(View.VISIBLE, activity.findViewById(R.id.workspace_manage_button).getVisibility());

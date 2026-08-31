@@ -18,6 +18,14 @@ v1/v2 签名。候选 Release 发布后，手动运行 `TermuxPro Emulator UI`�
 Debug APK 代替这项证据。设备接入后运行 `./scripts/device-smoke-test.sh`，再逐项完成
 [真机验收清单](../docs/DEVICE_ACCEPTANCE.md)。
 
+`./test/terminal-touch-scrollback-test.sh` 是终端核心体验门禁：手机手指上下滑动必须滚动历史输出，
+不得在 alternate screen、Claude Code、Codex CLI 或 shell 输入状态中退化为 `DPAD_UP/DPAD_DOWN`
+命令历史；鼠标滚轮和显式键盘翻页保留各自语义。
+
+`./test/dialog-readable-style-test.sh` 是深色主题可读性门禁：TermuxPro 产品代码不得直接链式展示
+`AlertDialog`，必须经过 `TermuxProDialogStyle` 或专用可读样式，避免厂商默认主题造成黑字、浅字或
+按钮不可辨认。
+
 ## 证据
 
 使用 [验收报告模板](reports/ACCEPTANCE_TEMPLATE.md) 记录设备、Android 版本、APK SHA-256、步骤、结果、
