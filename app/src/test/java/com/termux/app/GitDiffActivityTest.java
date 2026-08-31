@@ -8,6 +8,7 @@ import static org.robolectric.Shadows.shadowOf;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Looper;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -28,7 +29,7 @@ public final class GitDiffActivityTest {
     public void branchDialogsUseReadableTermuxProStyleAndOfferRemoteTracking() throws Exception {
         Intent intent = GitDiffActivity.newIntent(RuntimeEnvironment.getApplication(),
                 "hdr@192.168.1.153", 22, "~/repo")
-            .putExtra(GitDiffActivity.EXTRA_UI_TEST_OVERVIEW, "TP_OVERVIEW\tdev\t0\t2\t\t\t0\n"
+            .putExtra(GitDiffActivity.EXTRA_UI_TEST_OVERVIEW, "TP_OVERVIEW\tdev\t0\t2\t1\t1\t\t\t0\n"
                 + "TP_LOCAL\tdev\n"
                 + "TP_REMOTE\torigin/feature/mobile\n"
                 + "TP_REMOTE\torigin/HEAD\n");
@@ -65,7 +66,7 @@ public final class GitDiffActivityTest {
     public void newBranchDialogKeepsReadableStyleAndValidatesInput() {
         Intent intent = GitDiffActivity.newIntent(RuntimeEnvironment.getApplication(),
                 "hdr@192.168.1.153", 22, "~/repo")
-            .putExtra(GitDiffActivity.EXTRA_UI_TEST_OVERVIEW, "TP_OVERVIEW\tdev\t0\t2\t\t\t0\n"
+            .putExtra(GitDiffActivity.EXTRA_UI_TEST_OVERVIEW, "TP_OVERVIEW\tdev\t0\t2\t0\t2\t\t\t0\n"
                 + "TP_LOCAL\tdev\n");
         GitDiffActivity activity = Robolectric.buildActivity(GitDiffActivity.class, intent)
             .setup().get();
@@ -88,5 +89,25 @@ public final class GitDiffActivityTest {
         assertNotNull(input.getError());
         assertTrue(dialog.isShowing());
         dialog.dismiss();
+    }
+
+    @Test
+    public void overviewShowsIndexSplitAndDisablesUnavailableIndexActions() {
+        Intent intent = GitDiffActivity.newIntent(RuntimeEnvironment.getApplication(),
+                "hdr@192.168.1.153", 22, "~/repo")
+            .putExtra(GitDiffActivity.EXTRA_UI_TEST_OVERVIEW, "TP_OVERVIEW\tdev\t0\t3\t2\t1\t\t\t0\n"
+                + "TP_LOCAL\tdev\n");
+        GitDiffActivity activity = Robolectric.buildActivity(GitDiffActivity.class, intent)
+            .setup().get();
+
+        TextView index = activity.findViewById(R.id.git_overview_index_state);
+        assertTrue(index.getText().toString().contains("已暂存 2"));
+        assertTrue(index.getText().toString().contains("未暂存 1"));
+        assertTrue(((Button) activity.findViewById(R.id.git_overview_stage_all_button)).isEnabled());
+        assertTrue(((Button) activity.findViewById(R.id.git_overview_unstage_all_button)).isEnabled());
+
+        activity.showOverviewForTesting("~/repo", "TP_OVERVIEW\tdev\t0\t0\t0\t0\t\t\t0\n");
+        assertTrue(!((Button) activity.findViewById(R.id.git_overview_stage_all_button)).isEnabled());
+        assertTrue(!((Button) activity.findViewById(R.id.git_overview_unstage_all_button)).isEnabled());
     }
 }

@@ -159,6 +159,8 @@ public class WorkspaceCommandBuilderTest {
 
         assertTrue(overview.contains("TP_OVERVIEW\\t"));
         assertTrue(overview.contains("git status --porcelain=v1 -z"));
+        assertTrue(overview.contains("git diff --cached --name-only -z"));
+        assertTrue(overview.contains("git ls-files --others --exclude-standard -z"));
         assertTrue(overview.contains("refs/heads"));
         assertTrue(overview.contains("grep -v '/HEAD$'"));
         assertTrue(overview.contains("git log -20"));
@@ -202,8 +204,32 @@ public class WorkspaceCommandBuilderTest {
         assertEquals(0, populated.exitCode);
         GitRepositoryOverview overview = GitRepositoryOverview.parse(populated.output);
         assertEquals(1, overview.changedFiles);
+        assertEquals(0, overview.stagedFiles);
+        assertEquals(1, overview.unstagedFiles);
         assertTrue(overview.localBranches.contains("feature"));
         assertEquals(1, overview.commits.size());
+
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitStageAllRemoteCommand(
+            repository.toString()), new HashMap<>()));
+        ShellOutput staged = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        GitRepositoryOverview stagedOverview = GitRepositoryOverview.parse(staged.output);
+        assertEquals(1, stagedOverview.changedFiles);
+        assertEquals(1, stagedOverview.stagedFiles);
+        assertEquals(0, stagedOverview.unstagedFiles);
+        assertEquals(75, runShell(WorkspaceCommandBuilder.buildGitStageAllRemoteCommand(
+            repository.toString()), new HashMap<>()));
+
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitUnstageAllRemoteCommand(
+            repository.toString()), new HashMap<>()));
+        ShellOutput unstaged = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        GitRepositoryOverview unstagedOverview = GitRepositoryOverview.parse(unstaged.output);
+        assertEquals(1, unstagedOverview.changedFiles);
+        assertEquals(0, unstagedOverview.stagedFiles);
+        assertEquals(1, unstagedOverview.unstagedFiles);
+        assertEquals(75, runShell(WorkspaceCommandBuilder.buildGitUnstageAllRemoteCommand(
+            repository.toString()), new HashMap<>()));
 
         assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand(
             repository.toString(), "feature"), new HashMap<>()));
