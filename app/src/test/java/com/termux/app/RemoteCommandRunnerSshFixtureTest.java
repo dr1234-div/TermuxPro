@@ -44,6 +44,8 @@ public class RemoteCommandRunnerSshFixtureTest {
     public void cleanUpTmux() {
         if (runner != null) runner.run(target, port,
             "tmux kill-session -t termuxpro-fixture 2>/dev/null || true; "
+                + "tmux kill-session -t termuxpro-renamed 2>/dev/null || true; "
+                + "tmux kill-session -t termuxpro-target 2>/dev/null || true; "
                 + "tmux kill-session -t manual-fixture 2>/dev/null || true", 4096);
     }
 
@@ -109,6 +111,84 @@ public class RemoteCommandRunnerSshFixtureTest {
             WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(
                 "termuxpro-fixture", OWNER, target, port, "~/repo"), 4096);
         assertEquals(stopped.output, 0, stopped.exitCode);
+    }
+
+    @Test
+    public void createsRenamesAndStopsOwnedSessionThroughRealOpenSsh() {
+        String fingerprint = WorkspaceCommandBuilder.workspaceFingerprint(target, port, "~/repo");
+        RemoteCommandRunner.Result create = runner.run(target, port,
+            WorkspaceCommandBuilder.buildCreateTaskSessionRemoteCommand(
+                "termuxpro-fixture", OWNER, target, port, "~/repo"), 4096);
+        assertEquals(create.output, 0, create.exitCode);
+
+        RemoteCommandRunner.Result owner = runner.run(target, port,
+            "test \"$(tmux show-options -v -t '=termuxpro-fixture' "
+                + WorkspaceCommandBuilder.TMUX_OWNER_OPTION + ")\" = '" + OWNER + "'"
+                + " && test \"$(tmux show-options -v -t '=termuxpro-fixture' "
+                + WorkspaceCommandBuilder.TMUX_WORKSPACE_OPTION + ")\" = '" + fingerprint + "'", 4096);
+        assertEquals(owner.output, 0, owner.exitCode);
+
+        RemoteCommandRunner.Result rename = runner.run(target, port,
+            WorkspaceCommandBuilder.buildRenameTaskSessionRemoteCommand(
+                "termuxpro-fixture", "termuxpro-renamed", OWNER, target, port, "~/repo"), 4096);
+        assertEquals(rename.output, 0, rename.exitCode);
+        assertEquals(0, runner.run(target, port,
+            "tmux has-session -t '=termuxpro-renamed'", 4096).exitCode);
+
+        RemoteCommandRunner.Result stop = runner.run(target, port,
+            WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(
+                "termuxpro-renamed", OWNER, target, port, "~/repo"), 4096);
+        assertEquals(stop.output, 0, stop.exitCode);
+    }
+
+    @Test
+    public void duplicateTargetAndMissingSourceFailWithoutTouchingOtherSessions() {
+        RemoteCommandRunner.Result setup = runner.run(target, port,
+            "tmux new-session -d -s manual-fixture; tmux new-session -d -s termuxpro-target", 4096);
+        assertEquals(setup.output, 0, setup.exitCode);
+
+        RemoteCommandRunner.Result duplicateCreate = runner.run(target, port,
+            WorkspaceCommandBuilder.buildCreateTaskSessionRemoteCommand(
+                "termuxpro-target", OWNER, target, port, "~/repo"), 4096);
+        assertEquals(74, duplicateCreate.exitCode);
+
+        RemoteCommandRunner.Result missingRename = runner.run(target, port,
+            WorkspaceCommandBuilder.buildRenameTaskSessionRemoteCommand(
+                "termuxpro-fixture", "termuxpro-renamed", OWNER, target, port, "~/repo"), 4096);
+        assertEquals(72, missingRename.exitCode);
+        assertEquals(0, runner.run(target, port,
+            "tmux has-session -t '=manual-fixture' && tmux has-session -t '=termuxpro-target'", 4096).exitCode);
+    }
+
+    @Test
+    public void renameRechecksOwnershipAndRejectsExistingTarget() {
+        String fingerprint = WorkspaceCommandBuilder.workspaceFingerprint(target, port, "~/repo");
+        RemoteCommandRunner.Result setup = runner.run(target, port,
+            "tmux new-session -d -s manual-fixture; "
+                + "tmux new-session -d -s termuxpro-fixture; "
+                + "tmux set-option -t termuxpro-fixture "
+                + WorkspaceCommandBuilder.TMUX_OWNER_OPTION + " wrong-owner; "
+                + "tmux set-option -t termuxpro-fixture "
+                + WorkspaceCommandBuilder.TMUX_WORKSPACE_OPTION + " '" + fingerprint + "'", 4096);
+        assertEquals(setup.output, 0, setup.exitCode);
+
+        RemoteCommandRunner.Result changedOwner = runner.run(target, port,
+            WorkspaceCommandBuilder.buildRenameTaskSessionRemoteCommand(
+                "termuxpro-fixture", "termuxpro-renamed", OWNER, target, port, "~/repo"), 4096);
+        assertTrue(changedOwner.exitCode != 0);
+        assertEquals(0, runner.run(target, port,
+            "tmux has-session -t '=termuxpro-fixture' && tmux has-session -t '=manual-fixture'", 4096).exitCode);
+
+        RemoteCommandRunner.Result conflictSetup = runner.run(target, port,
+            "tmux set-option -t termuxpro-fixture " + WorkspaceCommandBuilder.TMUX_OWNER_OPTION
+                + " '" + OWNER + "'; tmux new-session -d -s termuxpro-target", 4096);
+        assertEquals(conflictSetup.output, 0, conflictSetup.exitCode);
+        RemoteCommandRunner.Result targetConflict = runner.run(target, port,
+            WorkspaceCommandBuilder.buildRenameTaskSessionRemoteCommand(
+                "termuxpro-fixture", "termuxpro-target", OWNER, target, port, "~/repo"), 4096);
+        assertEquals(74, targetConflict.exitCode);
+        assertEquals(0, runner.run(target, port,
+            "tmux has-session -t '=termuxpro-fixture' && tmux has-session -t '=termuxpro-target'", 4096).exitCode);
     }
 
     @Test

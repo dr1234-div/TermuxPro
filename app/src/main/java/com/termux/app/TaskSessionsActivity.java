@@ -9,9 +9,12 @@ import android.os.Looper;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import androidx.core.content.ContextCompat;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,6 +28,8 @@ import java.util.concurrent.Executors;
 
 /** 查看当前远端用户的全部 tmux 会话，并安全进入或管理 TermuxPro 自有会话。 */
 public final class TaskSessionsActivity extends AppCompatActivity {
+
+    static final String EXTRA_UI_TEST_SESSIONS = "com.termux.app.extra.UI_TEST_SESSIONS";
 
     private static final String EXTRA_HOST = "host";
     private static final String EXTRA_PORT = "port";
@@ -43,6 +48,8 @@ public final class TaskSessionsActivity extends AppCompatActivity {
     private Button mRecovery;
     private ArrayAdapter<TmuxSessionInfo> mAdapter;
     private View mRefresh;
+    private Button mCreate;
+    private ListView mList;
 
     @NonNull
     static Intent newIntent(@NonNull Context context, @NonNull String host, int port,
@@ -63,7 +70,11 @@ public final class TaskSessionsActivity extends AppCompatActivity {
         mProgress = findViewById(R.id.task_sessions_progress);
         mStatus = findViewById(R.id.task_sessions_status);
         mRecovery = findViewById(R.id.task_sessions_recovery_button);
-        ListView list = findViewById(R.id.task_sessions_list);
+        mCreate = findViewById(R.id.task_sessions_create_button);
+        mList = findViewById(R.id.task_sessions_list);
+        ((TextView) findViewById(R.id.task_sessions_target)).setText(
+            getString(R.string.task_sessions_target, String.valueOf(mHost), mPort,
+                String.valueOf(mProjectPath)));
         mAdapter = new ArrayAdapter<TmuxSessionInfo>(this, R.layout.item_termuxpro_list, mSessions) {
             @NonNull
             @Override
@@ -74,20 +85,37 @@ public final class TaskSessionsActivity extends AppCompatActivity {
                 return view;
             }
         };
-        list.setAdapter(mAdapter);
-        list.setOnItemClickListener((parent, view, position, id) -> showActions(mSessions.get(position)));
+        mList.setAdapter(mAdapter);
+        mList.setOnItemClickListener((parent, view, position, id) -> showActions(mSessions.get(position)));
         findViewById(R.id.task_sessions_back_button).setOnClickListener(view -> finish());
         mRefresh = findViewById(R.id.task_sessions_refresh_button);
         mRefresh.setOnClickListener(view -> loadSessions());
+        mCreate.setOnClickListener(view -> showNameDialog(null));
         configureReturnToWorkspace();
         if (mHost == null || mHost.trim().isEmpty() || mProjectPath == null || mProjectPath.trim().isEmpty() ||
             !WorkspaceOwnershipStore.isValid(mOwnerToken) ||
             mPort < 1 || mPort > 65535) {
-            mRefresh.setEnabled(false);
             showFailure(R.string.task_sessions_invalid_workspace);
+            mRefresh.setEnabled(false);
+            mCreate.setEnabled(false);
+        } else if (getIntent().getBooleanExtra(EXTRA_UI_TEST_SESSIONS, false)) {
+            showPreviewForUiTest();
         } else {
             loadSessions();
         }
+    }
+
+    private void showPreviewForUiTest() {
+        String fingerprint = WorkspaceCommandBuilder.workspaceFingerprint(mHost, mPort, mProjectPath);
+        String output = "feature-login\0002\0000\000" + mOwnerToken + "\000" + fingerprint
+            + "\000shared-support\0001\0001\000\000\000";
+        mProgress.setVisibility(View.GONE);
+        mSessions.clear();
+        mSessions.addAll(TmuxSessionParser.parse(output, mOwnerToken, fingerprint));
+        mAdapter.notifyDataSetChanged();
+        mCreate.setVisibility(View.VISIBLE);
+        styleCreateButton(false);
+        mStatus.setText(R.string.task_sessions_ready);
     }
 
     private void loadSessions() {
@@ -95,6 +123,9 @@ public final class TaskSessionsActivity extends AppCompatActivity {
         mSessions.clear();
         mAdapter.notifyDataSetChanged();
         mProgress.setVisibility(View.VISIBLE);
+        mCreate.setVisibility(View.GONE);
+        mList.setEnabled(false);
+        mRefresh.setEnabled(false);
         configureReturnToWorkspace();
         mRecovery.setVisibility(View.GONE);
         mStatus.setText(R.string.task_sessions_loading);
@@ -108,6 +139,7 @@ public final class TaskSessionsActivity extends AppCompatActivity {
     private void showResult(RemoteCommandRunner.Result result) {
         if (isFinishing() || isDestroyed()) return;
         mProgress.setVisibility(View.GONE);
+        mRefresh.setEnabled(true);
         if (result.exitCode != 0) {
             showFailure(R.string.task_sessions_failed);
             return;
@@ -119,17 +151,25 @@ public final class TaskSessionsActivity extends AppCompatActivity {
         mSessions.addAll(TmuxSessionParser.parse(result.output, mOwnerToken,
             WorkspaceCommandBuilder.workspaceFingerprint(mHost, mPort, mProjectPath)));
         mAdapter.notifyDataSetChanged();
+        mCreate.setEnabled(true);
+        mCreate.setVisibility(View.VISIBLE);
+        mList.setEnabled(true);
+        styleCreateButton(mSessions.isEmpty());
         mStatus.setText(mSessions.isEmpty() ? R.string.task_sessions_empty : R.string.task_sessions_ready);
     }
 
     private void showFailure(int message) {
         mProgress.setVisibility(View.GONE);
+        mCreate.setVisibility(View.GONE);
+        mRefresh.setEnabled(true);
         mStatus.setText(message);
         mRecovery.setVisibility(View.VISIBLE);
     }
 
     private void showMissingTmux() {
         mProgress.setVisibility(View.GONE);
+        mCreate.setVisibility(View.GONE);
+        mRefresh.setEnabled(true);
         mStatus.setText(R.string.task_sessions_tmux_missing);
         mRecovery.setText(R.string.task_sessions_open_plain_ssh);
         mRecovery.setOnClickListener(view -> openPlainSsh());
@@ -158,17 +198,88 @@ public final class TaskSessionsActivity extends AppCompatActivity {
     }
 
     private void showActions(TmuxSessionInfo session) {
-        String[] actions = session.managedByTermuxPro ? new String[]{
-            getString(R.string.task_sessions_attach), getString(R.string.task_sessions_stop)
-        } : new String[]{getString(R.string.task_sessions_attach)};
-        AlertDialog.Builder builder = new AlertDialog.Builder(this).setTitle(session.name);
-        if (!session.managedByTermuxPro) {
-            builder.setMessage(R.string.task_sessions_unknown_owner_warning);
-        }
+        String[] actions = session.managedByTermuxPro
+            ? new String[]{getString(R.string.task_sessions_attach), getString(R.string.task_sessions_rename)}
+            : new String[]{getString(R.string.task_sessions_attach)};
+        AlertDialog.Builder builder = new AlertDialog.Builder(this).setTitle(session.name)
+            .setMessage(session.managedByTermuxPro
+                ? getString(R.string.task_sessions_owned_context, mHost, mPort, mProjectPath)
+                : getString(R.string.task_sessions_unknown_owner_warning));
         builder.setItems(actions, (dialog, which) -> {
             if (which == 0) attach(session);
-            else confirmStop(session);
-        }).setNegativeButton(android.R.string.cancel, null).show();
+            else if (which == 1) showNameDialog(session);
+        });
+        if (session.managedByTermuxPro) {
+            builder.setNeutralButton(R.string.task_sessions_stop, (dialog, which) -> confirmStop(session));
+        }
+        builder.setNegativeButton(android.R.string.cancel, null);
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(ignored -> {
+            TermuxProDialogStyle.apply(this, dialog);
+            if (session.managedByTermuxPro) dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+                .setTextColor(ContextCompat.getColor(this, R.color.tp_danger));
+        });
+        dialog.show();
+    }
+
+    private void showNameDialog(TmuxSessionInfo session) {
+        View content = getLayoutInflater().inflate(R.layout.dialog_tmux_session_name, null);
+        EditText input = content.findViewById(R.id.task_session_name_input);
+        if (session != null) input.setText(session.name);
+        int title = session == null ? R.string.task_sessions_create_title : R.string.task_sessions_rename_title;
+        int action = session == null ? R.string.task_sessions_create : R.string.task_sessions_rename;
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(title).setView(content)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(action, null).create();
+        dialog.setOnShowListener(ignored -> {
+            TermuxProDialogStyle.apply(this, dialog);
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+                String name = input.getText().toString();
+                if (!TmuxSessionNameValidator.isValid(name)) {
+                    input.setError(getString(R.string.workspace_error_session_name));
+                    return;
+                }
+                if (session != null && session.name.equals(name)) {
+                    dialog.dismiss();
+                    return;
+                }
+                dialog.dismiss();
+                mutateSession(session == null
+                    ? WorkspaceCommandBuilder.buildCreateTaskSessionRemoteCommand(
+                    name, mOwnerToken, mHost, mPort, mProjectPath)
+                    : WorkspaceCommandBuilder.buildRenameTaskSessionRemoteCommand(
+                    session.name, name, mOwnerToken, mHost, mPort, mProjectPath),
+                    session == null ? R.string.task_sessions_create_failed : R.string.task_sessions_rename_failed,
+                    session == null
+                        ? getString(R.string.task_sessions_creating, name)
+                        : getString(R.string.task_sessions_renaming, session.name, name));
+            });
+            input.setOnEditorActionListener((view, actionId, event) -> {
+                if (actionId != android.view.inputmethod.EditorInfo.IME_ACTION_DONE) return false;
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+                return true;
+            });
+        });
+        dialog.show();
+    }
+
+    private void mutateSession(String command, int failureMessage, String progressMessage) {
+        mProgress.setVisibility(View.VISIBLE);
+        mStatus.setText(progressMessage);
+        mCreate.setEnabled(false);
+        mRefresh.setEnabled(false);
+        mList.setEnabled(false);
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(mHost, mPort, command, 32_000);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                mCreate.setEnabled(true);
+                mRefresh.setEnabled(true);
+                if (result.exitCode == 0) loadSessions();
+                else showMutationFailure(failureMessage);
+            });
+        });
     }
 
     private void attach(TmuxSessionInfo session) {
@@ -180,27 +291,50 @@ public final class TaskSessionsActivity extends AppCompatActivity {
     }
 
     private void confirmStop(TmuxSessionInfo session) {
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
             .setTitle(R.string.task_sessions_stop_title)
-            .setMessage(getString(R.string.task_sessions_stop_message, session.name))
+            .setMessage(getString(R.string.task_sessions_stop_message, session.name,
+                mHost, mPort, mProjectPath))
             .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.task_sessions_stop, (dialog, which) -> stop(session))
-            .show();
+            .setPositiveButton(R.string.task_sessions_stop, (ignoredDialog, which) -> stop(session))
+            .create();
+        dialog.setOnShowListener(ignored -> {
+            TermuxProDialogStyle.apply(this, dialog);
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setTextColor(ContextCompat.getColor(this, R.color.tp_danger));
+        });
+        dialog.show();
     }
 
     private void stop(TmuxSessionInfo session) {
-        mProgress.setVisibility(View.VISIBLE);
-        mExecutor.execute(() -> {
-            RemoteCommandRunner.Result result = mRunner.run(mHost, mPort,
-                WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(
-                    session.name, mOwnerToken, mHost, mPort, mProjectPath), 32_000);
-            mMainHandler.post(() -> {
-                if (result.exitCode == 0) loadSessions();
-                else {
-                    showFailure(R.string.task_sessions_stop_failed);
-                }
-            });
-        });
+        mutateSession(WorkspaceCommandBuilder.buildStopTaskSessionRemoteCommand(
+            session.name, mOwnerToken, mHost, mPort, mProjectPath), R.string.task_sessions_stop_failed,
+            getString(R.string.task_sessions_stopping, session.name));
+    }
+
+    /** 仅供真实 Android 截图验收打开完整状态，不执行远端写操作。 */
+    void showRenameDialogForTesting() {
+        if (!mSessions.isEmpty()) showNameDialog(mSessions.get(0));
+    }
+
+    /** 仅供真实 Android 截图验收危险操作的层级与上下文。 */
+    void showStopDialogForTesting() {
+        if (!mSessions.isEmpty()) confirmStop(mSessions.get(0));
+    }
+
+    private void showMutationFailure(int message) {
+        mProgress.setVisibility(View.GONE);
+        mStatus.setText(getString(R.string.task_sessions_mutation_uncertain, getString(message)));
+        mRecovery.setText(R.string.task_sessions_refresh_result);
+        mRecovery.setOnClickListener(view -> loadSessions());
+        mRecovery.setVisibility(View.VISIBLE);
+    }
+
+    private void styleCreateButton(boolean primary) {
+        mCreate.setBackgroundTintList(ContextCompat.getColorStateList(this,
+            primary ? R.color.tp_primary : R.color.tp_surface_elevated));
+        mCreate.setTextColor(ContextCompat.getColor(this,
+            primary ? R.color.tp_on_primary : R.color.tp_primary));
     }
 
     @Override

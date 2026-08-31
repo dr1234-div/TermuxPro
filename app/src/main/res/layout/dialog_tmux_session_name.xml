@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="20dp"
+    android:paddingTop="8dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:labelFor="@id/task_session_name_input"
+        android:text="@string/task_sessions_name_label"
+        android:textColor="@color/tp_text_secondary"
+        android:textSize="13sp" />
+
+    <EditText
+        android:id="@+id/task_session_name_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/task_sessions_name_hint"
+        android:imeOptions="actionDone"
+        android:inputType="text"
+        android:maxLength="64"
+        android:minHeight="52dp"
+        android:singleLine="true"
+        android:textColor="@color/tp_text_primary"
+        android:textColorHint="@color/tp_text_tertiary" />
+</LinearLayout>
