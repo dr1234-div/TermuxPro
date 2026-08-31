@@ -19,5 +19,17 @@ if ! grep -Fq "branches: ['dev_*', 'hotfix_*']" "$project_dir/.github/workflows/
     echo "UI push 门禁必须覆盖 dev_* 和 hotfix_*。" >&2
     exit 1
 fi
+if ! grep -Fq "'terminal-view/src/main/**'" "$project_dir/.github/workflows/ui-emulator.yml"; then
+    echo "UI pull_request 门禁必须覆盖 terminal-view 触摸、渲染和输入层变更。" >&2
+    exit 1
+fi
+if ! grep -Fq "verifyReleaseUpgrade" "$project_dir/.github/workflows/ui-emulator.yml"; then
+    echo "UI workflow_dispatch 必须默认跳过 Release 覆盖升级，避免发布 PR 阶段依赖尚未创建的标签 Release。" >&2
+    exit 1
+fi
+if ! grep -Fq "github.event_name == 'workflow_dispatch' && inputs.verifyReleaseUpgrade" "$project_dir/.github/workflows/ui-emulator.yml"; then
+    echo "Release 覆盖升级只能在显式开启 verifyReleaseUpgrade 时运行。" >&2
+    exit 1
+fi
 
 echo "研发 PR 与发布 PR 的 workflow 触发策略校验通过。"

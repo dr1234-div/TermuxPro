@@ -2,6 +2,12 @@ name: TermuxPro Emulator UI
 
 on:
   workflow_dispatch:
+    inputs:
+      verifyReleaseUpgrade:
+        description: '是否下载已发布 Release 并验证覆盖升级'
+        required: false
+        default: 'false'
+        type: boolean
   schedule:
     - cron: '30 2 * * *'
   push:
@@ -12,6 +18,7 @@ on:
       - 'app/src/main/**'
       - 'app/src/androidTest/**'
       - 'app/build.gradle'
+      - 'terminal-view/src/main/**'
       - '.github/workflows/ui-emulator.yml'
       - 'scripts/verify-ui-screenshots.sh'
       - 'test/plans/ui-screenshot-manifest.txt'
@@ -99,7 +106,7 @@ jobs:
             test-artifacts/emulator-ui/font200/
           ./scripts/verify-ui-screenshots.sh test-artifacts/emulator-ui/font200 font200
       - name: 正式签名 Release APK 覆盖升级与启动冒烟
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' && inputs.verifyReleaseUpgrade
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

@@ -180,7 +180,7 @@ public final class TerminalView extends View {
                     distanceY += mScrollRemainder;
                     int deltaRows = (int) (distanceY / mRenderer.mFontLineSpacing);
                     mScrollRemainder = distanceY - deltaRows * mRenderer.mFontLineSpacing;
-                    doScroll(e, deltaRows);
+                    doScroll(e, deltaRows, true);
                 }
                 return true;
             }
@@ -199,7 +199,8 @@ public final class TerminalView extends View {
                 // Do not start scrolling until last fling has been taken care of:
                 if (!mScroller.isFinished()) return true;
 
-                final boolean mouseTrackingAtStartOfFling = mEmulator.isMouseTrackingActive();
+                final boolean forceScrollbackAtStartOfFling = !e2.isFromSource(InputDevice.SOURCE_MOUSE);
+                final boolean mouseTrackingAtStartOfFling = mEmulator.isMouseTrackingActive() && !forceScrollbackAtStartOfFling;
                 float SCALE = 0.25f;
                 if (mouseTrackingAtStartOfFling) {
                     mScroller.fling(0, 0, 0, -(int) (velocityY * SCALE), 0, 0, -mEmulator.mRows / 2, mEmulator.mRows / 2);
@@ -220,7 +221,7 @@ public final class TerminalView extends View {
                         boolean more = mScroller.computeScrollOffset();
                         int newY = mScroller.getCurrY();
                         int diff = mouseTrackingAtStartOfFling ? (newY - mLastY) : (newY - mTopRow);
-                        doScroll(e2, diff);
+                        doScroll(e2, diff, forceScrollbackAtStartOfFling);
                         mLastY = newY;
                         if (more) post(this);
                     }
@@ -572,12 +573,22 @@ public final class TerminalView extends View {
 
     /** Perform a scroll, either from dragging the screen or by scrolling a mouse wheel. */
     void doScroll(MotionEvent event, int rowsDown) {
+        doScroll(event, rowsDown, false);
+    }
+
+    /**
+     * Perform a scroll, either from dragging the screen or by scrolling a mouse wheel.
+     *
+     * <p>手机触摸滑动必须优先滚动 scrollback，不能在 alternate screen 中退化为上下键，
+     * 否则 Claude Code、Codex CLI 等 TUI 会把滑动误解为历史命令或列表选择。</p>
+     */
+    void doScroll(MotionEvent event, int rowsDown, boolean forceScrollback) {
         boolean up = rowsDown < 0;
         int amount = Math.abs(rowsDown);
         for (int i = 0; i < amount; i++) {
-            if (mEmulator.isMouseTrackingActive()) {
+            if (!forceScrollback && mEmulator.isMouseTrackingActive()) {
                 sendMouseEventCode(event, up ? TerminalEmulator.MOUSE_WHEELUP_BUTTON : TerminalEmulator.MOUSE_WHEELDOWN_BUTTON, true);
-            } else if (mEmulator.isAlternateBufferActive()) {
+            } else if (!forceScrollback && mEmulator.isAlternateBufferActive()) {
                 // Send up and down key events for scrolling, which is what some terminals do to make scroll work in
                 // e.g. less, which shifts to the alt screen without mouse handling.
                 handleKeyCode(up ? KeyEvent.KEYCODE_DPAD_UP : KeyEvent.KEYCODE_DPAD_DOWN, 0);
@@ -935,7 +946,7 @@ public final class TerminalView extends View {
                 if (shiftDown) {
                     long time = SystemClock.uptimeMillis();
                     MotionEvent motionEvent = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, 0, 0, 0);
-                    doScroll(motionEvent, keyCode == KeyEvent.KEYCODE_PAGE_UP ? -mEmulator.mRows : mEmulator.mRows);
+                    doScroll(motionEvent, keyCode == KeyEvent.KEYCODE_PAGE_UP ? -mEmulator.mRows : mEmulator.mRows, true);
                     motionEvent.recycle();
                     return true;
                 }
