@@ -45,8 +45,8 @@ jobs:
             target_sha="${3:-$COMMIT_SHA}"
             for attempt in $(seq 1 180); do
               record="$(gh run list --repo "$REPOSITORY" --commit "$target_sha" \
-                --workflow "$workflow" --limit 1 --json status,conclusion,databaseId \
-                --jq '.[0] // empty')"
+                --workflow "$workflow" --limit 10 --json status,conclusion,databaseId,event \
+                --jq 'map(select(.event == "push" or .event == "workflow_dispatch"))[0] // empty')"
               if [[ -n "$record" ]]; then
                 status="$(jq -r '.status' <<<"$record")"
                 conclusion="$(jq -r '.conclusion // ""' <<<"$record")"
