@@ -41,5 +41,17 @@ if ! grep -Fq "github.event_name == 'workflow_dispatch' && inputs.verifyReleaseU
     echo "Release 覆盖升级只能在显式开启 verifyReleaseUpgrade 时运行。" >&2
     exit 1
 fi
+if ! grep -Fq 'gate_abi="x86_64"' "$project_dir/.github/workflows/release.yml"; then
+    echo "Release 覆盖升级必须使用与 GitHub 模拟器匹配的 x86_64 验收 APK，不能把 arm64 发布 APK 装到 x86_64 模拟器。" >&2
+    exit 1
+fi
+if ! grep -Fq "public_candidate_apk" "$project_dir/.github/workflows/release.yml"; then
+    echo "Release workflow 必须继续验证公开发布的 arm64 APK，不能用 x86_64 验收产物替代正式资产。" >&2
+    exit 1
+fi
+if ! grep -Fq "build-release-abi-apk.sh" "$project_dir/.github/workflows/release.yml"; then
+    echo "Release workflow 必须从稳定标签构建同签名 ABI 验收基线 APK。" >&2
+    exit 1
+fi
 
 echo "研发 PR 与发布 PR 的 workflow 触发策略校验通过。"

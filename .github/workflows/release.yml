@@ -122,6 +122,7 @@ jobs:
         run: |
           version_name="${{ steps.version.outputs.name }}"
           version_code="${{ steps.version.outputs.code }}"
+          gate_abi="x86_64"
           baseline_tag="$(gh release list --exclude-pre-releases --exclude-drafts --limit 100 \
             --json tagName --jq '.[].tagName' \
             | ./scripts/select-stable-baseline-tag.sh "$version_name")"
@@ -133,8 +134,18 @@ jobs:
           gh release download "$baseline_tag" --pattern '*.apk' --pattern 'SHA256SUMS' \
             --dir "$RUNNER_TEMP/release-baseline"
           (cd "$RUNNER_TEMP/release-baseline" && sha256sum -c SHA256SUMS)
-          baseline_apk="$(find "$RUNNER_TEMP/release-baseline" -maxdepth 1 -name '*.apk' -print -quit)"
-          candidate_apk="${{ steps.version.outputs.dist }}/termuxpro-${version_name}-arm64-v8a.apk"
+          public_candidate_apk="${{ steps.version.outputs.dist }}/termuxpro-${version_name}-arm64-v8a.apk"
+          if ! "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$public_candidate_apk" | grep -Fq "native-code: 'arm64-v8a'"; then
+            echo "公开发布 APK 必须保持 arm64-v8a 架构。" >&2
+            exit 1
+          fi
+          baseline_apk="$RUNNER_TEMP/release-baseline/termuxpro-${baseline_tag#v}-${gate_abi}.apk"
+          candidate_apk="app/build/outputs/apk/release/termux-app_apt-android-7-release_${gate_abi}.apk"
+          ./scripts/build-release-abi-apk.sh "$baseline_tag" "$gate_abi" "$baseline_apk"
+          if [[ ! -f "$candidate_apk" ]]; then
+            echo "未找到候选 ${gate_abi} APK：$candidate_apk" >&2
+            exit 1
+          fi
           export AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
           ./scripts/verify-release-apk-on-device.sh "$baseline_apk" "$candidate_apk" \
             "$version_name" "$version_code" test-artifacts/release-apk
