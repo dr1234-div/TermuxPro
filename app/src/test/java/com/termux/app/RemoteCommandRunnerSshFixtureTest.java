@@ -124,9 +124,9 @@ public class RemoteCommandRunnerSshFixtureTest {
         assertEquals(create.output, 0, create.exitCode);
 
         RemoteCommandRunner.Result owner = runner.run(target, port,
-            "test \"$(tmux show-options -v -t '=termuxpro-fixture' "
+            "test \"$(tmux show-options -v -t termuxpro-fixture "
                 + WorkspaceCommandBuilder.TMUX_OWNER_OPTION + ")\" = '" + OWNER + "'"
-                + " && test \"$(tmux show-options -v -t '=termuxpro-fixture' "
+                + " && test \"$(tmux show-options -v -t termuxpro-fixture "
                 + WorkspaceCommandBuilder.TMUX_WORKSPACE_OPTION + ")\" = '" + fingerprint + "'", 4096);
         assertEquals(owner.output, 0, owner.exitCode);
 
