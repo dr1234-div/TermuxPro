@@ -28,4 +28,13 @@
 
 - 新增 Robolectric 用例验证已配置首页隐藏低频工具卡片、隐藏连接编辑控件，并使用“连接配置”文案。
 - 更新终端布局用例，验证“工具箱”文字与无障碍描述一致，触控高度满足 48dp。
-- 待 GitHub CI 与模拟器默认/200% 字体截图验证后更新为完成。
+- 本地 `TERMUXPRO_USE_CHINA_MIRROR=1 ./scripts/test-all.sh` 成功，169 个 Gradle 任务通过。
+- PR #55 head `c70b04c9` 的 GitHub CI run `33382767774` 成功。
+- PR #55 head `c70b04c9` 的 Emulator UI run `33382767716` 成功，覆盖默认字体和 200% 字体截图矩阵。
+- PR #55 已合入 `dev`，merge commit `1dcdd1ed`。
+- `dev` merge commit CI run `33383251382` 成功。
+
+## 验收结论
+
+本轮切片通过。首页入口语义和终端工具入口可发现性已有自动化与模拟器证据；后续继续补“最近 tmux/AI
+会话”和真正的终端内工具箱信息架构，不把低频工具回流首页。
