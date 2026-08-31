@@ -224,6 +224,31 @@ final class WorkspaceCommandBuilder {
         return true;
     }
 
+    /** 提交说明只允许单行可见文本，避免把终端控制字符或多段脚本混入远端命令。 */
+    static boolean isSafeGitCommitMessage(@NonNull String message) {
+        String trimmed = message.trim();
+        if (trimmed.isEmpty() || trimmed.length() > 200) return false;
+        for (int index = 0; index < trimmed.length(); index++) {
+            char value = trimmed.charAt(index);
+            if (Character.isISOControl(value) || value == '\n' || value == '\r') return false;
+        }
+        return true;
+    }
+
+    /** 只提交已经暂存的内容；不自动 add、不推送、不丢弃工作区文件。 */
+    @NonNull
+    static String buildGitCommitStagedRemoteCommand(@NonNull String path, @NonNull String message) {
+        String trimmed = message.trim();
+        if (!isSafeGitCommitMessage(trimmed)) throw new IllegalArgumentException("Invalid commit message");
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && root=$(git rev-parse --show-toplevel)"
+            + " && cd -- \"$root\""
+            + " && staged=$(git diff --cached --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && if [ \"$staged\" -eq 0 ]; then exit 75; fi"
+            + " && git commit -m " + shellQuote(trimmed);
+    }
+
     /**
      * 从用户显式选择的远端跟踪分支创建同名本地跟踪分支并切换。
      *

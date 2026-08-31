@@ -370,6 +370,13 @@
     <string name="git_workbench_no_staged_changes">There are no staged changes to unstage.</string>
     <string name="git_workbench_stage_all_failed">Git did not stage the changes. Your working tree was preserved.\n\n%1$s</string>
     <string name="git_workbench_unstage_all_failed">Git did not unstage the changes. Your working tree was preserved.\n\n%1$s</string>
+    <string name="git_workbench_commit">Commit</string>
+    <string name="git_workbench_commit_hint">For example fix: improve mobile terminal UX</string>
+    <string name="git_workbench_commit_message">Commit %1$d staged file(s). %2$d unstaged file(s) will stay outside this commit. Nothing is pushed.</string>
+    <string name="git_workbench_commit_action">Commit staged</string>
+    <string name="git_workbench_commit_invalid">Use a non-empty single-line message up to 200 characters. Control characters are not allowed.</string>
+    <string name="git_workbench_committing">Committing staged changes…</string>
+    <string name="git_workbench_commit_failed">Git did not create the commit. Your staged and unstaged files were preserved.\n\n%1$s</string>
     <string name="git_workbench_commits">Commits</string>
     <string name="git_workbench_guidance">Branch switching never discards changes. If Git detects a conflict, TermuxPro stops and keeps the current working tree unchanged.</string>
     <string name="git_workbench_no_commits">No commits yet.</string>

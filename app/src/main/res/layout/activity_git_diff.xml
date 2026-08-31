@@ -190,6 +190,16 @@
                             android:textColor="#F5F8FA" />
 
                         <Button
+                            android:id="@+id/git_overview_commit_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="#68E0B7"
+                            android:minHeight="48dp"
+                            android:text="@string/git_workbench_commit"
+                            android:textColor="#06231B" />
+
+                        <Button
                             android:id="@+id/git_overview_commits_button"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"

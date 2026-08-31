@@ -79,6 +79,8 @@ public final class GitDiffActivity extends AppCompatActivity {
             view -> confirmStageAll());
         findViewById(R.id.git_overview_unstage_all_button).setOnClickListener(
             view -> confirmUnstageAll());
+        findViewById(R.id.git_overview_commit_button).setOnClickListener(
+            view -> showCommitDialog());
         findViewById(R.id.git_overview_commits_button).setOnClickListener(view -> showCommits());
         mReturnWorkspace.setOnClickListener(view -> WorkspaceNavigation.returnToWorkspace(this));
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -216,6 +218,9 @@ public final class GitDiffActivity extends AppCompatActivity {
         Button unstageAll = findViewById(R.id.git_overview_unstage_all_button);
         unstageAll.setEnabled(overview.stagedFiles > 0);
         unstageAll.setAlpha(overview.stagedFiles > 0 ? 1f : 0.48f);
+        Button commit = findViewById(R.id.git_overview_commit_button);
+        commit.setEnabled(overview.stagedFiles > 0);
+        commit.setAlpha(overview.stagedFiles > 0 ? 1f : 0.48f);
         TextView sync = findViewById(R.id.git_overview_sync);
         if (overview.ahead == null || overview.behind == null) {
             sync.setText(R.string.git_workbench_no_upstream);
@@ -351,6 +356,49 @@ public final class GitDiffActivity extends AppCompatActivity {
         showStyledDialog(dialog);
     }
 
+    private void showCommitDialog() {
+        AlertDialog dialog = createCommitDialog();
+        if (dialog != null) dialog.show();
+    }
+
+    @Nullable
+    AlertDialog createCommitDialog() {
+        if (mOverview == null) return null;
+        if (mOverview.stagedFiles <= 0) {
+            showStatus(getString(R.string.git_workbench_no_staged_changes), false);
+            return null;
+        }
+        EditText input = new EditText(this);
+        input.setId(android.R.id.edit);
+        input.setSingleLine(true);
+        input.setHint(R.string.git_workbench_commit_hint);
+        input.setTextColor(ContextCompat.getColor(this, R.color.tp_text_primary));
+        input.setHintTextColor(ContextCompat.getColor(this, R.color.tp_text_secondary));
+        int padding = Math.round(20 * getResources().getDisplayMetrics().density);
+        input.setPadding(padding, padding / 2, padding, padding / 2);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_commit)
+            .setMessage(getString(R.string.git_workbench_commit_message, mOverview.stagedFiles,
+                mOverview.unstagedFiles))
+            .setView(input)
+            .setPositiveButton(R.string.git_workbench_commit_action, null)
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        dialog.setOnShowListener(ignored -> {
+            TermuxProDialogStyle.apply(this, dialog);
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+                String message = input.getText().toString();
+                if (!WorkspaceCommandBuilder.isSafeGitCommitMessage(message)) {
+                    input.setError(getString(R.string.git_workbench_commit_invalid));
+                    return;
+                }
+                dialog.dismiss();
+                commitStaged(message.trim());
+            });
+        });
+        return dialog;
+    }
+
     void showStyledDialog(@NonNull AlertDialog dialog) {
         dialog.setOnShowListener(ignored -> TermuxProDialogStyle.apply(this, dialog));
         dialog.show();
@@ -479,6 +527,29 @@ public final class GitDiffActivity extends AppCompatActivity {
                 else showStatus(getString(stage
                     ? R.string.git_workbench_stage_all_failed
                     : R.string.git_workbench_unstage_all_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    private void commitStaged(@NonNull String message) {
+        if (mOverview == null || mOverview.stagedFiles <= 0
+            || !WorkspaceCommandBuilder.isSafeGitCommitMessage(message)) {
+            return;
+        }
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(R.string.git_workbench_committing));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand(target.path, message),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 75) showStatus(
+                    getString(R.string.git_workbench_no_staged_changes), false);
+                else showStatus(getString(R.string.git_workbench_commit_failed,
                     result.output.trim()), false);
             });
         });
