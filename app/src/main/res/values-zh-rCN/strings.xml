@@ -160,7 +160,7 @@
     <string name="workspace_open_sessions">打开终端会话列表</string>
     <string name="workspace_sessions_short">会话</string>
     <string name="workspace_open_workbench">工作台</string>
-    <string name="workspace_open_workbench_description">返回连接配置与远程入口</string>
+    <string name="workspace_open_workbench_description">返回服务器、项目目录和远程入口</string>
     <string name="terminal_sessions_title">终端会话</string>
     <string name="terminal_sessions_hint">点击切换会话，长按可重命名</string>
     <string name="workspace_command_confirm_title">发送命令到当前会话？</string>
@@ -176,7 +176,7 @@
     <string name="workspace_setup_ready">SSH 连接组件已就绪</string>
     <string name="workspace_selector_description">已保存的工作区</string>
     <string name="workspace_new_action">新建工作区</string>
-    <string name="workspace_manage_action">连接配置</string>
+    <string name="workspace_manage_action">服务器与项目</string>
     <string name="workspace_edit_action">编辑连接</string>
     <string name="workspace_advanced_action">高级设置</string>
     <string name="workspace_advanced_hide_action">收起高级设置</string>

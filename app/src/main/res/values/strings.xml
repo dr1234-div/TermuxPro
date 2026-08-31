@@ -278,7 +278,7 @@
     <string name="workspace_open_sessions">Open terminal sessions</string>
     <string name="workspace_sessions_short">Sessions</string>
     <string name="workspace_open_workbench">Workbench</string>
-    <string name="workspace_open_workbench_description">Return to connection settings and remote entry</string>
+    <string name="workspace_open_workbench_description">Return to servers, project paths, and remote entry</string>
     <string name="terminal_sessions_title">Terminal sessions</string>
     <string name="terminal_sessions_hint">Tap to switch; touch and hold to rename</string>
     <string name="workspace_command_confirm_title">Send command to current session?</string>
@@ -294,7 +294,7 @@
     <string name="workspace_setup_ready">SSH component is ready</string>
     <string name="workspace_selector_description">Saved workspaces</string>
     <string name="workspace_new_action">New workspace</string>
-    <string name="workspace_manage_action">Connection settings</string>
+    <string name="workspace_manage_action">Server and project</string>
     <string name="workspace_edit_action">Edit connection</string>
     <string name="workspace_advanced_action">Advanced settings</string>
     <string name="workspace_advanced_hide_action">Hide advanced settings</string>
