@@ -63,7 +63,8 @@ final class GitRepositoryOverview {
             } else if (line.startsWith(LOCAL_BRANCH)) {
                 local.add(requireValue(line.substring(LOCAL_BRANCH.length()), "local branch"));
             } else if (line.startsWith(REMOTE_BRANCH)) {
-                remote.add(requireValue(line.substring(REMOTE_BRANCH.length()), "remote branch"));
+                String branch = requireValue(line.substring(REMOTE_BRANCH.length()), "remote branch");
+                if (!isRemoteHead(branch)) remote.add(branch);
             } else if (line.startsWith(LOG)) {
                 String[] fields = line.split("\t", 4);
                 if (fields.length != 4) throw new IllegalArgumentException("Invalid Git log record");
@@ -73,6 +74,10 @@ final class GitRepositoryOverview {
         if (head == null) throw new IllegalArgumentException("Missing Git overview record");
         return new GitRepositoryOverview(head, detached, changedFiles, ahead, behind,
             local, remote, commits);
+    }
+
+    static boolean isRemoteHead(@NonNull String branch) {
+        return branch.endsWith("/HEAD");
     }
 
     private static int parseNonNegative(@NonNull String value, @NonNull String name) {

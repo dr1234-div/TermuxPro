@@ -16,6 +16,7 @@ public final class GitRepositoryOverviewTest {
             "TP_OVERVIEW\tdev\t0\t3\t2\t1\t1\n"
                 + "TP_LOCAL\tdev\nTP_LOCAL\tmaster\n"
                 + "TP_REMOTE\torigin/dev\n"
+                + "TP_REMOTE\torigin/HEAD\n"
                 + "TP_LOG\ta1b2c3d\t2 hours ago\t修复切换逻辑\n");
 
         assertEquals("dev", result.head);

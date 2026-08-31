@@ -146,6 +146,7 @@ final class WorkspaceCommandBuilder {
             + "\"$head\" \"$detached\" \"$changed\" \"$ahead\" \"$behind\" \"$upstream\""
             + " && git for-each-ref --sort=-committerdate --format='TP_LOCAL%09%(refname:short)' refs/heads"
             + " && git for-each-ref --sort=-committerdate --format='TP_REMOTE%09%(refname:short)' refs/remotes"
+            + " | grep -v '/HEAD$' || true"
             + " && (git log -20 --date=relative --pretty=format:'TP_LOG%x09%h%x09%ar%x09%s'"
             + " 2>/dev/null || true)";
     }
@@ -157,6 +158,31 @@ final class WorkspaceCommandBuilder {
             throw new IllegalArgumentException("Invalid branch");
         }
         return "cd -- " + remotePathExpression(path) + " && git switch -- " + shellQuote(branch);
+    }
+
+    /**
+     * 从用户显式选择的远端跟踪分支创建同名本地跟踪分支并切换。
+     *
+     * 不自动覆盖已有本地分支；如果脏工作树会被覆盖，Git 自身会拒绝并保留当前工作树。
+     */
+    @NonNull
+    static String buildGitTrackRemoteBranchCommand(@NonNull String path, @NonNull String remoteBranch) {
+        if (remoteBranch.isEmpty()
+            || remoteBranch.indexOf('\n') >= 0
+            || remoteBranch.indexOf('\r') >= 0
+            || remoteBranch.endsWith("/HEAD")
+            || remoteBranch.indexOf('/') <= 0
+            || remoteBranch.startsWith("-")) {
+            throw new IllegalArgumentException("Invalid remote branch");
+        }
+        String localBranch = remoteBranch.substring(remoteBranch.indexOf('/') + 1);
+        if (localBranch.isEmpty() || localBranch.startsWith("-")) {
+            throw new IllegalArgumentException("Invalid local branch");
+        }
+        return "cd -- " + remotePathExpression(path)
+            + " && if git show-ref --verify --quiet refs/heads/" + shellQuote(localBranch)
+            + "; then exit 74; fi"
+            + " && git switch --track " + shellQuote(remoteBranch);
     }
 
     /** 列出项目内单层目录，使用 NUL 分隔以支持空格、Tab 和换行文件名。 */

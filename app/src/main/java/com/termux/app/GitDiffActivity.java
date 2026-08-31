@@ -243,17 +243,23 @@ public final class GitDiffActivity extends AppCompatActivity {
             .setTitle(R.string.git_workbench_switch_branch)
             .setItems(labels, (dialog, which) -> {
                 if (which < localCount) confirmSwitch(mOverview.localBranches.get(which));
-                else showRemoteBranch(mOverview.remoteBranches.get(which - localCount));
+                else confirmTrackRemoteBranch(mOverview.remoteBranches.get(which - localCount));
             })
             .setNegativeButton(android.R.string.cancel, null)
             .show();
     }
 
-    private void showRemoteBranch(@NonNull String branch) {
+    private void confirmTrackRemoteBranch(@NonNull String branch) {
+        if (mOverview == null || GitRepositoryOverview.isRemoteHead(branch)) return;
+        int message = mOverview.changedFiles > 0
+            ? R.string.git_workbench_track_remote_dirty_message
+            : R.string.git_workbench_track_remote_message;
         new AlertDialog.Builder(this)
             .setTitle(branch)
-            .setMessage(R.string.git_workbench_remote_branch_guidance)
-            .setPositiveButton(android.R.string.ok, null)
+            .setMessage(getString(message, mOverview.head, branch, mOverview.changedFiles))
+            .setPositiveButton(R.string.git_workbench_track_remote_action,
+                (dialog, which) -> trackRemoteBranch(branch))
+            .setNegativeButton(android.R.string.cancel, null)
             .show();
     }
 
@@ -282,6 +288,29 @@ public final class GitDiffActivity extends AppCompatActivity {
             mMainHandler.post(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 if (result.exitCode == 0) loadOverview();
+                else showStatus(getString(R.string.git_workbench_switch_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    private void trackRemoteBranch(@NonNull String branch) {
+        if (mOverview == null || !mOverview.remoteBranches.contains(branch)
+            || GitRepositoryOverview.isRemoteHead(branch)) {
+            return;
+        }
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(R.string.git_workbench_switching, branch));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(target.path, branch),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 74) showStatus(getString(
+                    R.string.git_workbench_track_remote_conflict, branch), false);
                 else showStatus(getString(R.string.git_workbench_switch_failed,
                     result.output.trim()), false);
             });
