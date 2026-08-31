@@ -246,13 +246,17 @@
     <string name="git_workbench_current_branch">%1$s  ·  当前</string>
     <string name="git_workbench_local_branch">本地  ·  %1$s</string>
     <string name="git_workbench_remote_branch">远端  ·  %1$s</string>
-    <string name="git_workbench_remote_branch_guidance">这是远端跟踪分支；当前安全切换流程暂不自动创建本地跟踪分支。</string>
+    <string name="git_workbench_remote_branch_guidance">这是远端跟踪分支；可以创建同名本地跟踪分支后切换。</string>
     <string name="git_workbench_switch_branch">切换分支</string>
     <string name="git_workbench_switch_message">从 %1$s 切换到 %2$s？</string>
     <string name="git_workbench_switch_dirty_message">从 %1$s 切换到 %2$s？当前有 %3$d 个未提交文件；若可能覆盖修改，Git 会停止切换。</string>
     <string name="git_workbench_switch_action">切换</string>
     <string name="git_workbench_switching">正在切换到 %1$s…</string>
     <string name="git_workbench_switch_failed">Git 未切换分支，当前工作树已保留。\n\n%1$s</string>
+    <string name="git_workbench_track_remote_message">从 %1$s 基于 %2$s 创建本地跟踪分支并切换？</string>
+    <string name="git_workbench_track_remote_dirty_message">从 %1$s 基于 %2$s 创建本地跟踪分支并切换？当前有 %3$d 个未提交文件；若可能覆盖修改，Git 会停止切换。</string>
+    <string name="git_workbench_track_remote_action">创建并切换</string>
+    <string name="git_workbench_track_remote_conflict">未创建本地跟踪分支：%1$s 对应的本地分支已存在。请刷新后从本地分支列表切换。</string>
     <plurals name="git_workbench_changed_files">
         <item quantity="other">%1$d 个未提交文件</item>
     </plurals>

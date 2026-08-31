@@ -152,15 +152,22 @@ public class WorkspaceCommandBuilderTest {
         String overview = WorkspaceCommandBuilder.buildGitOverviewRemoteCommand("~/team app");
         String branch = WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand(
             "/srv/team's app", "feature/user's-work");
+        String remoteBranch = WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(
+            "/srv/team's app", "origin/feature/user's-work");
 
         assertTrue(overview.contains("TP_OVERVIEW\\t"));
         assertTrue(overview.contains("git status --porcelain=v1 -z"));
         assertTrue(overview.contains("refs/heads"));
+        assertTrue(overview.contains("grep -v '/HEAD$'"));
         assertTrue(overview.contains("git log -20"));
         assertTrue(branch.contains("'/srv/team'\\''s app'"));
         assertTrue(branch.endsWith("'feature/user'\\''s-work'"));
+        assertTrue(remoteBranch.contains("git show-ref --verify --quiet refs/heads/'feature/user'\\''s-work'"));
+        assertTrue(remoteBranch.endsWith("git switch --track 'origin/feature/user'\\''s-work'"));
         assertThrows(IllegalArgumentException.class,
             () -> WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand("~/app", "bad\nbranch"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand("~/app", "origin/HEAD"));
     }
 
     @Test
@@ -195,6 +202,43 @@ public class WorkspaceCommandBuilderTest {
         ShellOutput switched = runShellCapture(
             WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
         assertEquals("feature", GitRepositoryOverview.parse(switched.output).head);
+    }
+
+    @Test
+    public void gitTrackRemoteBranchCreatesLocalTrackingBranchWithoutOverwriting() throws Exception {
+        Assume.assumeTrue(new File("/usr/bin/git").canExecute());
+        Path remote = Files.createTempDirectory("termuxpro git remote");
+        Path seed = Files.createTempDirectory("termuxpro git seed");
+        Path clone = Files.createTempDirectory("termuxpro git clone");
+        assertEquals(0, runShell("git init --bare -q -- " + WorkspaceCommandBuilder.shellQuote(
+            remote.toString()), new HashMap<>()));
+        String setup = "git init -q -- " + WorkspaceCommandBuilder.shellQuote(seed.toString())
+            + " && cd -- " + WorkspaceCommandBuilder.shellQuote(seed.toString())
+            + " && git config user.name test && git config user.email test@example.com"
+            + " && printf content > README.md && git add README.md && git commit -q -m initial"
+            + " && git branch feature/mobile"
+            + " && git remote add origin " + WorkspaceCommandBuilder.shellQuote(remote.toString())
+            + " && git push -q origin master feature/mobile";
+        assertEquals(0, runShell(setup, new HashMap<>()));
+        assertEquals(0, runShell("git clone -q " + WorkspaceCommandBuilder.shellQuote(remote.toString())
+            + " " + WorkspaceCommandBuilder.shellQuote(clone.toString()), new HashMap<>()));
+
+        ShellOutput overview = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(clone.toString()));
+        assertEquals(0, overview.exitCode);
+        assertTrue(GitRepositoryOverview.parse(overview.output).remoteBranches.contains(
+            "origin/feature/mobile"));
+
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(
+            clone.toString(), "origin/feature/mobile"), new HashMap<>()));
+        ShellOutput switched = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(clone.toString()));
+        GitRepositoryOverview parsed = GitRepositoryOverview.parse(switched.output);
+        assertEquals("feature/mobile", parsed.head);
+        assertTrue(parsed.localBranches.contains("feature/mobile"));
+
+        assertEquals(74, runShell(WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(
+            clone.toString(), "origin/feature/mobile"), new HashMap<>()));
     }
 
     @Test
