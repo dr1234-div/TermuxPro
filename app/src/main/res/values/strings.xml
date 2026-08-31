@@ -537,6 +537,10 @@
     <string name="custom_commands_delete_message">Only this quick command in the current workspace will be removed. Its command will not run.</string>
     <string name="custom_commands_copy_suffix">%1$s copy</string>
     <string name="custom_commands_invalid_workspace">No valid remote workspace is selected. Return to the workspace and configure a server and project directory first.</string>
+    <string name="terminal_tools_section_context">Current context</string>
+    <string name="terminal_tools_section_project">Project and Git</string>
+    <string name="terminal_tools_section_ai">AI safety actions</string>
+    <string name="terminal_tools_section_keyboard">Key rows</string>
     <string name="terminal_custom_commands_action">Quick commands</string>
 
 </resources>
