@@ -82,6 +82,8 @@ public class WorkspaceActivitySmokeTest {
             ((TextView) activity.findViewById(R.id.workspace_manage_button)).getText().toString());
         assertEquals(View.VISIBLE, activity.findViewById(R.id.workspace_summary).getVisibility());
         assertEquals(View.VISIBLE, activity.findViewById(R.id.workspace_manage_button).getVisibility());
+        assertEquals(View.VISIBLE, activity.findViewById(R.id.workspace_new_button).getVisibility());
+        assertEquals(View.GONE, activity.findViewById(R.id.workspace_selector).getVisibility());
         assertEquals(View.GONE, activity.findViewById(R.id.workspace_development_tools_card).getVisibility());
         assertEquals(View.GONE, activity.findViewById(R.id.workspace_preview_card).getVisibility());
         assertEquals(View.GONE, activity.findViewById(R.id.workspace_local_terminal_button).getVisibility());
@@ -139,6 +141,7 @@ public class WorkspaceActivitySmokeTest {
 
         Spinner selector = activity.findViewById(R.id.workspace_selector);
         assertEquals(2, selector.getCount());
+        assertEquals(View.VISIBLE, selector.getVisibility());
         assertEquals("远程开发 副本", selector.getSelectedItem().toString());
         assertEquals("hdr@192.168.1.153",
             ((EditText) activity.findViewById(R.id.workspace_host_input)).getText().toString());

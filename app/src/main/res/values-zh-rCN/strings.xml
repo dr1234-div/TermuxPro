@@ -175,7 +175,7 @@
     <string name="workspace_setup_action">安装 SSH 连接组件</string>
     <string name="workspace_setup_ready">SSH 连接组件已就绪</string>
     <string name="workspace_selector_description">已保存的工作区</string>
-    <string name="workspace_new_action">新建</string>
+    <string name="workspace_new_action">新建工作区</string>
     <string name="workspace_manage_action">连接配置</string>
     <string name="workspace_edit_action">编辑连接</string>
     <string name="workspace_advanced_action">高级设置</string>
