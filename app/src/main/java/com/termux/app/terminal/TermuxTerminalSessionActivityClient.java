@@ -17,6 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.termux.R;
+import com.termux.app.TermuxProDialogStyle;
 import com.termux.shared.interact.ShareUtils;
 import com.termux.shared.termux.shell.command.runner.terminal.TermuxSession;
 import com.termux.shared.termux.interact.TextInputDialogUtils;
@@ -374,8 +375,11 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         if (service == null) return;
 
         if (service.getTermuxSessionsSize() >= MAX_SESSIONS) {
-            new AlertDialog.Builder(mActivity).setTitle(R.string.title_max_terminals_reached).setMessage(R.string.msg_max_terminals_reached)
-                .setPositiveButton(android.R.string.ok, null).show();
+            TermuxProDialogStyle.show(mActivity, new AlertDialog.Builder(mActivity)
+                .setTitle(R.string.title_max_terminals_reached)
+                .setMessage(R.string.msg_max_terminals_reached)
+                .setPositiveButton(android.R.string.ok, null)
+                .create());
         } else {
             TerminalSession currentSession = mActivity.getCurrentSession();
 

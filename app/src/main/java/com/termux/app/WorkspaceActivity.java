@@ -271,13 +271,13 @@ public final class WorkspaceActivity extends AppCompatActivity {
     }
 
     private void installSshClient() {
-        new AlertDialog.Builder(this)
+        TermuxProDialogStyle.show(this, new AlertDialog.Builder(this)
             .setTitle(R.string.workspace_setup_title)
             .setMessage(R.string.workspace_setup_description)
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.workspace_setup_action,
                 (dialog, which) -> openTerminal(INSTALL_SSH_COMMAND))
-            .show();
+            .create());
     }
 
     private void restoreWorkspaces() {
@@ -406,13 +406,13 @@ public final class WorkspaceActivity extends AppCompatActivity {
 
     private void confirmDiscardChanges(Runnable action) {
         WorkspaceProfile profile = mProfiles.get(findActiveProfileIndex());
-        new AlertDialog.Builder(this)
+        TermuxProDialogStyle.show(this, new AlertDialog.Builder(this)
             .setTitle(R.string.workspace_discard_changes_title)
             .setMessage(getString(R.string.workspace_discard_changes_message, profile.name))
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.workspace_discard_changes_action,
                 (dialog, which) -> action.run())
-            .show();
+            .create());
     }
 
     private void createWorkspace() {
@@ -477,7 +477,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
 
     private void confirmDeleteWorkspace() {
         WorkspaceProfile profile = mProfiles.get(findActiveProfileIndex());
-        new AlertDialog.Builder(this)
+        TermuxProDialogStyle.show(this, new AlertDialog.Builder(this)
             .setTitle(R.string.workspace_delete_title)
             .setMessage(getString(R.string.workspace_delete_message, profile.name))
             .setNegativeButton(android.R.string.cancel, null)
@@ -494,7 +494,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
                 persistProfiles();
                 refreshWorkspaceSelector();
             })
-            .show();
+            .create());
     }
 
     private void persistProfiles() {

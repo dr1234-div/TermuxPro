@@ -757,7 +757,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         EditText input = new EditText(this);
         input.setSingleLine(true);
         input.setHint(R.string.terminal_search_hint);
-        new AlertDialog.Builder(this)
+        TermuxProDialogStyle.show(this, new AlertDialog.Builder(this)
             .setTitle(R.string.terminal_search_title)
             .setView(input)
             .setNegativeButton(android.R.string.cancel, null)
@@ -765,7 +765,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 String query = input.getText().toString().trim();
                 if (!query.isEmpty()) showTerminalSearchResults(session, query);
             })
-            .show();
+            .create());
     }
 
     private void showTerminalSearchResults(TerminalSession session, String query) {
@@ -790,11 +790,11 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         output.setTextSize(13);
         android.widget.ScrollView scroll = new android.widget.ScrollView(this);
         scroll.addView(output);
-        new AlertDialog.Builder(this)
+        TermuxProDialogStyle.show(this, new AlertDialog.Builder(this)
             .setTitle(getString(R.string.terminal_search_results_title, query, result.matches.size()))
             .setView(scroll)
             .setPositiveButton(android.R.string.ok, null)
-            .show();
+            .create());
     }
 
     /** Enter 可能确认危险授权，因此始终要求用户再次确认，且不推断终端当前状态。 */
@@ -804,14 +804,14 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             showToast(getString(R.string.error_termux_service_start_failed_general), true);
             return;
         }
-        new AlertDialog.Builder(this)
+        TermuxProDialogStyle.show(this, new AlertDialog.Builder(this)
             .setTitle(R.string.ai_action_confirm_title)
             .setMessage(R.string.ai_action_confirm_message)
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.ai_action_confirm_send,
                 (dialog, which) -> session.write(AiTerminalAction.payload(
                     AiTerminalAction.Type.CONFIRM_SELECTION)))
-            .show();
+            .create());
     }
 
     private void sendTerminalAction(AiTerminalAction.Type type) {
@@ -867,6 +867,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         });
         dialog.setOnShowListener(ignored -> {
             input.requestFocus();
+            TermuxProDialogStyle.apply(this, dialog);
             dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
         });
         dialog.show();
@@ -879,13 +880,13 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             return;
         }
 
-        new AlertDialog.Builder(this)
+        TermuxProDialogStyle.show(this, new AlertDialog.Builder(this)
             .setTitle(R.string.workspace_command_confirm_title)
             .setMessage(getString(R.string.workspace_command_confirm_message, command))
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.workspace_command_confirm_action,
                 (dialog, which) -> session.write(command + "\r"))
-            .show();
+            .create());
     }
 
 
@@ -1023,7 +1024,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             session.finishIfRunning();
         });
         b.setNegativeButton(android.R.string.no, null);
-        b.show();
+        TermuxProDialogStyle.show(this, b.create());
     }
 
     private void onResetTerminalSession(TerminalSession session) {
@@ -1044,10 +1045,12 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         } catch (ActivityNotFoundException | IllegalArgumentException e) {
             // The startActivity() call is not documented to throw IllegalArgumentException.
             // However, crash reporting shows that it sometimes does, so catch it here.
-            new AlertDialog.Builder(this).setMessage(getString(R.string.error_styling_not_installed))
+            TermuxProDialogStyle.show(this, new AlertDialog.Builder(this)
+                .setMessage(getString(R.string.error_styling_not_installed))
                 .setPositiveButton(R.string.action_styling_install,
                     (dialog, which) -> ActivityUtils.startActivity(this, new Intent(Intent.ACTION_VIEW, Uri.parse(TermuxConstants.TERMUX_STYLING_FDROID_PACKAGE_URL))))
-                .setNegativeButton(android.R.string.cancel, null).show();
+                .setNegativeButton(android.R.string.cancel, null)
+                .create());
         }
     }
     private void toggleKeepScreenOn() {
