@@ -19,5 +19,9 @@ if ! grep -Fq "branches: ['dev_*', 'hotfix_*']" "$project_dir/.github/workflows/
     echo "UI push 门禁必须覆盖 dev_* 和 hotfix_*。" >&2
     exit 1
 fi
+if ! grep -Fq "'terminal-view/src/main/**'" "$project_dir/.github/workflows/ui-emulator.yml"; then
+    echo "UI pull_request 门禁必须覆盖 terminal-view 触摸、渲染和输入层变更。" >&2
+    exit 1
+fi
 
 echo "研发 PR 与发布 PR 的 workflow 触发策略校验通过。"
