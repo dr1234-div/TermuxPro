@@ -9,6 +9,7 @@ source "$project_dir/scripts/resolve-jdk17.sh"
 ./test/version-metadata-test.sh
 ./test/select-stable-baseline-tag-test.sh
 ./test/github-cli-wrapper-test.sh
+./test/github-check-suites-test.sh
 ./test/workflow-trigger-policy-test.sh
 ./test/skill-validator-bootstrap-test.sh
 ./test/ui-screenshot-manifest-test.sh
