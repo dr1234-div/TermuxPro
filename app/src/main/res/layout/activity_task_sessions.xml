@@ -70,6 +70,16 @@
         android:textColor="@color/tp_text_primary"
         android:textSize="14sp" />
     <TextView
+        android:id="@+id/task_sessions_safety_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="16dp"
+        android:text="@string/task_sessions_safety_hint"
+        android:textColor="@color/tp_text_secondary"
+        android:textSize="13sp" />
+    <TextView
         android:id="@+id/task_sessions_status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

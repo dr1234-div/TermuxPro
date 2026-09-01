@@ -598,6 +598,7 @@
     <string name="task_sessions_other_owner_warning">This session was created by another TermuxPro owner on the same remote account. It can be attached only after explicit confirmation; rename and stop are disabled to avoid disrupting shared work.</string>
     <string name="task_sessions_incomplete_marker_warning">This session has incomplete TermuxPro ownership metadata. TermuxPro treats it as read-only here: attach is allowed, but rename and stop stay disabled until the metadata is verified by reconnecting or recreating the session.</string>
     <string name="task_sessions_target">Remote target · %1$s:%2$d · %3$s</string>
+    <string name="task_sessions_safety_hint">Current workspace sessions are shown first. Other workspaces, other owners, and unknown sessions can be attached only; rename and stop stay disabled here.</string>
     <string name="task_sessions_owned_context">TermuxPro-owned session · %1$s:%2$d · %3$s</string>
     <string name="task_sessions_name_label">Session name</string>
     <string name="task_sessions_creating">Creating “%1$s”…</string>
