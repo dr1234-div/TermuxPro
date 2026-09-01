@@ -83,5 +83,17 @@ if grep -Fq '候选版本号无效' "$auto_dev_pr_file"; then
     echo "自动研发 PR 工作流不能在 PR 已合并、dev 收尾 CI 已通过后再因稳定版本号失败。" >&2
     exit 1
 fi
+if ! grep -Fq '自动 PR 工作流不再重复上报失败' "$auto_dev_pr_file"; then
+    echo "预合并 CI 或模拟器失败时，自动研发 PR 工作流应保留 PR 并成功退出，避免与 CI 失败重复发送邮件。" >&2
+    exit 1
+fi
+if ! grep -Fq "if ! wait_for_workflow '.github/workflows/ci.yml' '完整 CI'; then" "$auto_dev_pr_file"; then
+    echo "自动研发 PR 工作流必须显式处理预合并 CI 失败，不能让 set -e 直接把自动 PR 标成失败。" >&2
+    exit 1
+fi
+if ! grep -Fq "if ! wait_for_workflow '.github/workflows/ui-emulator.yml' '模拟器 UI'; then" "$auto_dev_pr_file"; then
+    echo "自动研发 PR 工作流必须显式处理预合并模拟器失败，不能重复制造失败通知。" >&2
+    exit 1
+fi
 
 echo "研发 PR 与发布 PR 的 workflow 触发策略校验通过。"
