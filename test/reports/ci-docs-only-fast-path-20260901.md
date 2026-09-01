@@ -28,4 +28,7 @@
 - `git diff --check` 通过。
 - `./scripts/validate-skills.sh` 通过。
 - `./scripts/pre-push-smoke.sh origin/dev` 通过；本轮仅涉及 workflow、规则和文档，静态门禁完成。
-- 远端 PR 与 CI 编号待补。
+- PR #130 已合入 `dev`，merge commit `559665d516bab7734defac021016818867cfbf68`。
+- 分支 CI run `33487758405` 通过；模拟器 UI run `33487758421` 通过；`dev` 收尾 CI run
+  `33488274687` 通过；自动 PR run `33487758418` 成功结束。
+- docs-only 快速通道自验证待补。
