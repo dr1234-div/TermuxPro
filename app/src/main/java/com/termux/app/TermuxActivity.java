@@ -331,6 +331,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
         if (mIsInvalidState) return;
 
+        updateTerminalToolsButtonState();
+
         if (mTermuxTerminalSessionActivityClient != null)
             mTermuxTerminalSessionActivityClient.onResume();
 
@@ -695,6 +697,18 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             showAiLaunchDialog(AiCliLaunchCommand.Tool.CODEX));
         findViewById(R.id.terminal_prompt_button).setOnClickListener(view -> showPromptComposer());
         findViewById(R.id.terminal_tools_button).setOnClickListener(this::showProjectTools);
+        updateTerminalToolsButtonState();
+    }
+
+    /** 在 TermuxPro 增值工具入口直接暴露当前触摸滚动语义，避免用户误以为滑动失效。 */
+    private void updateTerminalToolsButtonState() {
+        TextView tools = findViewById(R.id.terminal_tools_button);
+        if (tools == null || mPreferences == null) return;
+        boolean tuiMode = TerminalView.TOUCH_SCROLL_MODE_TUI.equals(
+            mPreferences.getTerminalTouchScrollMode());
+        int label = TerminalProjectToolsMenu.toolsButtonLabel(tuiMode);
+        tools.setText(label);
+        tools.setContentDescription(getString(label));
     }
 
     private void startAiCli(String command) {
@@ -787,6 +801,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             TerminalView.TOUCH_SCROLL_MODE_TUI;
         mPreferences.setTerminalTouchScrollMode(nextMode);
         mTerminalView.setTouchScrollMode(nextMode);
+        updateTerminalToolsButtonState();
         showToast(getString(tuiMode ?
             R.string.terminal_touch_scroll_scrollback_applied :
             R.string.terminal_touch_scroll_tui_applied), false);

@@ -216,6 +216,8 @@
     <string name="workspace_delete_title">删除这个工作区？</string>
     <string name="workspace_delete_message">将删除“%1$s”的连接信息，不会影响 SSH 密钥和远端文件。</string>
     <string name="workspace_tools_action">工具箱</string>
+    <string name="workspace_tools_scrollback_action">工具箱 · 历史</string>
+    <string name="workspace_tools_tui_scroll_action">工具箱 · TUI</string>
     <string name="workspace_git_status_action">Git 状态</string>
     <string name="workspace_git_diff_action">审查 Git Diff</string>
     <string name="workspace_project_check_action">运行项目检查</string>
@@ -237,8 +239,8 @@
     <string name="workspace_keys_shell_applied">已切换为 Shell 键区</string>
     <string name="workspace_keys_ai_applied">已切换为 AI CLI 键区</string>
     <string name="workspace_keys_vim_applied">已切换为 Vim 键区</string>
-    <string name="terminal_touch_scroll_switch_to_scrollback">触摸滚动：终端历史</string>
-    <string name="terminal_touch_scroll_switch_to_tui">触摸滚动：AI/TUI 面板</string>
+    <string name="terminal_touch_scroll_switch_to_scrollback">当前：AI/TUI 面板；点此切换到终端历史</string>
+    <string name="terminal_touch_scroll_switch_to_tui">当前：终端历史；点此切换到 AI/TUI 面板</string>
     <string name="terminal_touch_scroll_scrollback_applied">手指滑动将滚动终端历史</string>
     <string name="terminal_touch_scroll_tui_applied">手指滑动将在支持时滚动 AI/TUI 面板</string>
     <string name="workspace_review_diff_action">Git 修改</string>
