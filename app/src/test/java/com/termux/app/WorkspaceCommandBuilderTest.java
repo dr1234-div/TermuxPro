@@ -165,8 +165,15 @@ public class WorkspaceCommandBuilderTest {
             "/srv/team's app", "src/user's file.txt");
         String unstageFile = WorkspaceCommandBuilder.buildGitUnstageFileRemoteCommand(
             "/srv/team's app", "src/user's file.txt");
+        String stashPush = WorkspaceCommandBuilder.buildGitStashPushRemoteCommand(
+            "/srv/team's app", "WIP user's task");
+        String stashApply = WorkspaceCommandBuilder.buildGitStashApplyRemoteCommand(
+            "/srv/team's app", "stash@{0}");
+        String stashDrop = WorkspaceCommandBuilder.buildGitStashDropRemoteCommand(
+            "/srv/team's app", "stash@{0}");
 
         assertTrue(overview.contains("TP_OVERVIEW\\t"));
+        assertTrue(overview.contains("TP_STASH"));
         assertTrue(overview.contains("TP_STATUS_Z\\000"));
         assertTrue(overview.contains("git status --porcelain=v1 -z"));
         assertTrue(overview.contains("upstream_name=$(git rev-parse"));
@@ -205,6 +212,14 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(!stageFile.contains("git commit"));
         assertTrue(unstageFile.contains("git restore --staged -- 'src/user'\\''s file.txt'"));
         assertTrue(!unstageFile.contains("reset --hard"));
+        assertTrue(stashPush.contains("git stash push -u -m 'WIP user'\\''s task'"));
+        assertTrue(!stashPush.contains("git commit"));
+        assertTrue(!stashPush.contains("git push"));
+        assertTrue(stashApply.contains("git stash apply --index 'stash@{0}'"));
+        assertTrue(!stashApply.contains("git stash pop"));
+        assertTrue(stashApply.contains("then exit 77; fi"));
+        assertTrue(stashDrop.contains("git stash drop 'stash@{0}'"));
+        assertTrue(!stashDrop.contains("git stash clear"));
         String commit = WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand(
             "/srv/team's app", "fix: user's mobile flow");
         assertTrue(commit.contains("git diff --cached --name-only -z"));
@@ -229,6 +244,12 @@ public class WorkspaceCommandBuilderTest {
             () -> WorkspaceCommandBuilder.buildGitStageFileRemoteCommand("~/app", ""));
         assertThrows(IllegalArgumentException.class,
             () -> WorkspaceCommandBuilder.buildGitUnstageFileRemoteCommand("~/app", "bad\000file"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitStashPushRemoteCommand("~/app", "bad\nstash"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitStashApplyRemoteCommand("~/app", "stash@{bad}"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitStashDropRemoteCommand("~/app", "stash@{0};rm"));
     }
 
     @Test
@@ -282,6 +303,31 @@ public class WorkspaceCommandBuilderTest {
         assertEquals(1, singleUnstagedOverview.unstagedFiles);
         assertEquals(75, runShell(WorkspaceCommandBuilder.buildGitUnstageFileRemoteCommand(
             repository.toString(), "README.md"), new HashMap<>()));
+
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitStashPushRemoteCommand(
+            repository.toString(), "WIP mobile stash"), new HashMap<>()));
+        ShellOutput stashed = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        GitRepositoryOverview stashedOverview = GitRepositoryOverview.parse(stashed.output);
+        assertEquals(0, stashedOverview.changedFiles);
+        assertEquals(1, stashedOverview.stashes.size());
+        assertEquals("stash@{0}", stashedOverview.stashes.get(0).ref);
+        assertTrue(stashedOverview.stashes.get(0).subject.contains("WIP mobile stash"));
+        assertEquals(75, runShell(WorkspaceCommandBuilder.buildGitStashPushRemoteCommand(
+            repository.toString(), "nothing to stash"), new HashMap<>()));
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitStashApplyRemoteCommand(
+            repository.toString(), "stash@{0}"), new HashMap<>()));
+        ShellOutput appliedStash = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        GitRepositoryOverview appliedStashOverview = GitRepositoryOverview.parse(appliedStash.output);
+        assertEquals(1, appliedStashOverview.changedFiles);
+        assertEquals(1, appliedStashOverview.stashes.size());
+        assertEquals(77, runShell(WorkspaceCommandBuilder.buildGitStashApplyRemoteCommand(
+            repository.toString(), "stash@{0}"), new HashMap<>()));
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitStashDropRemoteCommand(
+            repository.toString(), "stash@{0}"), new HashMap<>()));
+        assertEquals(81, runShell(WorkspaceCommandBuilder.buildGitStashDropRemoteCommand(
+            repository.toString(), "stash@{0}"), new HashMap<>()));
 
         assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitStageAllRemoteCommand(
             repository.toString()), new HashMap<>()));
