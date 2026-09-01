@@ -168,7 +168,10 @@ final class WorkspaceCommandBuilder {
         if (branch.isEmpty() || branch.indexOf('\n') >= 0 || branch.indexOf('\r') >= 0) {
             throw new IllegalArgumentException("Invalid branch");
         }
-        return "cd -- " + remotePathExpression(path) + " && git switch -- " + shellQuote(branch);
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && if [ -n \"$(git status --porcelain=v1 -z)\" ]; then exit 77; fi"
+            + " && git switch -- " + shellQuote(branch);
     }
 
     /**
@@ -417,7 +420,7 @@ final class WorkspaceCommandBuilder {
     /**
      * 从用户显式选择的远端跟踪分支创建同名本地跟踪分支并切换。
      *
-     * 不自动覆盖已有本地分支；如果脏工作树会被覆盖，Git 自身会拒绝并保留当前工作树。
+     * 不自动覆盖已有本地分支；脏工作区直接拒绝，避免手机端误切分支后上下文不清。
      */
     @NonNull
     static String buildGitTrackRemoteBranchCommand(@NonNull String path, @NonNull String remoteBranch) {
@@ -434,6 +437,8 @@ final class WorkspaceCommandBuilder {
             throw new IllegalArgumentException("Invalid local branch");
         }
         return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && if [ -n \"$(git status --porcelain=v1 -z)\" ]; then exit 77; fi"
             + " && if git show-ref --verify --quiet refs/heads/" + shellQuote(localBranch)
             + "; then exit 74; fi"
             + " && git switch --track " + shellQuote(remoteBranch);

@@ -184,6 +184,7 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(overview.contains("grep -v '/HEAD$'"));
         assertTrue(overview.contains("git log -20"));
         assertTrue(branch.contains("'/srv/team'\\''s app'"));
+        assertTrue(branch.contains("then exit 77; fi"));
         assertTrue(branch.endsWith("'feature/user'\\''s-work'"));
         assertTrue(newBranch.contains("git check-ref-format --branch 'feature/local-ui'"));
         assertTrue(newBranch.contains("git switch -c 'feature/local-ui'"));
@@ -193,6 +194,7 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(deleteBranch.contains("exit 79"));
         assertTrue(deleteBranch.contains("exit 80"));
         assertTrue(remoteBranch.contains("git show-ref --verify --quiet refs/heads/'feature/user'\\''s-work'"));
+        assertTrue(remoteBranch.contains("then exit 77; fi"));
         assertTrue(remoteBranch.endsWith("git switch --track 'origin/feature/user'\\''s-work'"));
         assertTrue(fetch.contains("git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}'"));
         assertTrue(fetch.contains("if ! upstream=$(git rev-parse"));
@@ -282,6 +284,8 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(overview.fileChanges.get(0).hasUnstagedChange());
         assertTrue(overview.localBranches.contains("feature"));
         assertEquals(1, overview.commits.size());
+        assertEquals(77, runShell(WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand(
+            repository.toString(), "feature"), new HashMap<>()));
 
         assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitStageFileRemoteCommand(
             repository.toString(), "README.md"), new HashMap<>()));
@@ -469,6 +473,13 @@ public class WorkspaceCommandBuilderTest {
             WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(clone.toString()));
         GitRepositoryOverview pushedOverview = GitRepositoryOverview.parse(pushed.output);
         assertEquals(Integer.valueOf(0), pushedOverview.ahead);
+
+        assertEquals(0, runShell("cd -- " + WorkspaceCommandBuilder.shellQuote(clone.toString())
+            + " && printf dirty >> README.md", new HashMap<>()));
+        assertEquals(77, runShell(WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(
+            clone.toString(), "origin/feature/mobile"), new HashMap<>()));
+        assertEquals(0, runShell("cd -- " + WorkspaceCommandBuilder.shellQuote(clone.toString())
+            + " && git restore -- README.md", new HashMap<>()));
 
         assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(
             clone.toString(), "origin/feature/mobile"), new HashMap<>()));

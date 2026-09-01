@@ -519,6 +519,8 @@
     <string name="git_workbench_switch_branch">Switch branch</string>
     <string name="git_workbench_switch_message">Switch from %1$s to %2$s?</string>
     <string name="git_workbench_switch_dirty_message">Switch from %1$s to %2$s? The working tree has %3$d changed files. Git will stop if switching would overwrite them.</string>
+    <string name="git_workbench_switch_dirty_blocked">Branch switching is blocked because the working tree has %1$d changed files. Stash, commit, or discard them manually, then retry.</string>
+    <string name="git_workbench_switch_dirty_blocked_remote">Branch switching was blocked because the remote working tree changed before the command ran. Refresh, then stash or commit the changes.</string>
     <string name="git_workbench_switch_action">Switch</string>
     <string name="git_workbench_switching">Switching to %1$s…</string>
     <string name="git_workbench_switch_failed">Git did not switch branches. Your working tree was preserved.\n\n%1$s</string>
