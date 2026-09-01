@@ -148,6 +148,7 @@ public class WorkspaceActivitySmokeTest {
         assertTrue(selectedView.getText().toString().contains("远程开发 副本"));
         assertTrue(selectedView.getText().toString().contains("hdr@192.168.1.153"));
         assertTrue(selectedView.getText().toString().contains("~/termux-pro"));
+        assertTrue(selectedView.getText().toString().contains("尚未验证"));
         assertEquals("hdr@192.168.1.153",
             ((EditText) activity.findViewById(R.id.workspace_host_input)).getText().toString());
         assertEquals(View.GONE,
@@ -162,6 +163,32 @@ public class WorkspaceActivitySmokeTest {
         assertEquals("hdr@192.168.1.153",
             ((EditText) restored.findViewById(R.id.workspace_host_input)).getText().toString());
         restored.finish();
+    }
+
+    @Test
+    public void workspaceSelectorShowsRecentConnectionState() throws JSONException {
+        WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
+        ((EditText) activity.findViewById(R.id.workspace_host_input)).setText("hdr@192.168.1.153");
+        ((EditText) activity.findViewById(R.id.workspace_path_input)).setText("~/termux-pro");
+        activity.findViewById(R.id.workspace_save_button).performClick();
+        activity.findViewById(R.id.workspace_copy_button).performClick();
+
+        String profiles = activity.getSharedPreferences("ai_terminal_workspace", 0)
+            .getString("profiles_v2", "[]");
+        String workspaceId = new JSONArray(profiles).getJSONObject(1).getString("id");
+        new WorkspaceConnectionStateStore(activity).save(workspaceId,
+            new WorkspaceConnectionState(WorkspaceConnectionState.Status.VERIFIED, null,
+                System.currentTimeMillis()));
+
+        Spinner selector = activity.findViewById(R.id.workspace_selector);
+        TextView selectedView = (TextView) selector.getAdapter().getView(
+            selector.getSelectedItemPosition(), null, selector);
+
+        assertTrue(selectedView.getText().toString().contains("hdr@192.168.1.153"));
+        assertTrue(selectedView.getText().toString().contains("~/termux-pro"));
+        assertTrue(selectedView.getText().toString().contains("最近验证"));
+        assertEquals(3, selectedView.getMaxLines());
+        activity.finish();
     }
 
     @Test
