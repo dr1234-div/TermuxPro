@@ -68,17 +68,23 @@ jobs:
           wait_for_workflow '.github/workflows/ci.yml' '完整 CI'
           wait_for_workflow '.github/workflows/ui-emulator.yml' '模拟器 UI'
 
+          is_candidate_release_branch() {
+            [[ "$HEAD_BRANCH" =~ ^dev_release[0-9]+Rc[1-9][0-9]*_[0-9]{8}$ ]]
+          }
+
           should_publish_candidate=false
           candidate_version_name=''
-          if [[ "$HEAD_BRANCH" == dev_release* ]]; then
+          if is_candidate_release_branch; then
             head_version_file="$(gh api "repos/$REPOSITORY/contents/termuxpro-version.properties?ref=$COMMIT_SHA" \
               --jq '.content' | base64 --decode)"
             candidate_version_name="$(sed -n 's/^versionName=//p' <<<"$head_version_file")"
             if [[ "$candidate_version_name" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]]; then
               should_publish_candidate=true
             else
-              echo "分支 $HEAD_BRANCH 命中 dev_release*，但版本号 $candidate_version_name 不是候选版本；按普通研发 PR 合并，不创建候选 Release。"
+              echo "分支 $HEAD_BRANCH 命中候选发布分支格式，但版本号 $candidate_version_name 不是候选版本；按普通研发 PR 合并，不创建候选 Release。"
             fi
+          elif [[ "$HEAD_BRANCH" == dev_release* ]]; then
+            echo "分支 $HEAD_BRANCH 不是候选发布分支格式；按普通研发 PR 合并，不创建候选 Release。"
           fi
 
           gh pr merge "$pr_number" --repo "$REPOSITORY" --merge \
