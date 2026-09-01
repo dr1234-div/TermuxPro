@@ -392,6 +392,7 @@
     <string name="git_workbench_overview_truncated">This repository has too many branches or records to display safely. Use the terminal for the complete result.</string>
     <string name="git_workbench_branch">Branch: %1$s</string>
     <string name="git_workbench_detached">Detached HEAD: %1$s</string>
+    <string name="git_workbench_target">%1$s:%2$d · %3$s</string>
     <string name="git_workbench_sync">Ahead %1$d · behind %2$d</string>
     <string name="git_workbench_sync_with_upstream">Tracking %1$s · ahead %2$d · behind %3$d</string>
     <string name="git_workbench_unknown_upstream">upstream</string>
