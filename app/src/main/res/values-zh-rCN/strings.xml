@@ -477,6 +477,7 @@
     <string name="task_sessions_other_owner_warning">这个会话由同一远端账号下的其他 TermuxPro 使用者创建。只允许你明确确认后进入；重命名和停止已禁用，避免影响共享账号中的其他工作。</string>
     <string name="task_sessions_incomplete_marker_warning">这个会话存在不完整的 TermuxPro 归属元数据。当前只按只读处理：允许进入，但禁用重命名和停止；请重新连接或重建会话后再管理。</string>
     <string name="task_sessions_target">远端目标 · %1$s:%2$d · %3$s</string>
+    <string name="task_sessions_safety_hint">当前工作区会话优先显示；其他工作区、其他使用者和归属未知会话只允许进入，不允许在这里重命名或停止。</string>
     <string name="task_sessions_owned_context">TermuxPro 自有会话 · %1$s:%2$d · %3$s</string>
     <string name="task_sessions_name_label">会话名称</string>
     <string name="task_sessions_creating">正在新建“%1$s”…</string>

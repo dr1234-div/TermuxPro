@@ -45,6 +45,9 @@ public class TaskSessionsActivityTest {
         assertTrue(rowText.contains("活跃 "));
         TextView otherWorkspaceRow = (TextView) sessions.getAdapter().getView(1, null, sessions);
         assertTrue(otherWorkspaceRow.getText().toString().contains("其他工作区"));
+        TextView safetyHint = activity.findViewById(R.id.task_sessions_safety_hint);
+        assertTrue(safetyHint.getText().toString().contains("当前工作区会话优先显示"));
+        assertTrue(safetyHint.getText().toString().contains("只允许进入"));
 
         create.performClick();
         AlertDialog dialog = (AlertDialog) ShadowDialog.getLatestDialog();
