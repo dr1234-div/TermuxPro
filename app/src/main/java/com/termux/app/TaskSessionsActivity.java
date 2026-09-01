@@ -111,7 +111,9 @@ public final class TaskSessionsActivity extends AppCompatActivity {
     private void showPreviewForUiTest() {
         String fingerprint = WorkspaceCommandBuilder.workspaceFingerprint(mHost, mPort, mProjectPath);
         String output = "feature-login\0002\0000\0001788153600\0001788157200\000" + mOwnerToken
-            + "\000" + fingerprint + "\000shared-support\0001\0001\0001788067200\0001788150000\000\000\000";
+            + "\000" + fingerprint + "\000other-project\0001\0000\0001788150000\0001788153600\000"
+            + mOwnerToken + "\000other-fingerprint\000shared-support\0001\0001\0001788067200\000"
+            + "1788150000\000\000\000";
         mProgress.setVisibility(View.GONE);
         mSessions.clear();
         mSessions.addAll(TmuxSessionParser.parse(output, mOwnerToken, fingerprint));
@@ -195,12 +197,27 @@ public final class TaskSessionsActivity extends AppCompatActivity {
     private String sessionRow(TmuxSessionInfo session) {
         String state = session.attached ? getString(R.string.task_sessions_attached) :
             getString(R.string.task_sessions_background);
-        String ownership = session.managedByTermuxPro ?
-            getString(R.string.task_sessions_owned) : getString(R.string.task_sessions_unknown_owner);
+        String ownership = ownershipLabel(session);
         String created = formatSessionTime(session.createdEpochSeconds);
         String activity = formatSessionTime(session.activityEpochSeconds);
         return getString(R.string.task_sessions_row, session.name, session.windows, state, ownership,
             created, activity);
+    }
+
+    private String ownershipLabel(TmuxSessionInfo session) {
+        switch (session.ownershipState) {
+            case CURRENT_WORKSPACE:
+                return getString(R.string.task_sessions_owned);
+            case OTHER_WORKSPACE:
+                return getString(R.string.task_sessions_other_workspace);
+            case OTHER_OWNER:
+                return getString(R.string.task_sessions_other_owner);
+            case INCOMPLETE_MARKER:
+                return getString(R.string.task_sessions_incomplete_marker);
+            case UNMARKED:
+            default:
+                return getString(R.string.task_sessions_unknown_owner);
+        }
     }
 
     private String formatSessionTime(long epochSeconds) {
@@ -216,7 +233,7 @@ public final class TaskSessionsActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this).setTitle(session.name)
             .setMessage(session.managedByTermuxPro
                 ? getString(R.string.task_sessions_owned_context, mHost, mPort, mProjectPath)
-                : getString(R.string.task_sessions_unknown_owner_warning));
+                : nonOwnedSessionWarning(session));
         builder.setItems(actions, (dialog, which) -> {
             if (which == 0) attach(session);
             else if (which == 1) showNameDialog(session);
@@ -232,6 +249,20 @@ public final class TaskSessionsActivity extends AppCompatActivity {
                 .setTextColor(ContextCompat.getColor(this, R.color.tp_danger));
         });
         dialog.show();
+    }
+
+    private String nonOwnedSessionWarning(TmuxSessionInfo session) {
+        switch (session.ownershipState) {
+            case OTHER_WORKSPACE:
+                return getString(R.string.task_sessions_other_workspace_warning);
+            case OTHER_OWNER:
+                return getString(R.string.task_sessions_other_owner_warning);
+            case INCOMPLETE_MARKER:
+                return getString(R.string.task_sessions_incomplete_marker_warning);
+            case UNMARKED:
+            default:
+                return getString(R.string.task_sessions_unknown_owner_warning);
+        }
     }
 
     private void showNameDialog(TmuxSessionInfo session) {

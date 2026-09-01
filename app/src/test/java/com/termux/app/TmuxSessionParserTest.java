@@ -26,8 +26,11 @@ public class TmuxSessionParserTest {
         assertEquals(100L, sessions.get(0).createdEpochSeconds);
         assertEquals(200L, sessions.get(0).activityEpochSeconds);
         assertFalse(sessions.get(0).managedByTermuxPro);
+        assertEquals(TmuxSessionInfo.OwnershipState.UNMARKED, sessions.get(0).ownershipState);
         assertFalse(sessions.get(1).managedByTermuxPro);
+        assertEquals(TmuxSessionInfo.OwnershipState.OTHER_OWNER, sessions.get(1).ownershipState);
         assertTrue(sessions.get(2).managedByTermuxPro);
+        assertEquals(TmuxSessionInfo.OwnershipState.CURRENT_WORKSPACE, sessions.get(2).ownershipState);
     }
 
     @Test
@@ -49,5 +52,23 @@ public class TmuxSessionParserTest {
         assertEquals(300L, sessions.get(0).createdEpochSeconds);
         assertEquals(400L, sessions.get(0).activityEpochSeconds);
         assertFalse(sessions.get(0).managedByTermuxPro);
+    }
+
+    @Test
+    public void distinguishesOtherWorkspaceFromUnmarkedAndOtherOwner() {
+        List<TmuxSessionInfo> sessions = TmuxSessionParser.parse(
+            "other-project\u00001\u00000\u0000500\u0000600\u0000" + OWNER + "\u0000other-workspace\u0000"
+                + "other-owner\u00001\u00000\u0000501\u0000601\u0000"
+                + "99999999-8888-7777-6666-555555555555\u0000" + FINGERPRINT + "\u0000"
+                + "partial\u00001\u00000\u0000502\u0000602\u0000\u0000" + FINGERPRINT + "\u0000",
+            OWNER, FINGERPRINT);
+
+        assertEquals(3, sessions.size());
+        assertEquals(TmuxSessionInfo.OwnershipState.OTHER_WORKSPACE, sessions.get(0).ownershipState);
+        assertFalse(sessions.get(0).managedByTermuxPro);
+        assertEquals(TmuxSessionInfo.OwnershipState.OTHER_OWNER, sessions.get(1).ownershipState);
+        assertFalse(sessions.get(1).managedByTermuxPro);
+        assertEquals(TmuxSessionInfo.OwnershipState.INCOMPLETE_MARKER, sessions.get(2).ownershipState);
+        assertFalse(sessions.get(2).managedByTermuxPro);
     }
 }
