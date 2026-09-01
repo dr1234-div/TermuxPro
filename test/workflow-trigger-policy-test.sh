@@ -95,5 +95,17 @@ if ! grep -Fq "if ! wait_for_workflow '.github/workflows/ui-emulator.yml' '模�
     echo "自动研发 PR 工作流必须显式处理预合并模拟器失败，不能重复制造失败通知。" >&2
     exit 1
 fi
+if ! grep -Fq 'GH_COMMAND_TIMEOUT_SECONDS: 45' "$auto_dev_pr_file"; then
+    echo "自动研发 PR 工作流必须给 GitHub CLI 调用设置命令级超时，避免网络/API 卡死造成长时间失败提醒。" >&2
+    exit 1
+fi
+if ! grep -Fq 'gh_retry()' "$auto_dev_pr_file"; then
+    echo "自动研发 PR 工作流必须封装 GitHub CLI 重试，避免偶发 API 抖动直接中断自治流水线。" >&2
+    exit 1
+fi
+if ! grep -Fq '查询 GitHub Actions 超时或失败' "$auto_dev_pr_file"; then
+    echo "自动研发 PR 工作流等待 CI 时必须容忍短暂查询失败，不能把 GitHub API 抖动误判成项目失败。" >&2
+    exit 1
+fi
 
 echo "研发 PR 与发布 PR 的 workflow 触发策略校验通过。"
