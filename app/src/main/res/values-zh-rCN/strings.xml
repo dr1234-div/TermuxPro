@@ -171,6 +171,18 @@
     <string name="ai_session_terminal_context_message">%1$s\n\n注意：从终端工具箱启动时，命令会发送到当前正在显示的终端会话；请先确认你已经在正确的 SSH、tmux 和项目目录中。</string>
     <string name="ai_session_new_action">新建会话（安全默认）\n将执行：%1$s\n在当前项目干净启动；共享 Claude 账号推荐使用。</string>
     <string name="ai_session_pick_history_action">选择历史会话\n将执行：%1$s\n只打开 CLI 原生选择器，TermuxPro 不自动进入最近会话。</string>
+    <string name="ai_cli_center_title">AI CLI 会话中心</string>
+    <string name="ai_cli_center_summary">先确认工作区和 tmux 上下文，再选择 Claude/Codex 的新建或历史入口。TermuxPro 不读取 AI 私有历史，也不会自动进入最近会话。</string>
+    <string name="ai_cli_center_target_missing">未选择有效远程工作区</string>
+    <string name="ai_cli_center_target_missing_detail">请先回到工作台配置服务器、SSH 端口和项目目录。</string>
+    <string name="ai_cli_center_target_detail">%1$s:%2$d · %3$s</string>
+    <string name="ai_cli_center_command_pair">新建：%1$s\n历史选择：%2$s</string>
+    <string name="ai_cli_center_claude_title">Claude Code</string>
+    <string name="ai_cli_center_codex_title">Codex CLI</string>
+    <string name="ai_cli_center_tmux_warning">共享账号或多人 tmux 环境下，请先在 tmux 会话中心确认目标会话归属。未标记或其他归属会话只应显式进入，不应被自动恢复或管理。</string>
+    <string name="ai_cli_center_open_workspace">回到工作台启动</string>
+    <string name="ai_cli_center_open_templates">管理快捷指令模板</string>
+    <string name="ai_cli_center_open_tmux">查看 tmux 会话</string>
     <string name="workspace_open_local_terminal">打开本地终端</string>
     <string name="workspace_security_tip">首次连接需确认服务器指纹并输入密码或配置 SSH 密钥；TermuxPro 不会自动进入未指定的 tmux 或 AI 历史会话。</string>
     <string name="workspace_error_host">请输入有效的 SSH 别名、主机或“用户名@主机”。</string>
@@ -561,6 +573,7 @@
     <string name="terminal_tools_section_project">项目与 Git</string>
     <string name="terminal_tools_section_connection">连接与安全</string>
     <string name="terminal_tools_section_ai">AI 工作</string>
+    <string name="terminal_ai_cli_center_action">AI CLI 会话中心</string>
     <string name="terminal_ai_launch_claude_action">启动 Claude Code</string>
     <string name="terminal_ai_launch_codex_action">启动 Codex CLI</string>
     <string name="terminal_tools_section_keyboard">键区切换</string>
