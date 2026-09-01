@@ -342,11 +342,38 @@ public final class WorkspaceActivity extends AppCompatActivity {
         if (view instanceof TextView && position >= 0 && position < mProfiles.size()) {
             TextView textView = (TextView) view;
             WorkspaceProfile profile = mProfiles.get(position);
-            String label = profile.selectorLabel(this);
+            String label = workspaceSelectorLabel(profile);
             textView.setText(label);
             textView.setContentDescription(label);
         }
         return view;
+    }
+
+    private String workspaceSelectorLabel(WorkspaceProfile profile) {
+        if (TextUtils.isEmpty(profile.host)) {
+            return getString(R.string.workspace_selector_unconfigured, profile.name);
+        }
+        return getString(R.string.workspace_selector_target, profile.name, profile.host,
+            profile.path, workspaceSelectorStatus(profile.id));
+    }
+
+    private String workspaceSelectorStatus(String profileId) {
+        WorkspaceConnectionState state = mConnectionStateStore.read(profileId);
+        if (state == null) return getString(R.string.workspace_status_unverified);
+        switch (state.status) {
+            case TERMINAL_OPENED:
+                return getString(R.string.workspace_status_recently_opened);
+            case VERIFIED:
+                return state.isVerificationFresh(System.currentTimeMillis())
+                    ? getString(R.string.workspace_status_recently_verified)
+                    : getString(R.string.workspace_status_verification_expired);
+            case ACTION_REQUIRED:
+                return getString(R.string.workspace_status_action_required);
+            case FAILED:
+                return getString(R.string.workspace_status_check_failed);
+            default:
+                return getString(R.string.workspace_status_unknown);
+        }
     }
 
     private int findActiveProfileIndex() {
@@ -989,12 +1016,6 @@ public final class WorkspaceActivity extends AppCompatActivity {
             return name;
         }
 
-        String selectorLabel(WorkspaceActivity activity) {
-            if (TextUtils.isEmpty(host)) {
-                return activity.getString(R.string.workspace_selector_unconfigured, name);
-            }
-            return activity.getString(R.string.workspace_selector_target, name, host, path);
-        }
     }
 
 }

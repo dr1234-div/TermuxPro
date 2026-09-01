@@ -294,7 +294,7 @@
     <string name="workspace_setup_ready">SSH component is ready</string>
     <string name="workspace_selector_description">Saved workspaces</string>
     <string name="workspace_selector_unconfigured">%1$s\nServer not configured</string>
-    <string name="workspace_selector_target">%1$s\n%2$s · %3$s</string>
+    <string name="workspace_selector_target">%1$s\n%2$s · %3$s · %4$s</string>
     <string name="workspace_new_action">New workspace</string>
     <string name="workspace_manage_action">Server and project</string>
     <string name="workspace_edit_action">Edit connection</string>
@@ -302,8 +302,12 @@
     <string name="workspace_advanced_hide_action">Hide advanced settings</string>
     <string name="workspace_summary_details">%1$s · %2$s · %3$s</string>
     <string name="workspace_status_unverified">Not verified</string>
+    <string name="workspace_status_recently_opened">Recently opened</string>
     <string name="workspace_status_recently_verified">Recently verified</string>
     <string name="workspace_status_verification_expired">Verification expired</string>
+    <string name="workspace_status_action_required">Needs action</string>
+    <string name="workspace_status_check_failed">Check failed</string>
+    <string name="workspace_status_unknown">Unknown status</string>
     <string name="workspace_save_action">Save</string>
     <string name="workspace_copy_action">Copy</string>
     <string name="workspace_delete_action">Delete</string>

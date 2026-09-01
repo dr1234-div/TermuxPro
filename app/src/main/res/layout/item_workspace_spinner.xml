@@ -5,7 +5,7 @@
     android:gravity="center_vertical"
     android:paddingStart="12dp"
     android:paddingEnd="36dp"
-    android:maxLines="2"
-    android:minHeight="52dp"
+    android:maxLines="3"
+    android:minHeight="64dp"
     android:textColor="#F5F8FA"
     android:textSize="16sp" />
