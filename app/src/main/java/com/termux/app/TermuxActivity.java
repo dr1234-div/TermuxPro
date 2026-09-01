@@ -268,6 +268,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
         setNewSessionButtonView();
 
+        setCloseSessionButtonView();
+
         setToggleKeyboardView();
 
         setWorkspaceHeaderView();
@@ -639,6 +641,28 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 -1, null, null);
             return true;
         });
+    }
+
+    private void setCloseSessionButtonView() {
+        findViewById(R.id.close_session_button).setOnClickListener(v -> confirmCloseCurrentSession());
+    }
+
+    private void confirmCloseCurrentSession() {
+        TerminalSession currentSession = getCurrentSession();
+        if (currentSession == null) {
+            showToast(getString(R.string.terminal_session_close_missing), false);
+            return;
+        }
+
+        String title = mTermuxTerminalSessionActivityClient.toToastTitle(currentSession);
+        if (title == null || title.length() == 0) title = getString(R.string.terminal_sessions_title);
+        TermuxProDialogStyle.show(this, new AlertDialog.Builder(this)
+            .setTitle(R.string.terminal_session_close_title)
+            .setMessage(getString(R.string.terminal_session_close_message, title))
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.terminal_session_close_action,
+                (dialog, which) -> mTermuxTerminalSessionActivityClient.removeFinishedSession(currentSession))
+            .create());
     }
 
     private void setToggleKeyboardView() {
