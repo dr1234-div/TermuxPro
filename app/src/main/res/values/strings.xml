@@ -203,6 +203,18 @@
                     It should be enabled to try to fix the issue where soft keyboard covers part of extra keys/terminal view.
                     If it causes screen flickering on your devices, then disable it. (Default)</string>
 
+                <!-- Terminal Touch Scroll Mode -->
+                <string name="termux_terminal_view_touch_scroll_mode_title">Touch scroll mode</string>
+                <string name="termux_terminal_view_touch_scroll_mode_summary">Choose whether finger swipes read terminal history or scroll AI/TUI panels that support mouse wheel events.</string>
+                <string-array name="termux_terminal_touch_scroll_mode_labels">
+                    <item>Terminal history (recommended)</item>
+                    <item>AI/TUI panel scrolling</item>
+                </string-array>
+                <string-array name="termux_terminal_touch_scroll_mode_values">
+                    <item>scrollback</item>
+                    <item>tui</item>
+                </string-array>
+
 
 
     <!-- Termux:API App Preferences -->

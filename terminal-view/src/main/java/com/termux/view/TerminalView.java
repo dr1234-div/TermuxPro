@@ -48,6 +48,11 @@ public final class TerminalView extends View {
     /** Log terminal view key and IME events. */
     private static boolean TERMINAL_VIEW_KEY_LOGGING_ENABLED = false;
 
+    /** 手机触摸滑动始终滚动终端历史输出。 */
+    public static final String TOUCH_SCROLL_MODE_SCROLLBACK = "scrollback";
+    /** 手机触摸滑动在支持鼠标滚轮的 AI/TUI 中滚动应用内部，否则滚动终端历史。 */
+    public static final String TOUCH_SCROLL_MODE_TUI = "tui";
+
     /** The currently displayed terminal session, whose emulator is {@link #mEmulator}. */
     public TerminalSession mTermSession;
     /** Our terminal emulator whose session is {@link #mTermSession}. */
@@ -82,6 +87,9 @@ public final class TerminalView extends View {
 
     /** What was left in from scrolling movement. */
     float mScrollRemainder;
+
+    /** 手机触摸滚动模式，默认保护 shell 输入，不把手指滑动写成上下方向键。 */
+    private String mTouchScrollMode = TOUCH_SCROLL_MODE_SCROLLBACK;
 
     /** If non-zero, this is the last unicode code point received if that was a combining character. */
     int mCombiningAccent;
@@ -180,7 +188,8 @@ public final class TerminalView extends View {
                     distanceY += mScrollRemainder;
                     int deltaRows = (int) (distanceY / mRenderer.mFontLineSpacing);
                     mScrollRemainder = distanceY - deltaRows * mRenderer.mFontLineSpacing;
-                    doScroll(e, deltaRows, true);
+                    doScroll(e, deltaRows, shouldForceScrollbackForScrollEvent(e,
+                        mTouchScrollMode, mEmulator.isMouseTrackingActive()));
                 }
                 return true;
             }
@@ -199,7 +208,8 @@ public final class TerminalView extends View {
                 // Do not start scrolling until last fling has been taken care of:
                 if (!mScroller.isFinished()) return true;
 
-                final boolean forceScrollbackAtStartOfFling = !e2.isFromSource(InputDevice.SOURCE_MOUSE);
+                final boolean forceScrollbackAtStartOfFling = shouldForceScrollbackForScrollEvent(e2,
+                    mTouchScrollMode, mEmulator.isMouseTrackingActive());
                 final boolean mouseTrackingAtStartOfFling = mEmulator.isMouseTrackingActive() && !forceScrollbackAtStartOfFling;
                 float SCALE = 0.25f;
                 if (mouseTrackingAtStartOfFling) {
@@ -581,7 +591,23 @@ public final class TerminalView extends View {
      * 外接鼠标滚轮仍保留程序内滚动能力，兼容 less、vim、tmux pane 和支持鼠标事件的 TUI。
      */
     public static boolean shouldForceScrollbackForScrollEvent(@Nullable MotionEvent event) {
-        return event != null && !event.isFromSource(InputDevice.SOURCE_MOUSE);
+        return shouldForceScrollbackForScrollEvent(event, TOUCH_SCROLL_MODE_SCROLLBACK, false);
+    }
+
+    public static boolean shouldForceScrollbackForScrollEvent(@Nullable MotionEvent event,
+                                                              @Nullable String touchScrollMode,
+                                                              boolean mouseTrackingActive) {
+        if (event == null || event.isFromSource(InputDevice.SOURCE_MOUSE)) return false;
+        if (TOUCH_SCROLL_MODE_TUI.equals(touchScrollMode) && mouseTrackingActive) return false;
+        return true;
+    }
+
+    public void setTouchScrollMode(@Nullable String touchScrollMode) {
+        if (TOUCH_SCROLL_MODE_TUI.equals(touchScrollMode)) {
+            mTouchScrollMode = TOUCH_SCROLL_MODE_TUI;
+        } else {
+            mTouchScrollMode = TOUCH_SCROLL_MODE_SCROLLBACK;
+        }
     }
 
     /**

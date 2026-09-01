@@ -91,6 +91,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
 
         mActivity.getTerminalView().setTextSize(mActivity.getPreferences().getFontSize());
         mActivity.getTerminalView().setKeepScreenOn(mActivity.getPreferences().shouldKeepScreenOn());
+        mActivity.getTerminalView().setTouchScrollMode(mActivity.getPreferences().getTerminalTouchScrollMode());
     }
 
     /**
@@ -101,6 +102,7 @@ public class TermuxTerminalViewClient extends TermuxTerminalViewClientBase {
         // Also required if user changed the preference from {@link TermuxSettings} activity and returns
         boolean isTerminalViewKeyLoggingEnabled = mActivity.getPreferences().isTerminalViewKeyLoggingEnabled();
         mActivity.getTerminalView().setIsTerminalViewKeyLoggingEnabled(isTerminalViewKeyLoggingEnabled);
+        mActivity.getTerminalView().setTouchScrollMode(mActivity.getPreferences().getTerminalTouchScrollMode());
 
         // Piggyback on the terminal view key logging toggle for now, should add a separate toggle in future
         mActivity.getTermuxActivityRootView().setIsRootViewLoggingEnabled(isTerminalViewKeyLoggingEnabled);

@@ -169,6 +169,18 @@ public class TermuxAppSharedPreferences extends AppSharedPreferences {
         setFontSize(fontSize);
     }
 
+    public String getTerminalTouchScrollMode() {
+        return SharedPreferenceUtils.getString(mSharedPreferences,
+            TERMUX_APP.KEY_TERMINAL_TOUCH_SCROLL_MODE,
+            TERMUX_APP.DEFAULT_VALUE_TERMINAL_TOUCH_SCROLL_MODE, true);
+    }
+
+    public void setTerminalTouchScrollMode(String value) {
+        if (!"tui".equals(value)) value = TERMUX_APP.DEFAULT_VALUE_TERMINAL_TOUCH_SCROLL_MODE;
+        SharedPreferenceUtils.setString(mSharedPreferences,
+            TERMUX_APP.KEY_TERMINAL_TOUCH_SCROLL_MODE, value, false);
+    }
+
 
 
     public String getCurrentSession() {
