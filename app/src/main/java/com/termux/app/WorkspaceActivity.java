@@ -639,8 +639,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
                     AiCliLaunchCommand.Mode.PICK_HISTORY)))
             .setNegativeButton(android.R.string.cancel, null)
             .create();
-        dialog.setOnShowListener(ignored -> AiSessionDialog.applyReadableStyle(this, dialog));
-        dialog.show();
+        AiSessionDialog.show(this, dialog);
     }
 
     private String aiLaunchMessage(AiCliLaunchCommand.Tool tool) {

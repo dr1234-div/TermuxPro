@@ -501,14 +501,12 @@ public final class GitDiffActivity extends AppCompatActivity {
     }
 
     private void showDangerDialog(@NonNull AlertDialog dialog) {
-        dialog.setOnShowListener(ignored -> {
-            TermuxProDialogStyle.apply(this, dialog);
-            if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(
+        TermuxProDialogStyle.show(this, dialog, shownDialog -> {
+            if (shownDialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+                shownDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(
                     ContextCompat.getColor(this, R.color.tp_danger));
             }
         });
-        dialog.show();
     }
 
     private void confirmTrackRemoteBranch(@NonNull String branch) {
@@ -589,13 +587,11 @@ public final class GitDiffActivity extends AppCompatActivity {
     }
 
     private void showCommitDialog() {
-        AlertDialog dialog = createCommitDialog();
-        if (dialog != null) dialog.show();
+        showPreparedDialog(createCommitDialog());
     }
 
     private void showCreateStashDialog() {
-        AlertDialog dialog = createStashDialog();
-        if (dialog != null) dialog.show();
+        showPreparedDialog(createStashDialog());
     }
 
     @Nullable
@@ -621,15 +617,14 @@ public final class GitDiffActivity extends AppCompatActivity {
             .setPositiveButton(R.string.git_workbench_stash_save_action, null)
             .setNegativeButton(android.R.string.cancel, null)
             .create();
-        dialog.setOnShowListener(ignored -> {
-            TermuxProDialogStyle.apply(this, dialog);
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+        TermuxProDialogStyle.prepare(this, dialog, shownDialog -> {
+            shownDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
                 String message = input.getText().toString();
                 if (!WorkspaceCommandBuilder.isSafeGitCommitMessage(message)) {
                     input.setError(getString(R.string.git_workbench_stash_invalid));
                     return;
                 }
-                dialog.dismiss();
+                shownDialog.dismiss();
                 stashChanges(message.trim());
             });
         });
@@ -659,15 +654,14 @@ public final class GitDiffActivity extends AppCompatActivity {
             .setPositiveButton(R.string.git_workbench_commit_action, null)
             .setNegativeButton(android.R.string.cancel, null)
             .create();
-        dialog.setOnShowListener(ignored -> {
-            TermuxProDialogStyle.apply(this, dialog);
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+        TermuxProDialogStyle.prepare(this, dialog, shownDialog -> {
+            shownDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
                 String message = input.getText().toString();
                 if (!WorkspaceCommandBuilder.isSafeGitCommitMessage(message)) {
                     input.setError(getString(R.string.git_workbench_commit_invalid));
                     return;
                 }
-                dialog.dismiss();
+                shownDialog.dismiss();
                 commitStaged(message.trim());
             });
         });
@@ -675,12 +669,15 @@ public final class GitDiffActivity extends AppCompatActivity {
     }
 
     void showStyledDialog(@NonNull AlertDialog dialog) {
-        dialog.setOnShowListener(ignored -> TermuxProDialogStyle.apply(this, dialog));
-        dialog.show();
+        TermuxProDialogStyle.show(this, dialog);
     }
 
     private void showCreateBranchDialog() {
-        AlertDialog dialog = createNewBranchDialog();
+        showPreparedDialog(createNewBranchDialog());
+    }
+
+    private void showPreparedDialog(@Nullable AlertDialog dialog) {
+        // createXxxDialog() 已通过 TermuxProDialogStyle.prepare 绑定产品样式与输入校验。
         if (dialog != null) dialog.show();
     }
 
@@ -705,15 +702,14 @@ public final class GitDiffActivity extends AppCompatActivity {
             .setPositiveButton(R.string.git_workbench_create_branch_action, null)
             .setNegativeButton(android.R.string.cancel, null)
             .create();
-        dialog.setOnShowListener(ignored -> {
-            TermuxProDialogStyle.apply(this, dialog);
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+        TermuxProDialogStyle.prepare(this, dialog, shownDialog -> {
+            shownDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
                 String branch = input.getText().toString().trim();
                 if (!WorkspaceCommandBuilder.isSafeGitBranchName(branch)) {
                     input.setError(getString(R.string.git_workbench_create_branch_invalid));
                     return;
                 }
-                dialog.dismiss();
+                shownDialog.dismiss();
                 createBranch(branch);
             });
         });
