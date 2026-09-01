@@ -31,4 +31,7 @@
 - PR #130 已合入 `dev`，merge commit `559665d516bab7734defac021016818867cfbf68`。
 - 分支 CI run `33487758405` 通过；模拟器 UI run `33487758421` 通过；`dev` 收尾 CI run
   `33488274687` 通过；自动 PR run `33487758418` 成功结束。
-- docs-only 快速通道自验证待补。
+- docs-only 快速通道自验证 PR #131 已合入 `dev`，merge commit
+  `9b7a012f4ffc381a5ffa677bf3cfcac4bb357f20`；分支 CI run `33488818609` 仅用 17 秒完成静态门禁，
+  未触发模拟器 UI；自动 PR run `33488818652` 未等待不存在的 UI run 并在 52 秒内成功；`dev` 收尾
+  CI run `33488865509` 成功。
