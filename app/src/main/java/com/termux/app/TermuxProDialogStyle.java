@@ -10,6 +10,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import com.termux.R;
@@ -18,9 +19,26 @@ import com.termux.R;
 public final class TermuxProDialogStyle {
     private TermuxProDialogStyle() {}
 
+    public interface OnDialogShown {
+        void onShown(AlertDialog dialog);
+    }
+
     public static void show(Activity activity, AlertDialog dialog) {
-        dialog.setOnShowListener(ignored -> apply(activity, dialog));
+        show(activity, dialog, null);
+    }
+
+    public static void show(Activity activity, AlertDialog dialog,
+                            @Nullable OnDialogShown onDialogShown) {
+        prepare(activity, dialog, onDialogShown);
         dialog.show();
+    }
+
+    public static void prepare(Activity activity, AlertDialog dialog,
+                               @Nullable OnDialogShown onDialogShown) {
+        dialog.setOnShowListener(ignored -> {
+            apply(activity, dialog);
+            if (onDialogShown != null) onDialogShown.onShown(dialog);
+        });
     }
 
     public static void apply(Activity activity, AlertDialog dialog) {
@@ -51,13 +69,26 @@ public final class TermuxProDialogStyle {
         ListView list = dialog.getListView();
         if (list != null) {
             list.setBackgroundColor(ContextCompat.getColor(activity, R.color.tp_surface_elevated));
-            for (int index = 0; index < list.getChildCount(); index++) {
-                View row = list.getChildAt(index);
-                if (row instanceof TextView) {
-                    ((TextView) row).setTextColor(
-                        ContextCompat.getColor(activity, R.color.tp_text_primary));
+            list.setCacheColorHint(ContextCompat.getColor(activity, R.color.tp_surface_elevated));
+            list.setDivider(new ColorDrawable(ContextCompat.getColor(activity, R.color.tp_divider)));
+            list.setDividerHeight(1);
+            applyListChildrenColors(activity, list);
+            list.setOnHierarchyChangeListener(new ViewGroup.OnHierarchyChangeListener() {
+                @Override
+                public void onChildViewAdded(View parent, View child) {
+                    applyTextColors(activity, child);
                 }
-            }
+
+                @Override
+                public void onChildViewRemoved(View parent, View child) {}
+            });
+            list.post(() -> applyListChildrenColors(activity, list));
+        }
+    }
+
+    private static void applyListChildrenColors(Activity activity, ListView list) {
+        for (int index = 0; index < list.getChildCount(); index++) {
+            applyTextColors(activity, list.getChildAt(index));
         }
     }
 
