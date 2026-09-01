@@ -22,15 +22,23 @@ final class TerminalProjectToolsMenu {
     static final int TOOL_AI_REJECT = 10;
     static final int TOOL_SEARCH_OUTPUT = 11;
     static final int TOOL_CUSTOM_COMMANDS = 12;
+    static final int TOOL_TOUCH_SCROLL_MODE = 13;
 
     private TerminalProjectToolsMenu() {}
 
     static void populate(@NonNull Context context, @NonNull Menu menu) {
+        populate(context, menu, false);
+    }
+
+    static void populate(@NonNull Context context, @NonNull Menu menu, boolean tuiTouchScrollMode) {
         menu.clear();
         addHeader(context, menu, R.string.terminal_tools_section_context);
         menu.add(Menu.NONE, TOOL_TMUX_SESSIONS, Menu.NONE, R.string.workspace_tmux_sessions_action);
         menu.add(Menu.NONE, TOOL_CUSTOM_COMMANDS, Menu.NONE, R.string.terminal_custom_commands_action);
         menu.add(Menu.NONE, TOOL_SEARCH_OUTPUT, Menu.NONE, R.string.terminal_search_action);
+        menu.add(Menu.NONE, TOOL_TOUCH_SCROLL_MODE, Menu.NONE, tuiTouchScrollMode ?
+            R.string.terminal_touch_scroll_switch_to_scrollback :
+            R.string.terminal_touch_scroll_switch_to_tui);
 
         addHeader(context, menu, R.string.terminal_tools_section_project);
         menu.add(Menu.NONE, TOOL_GIT_STATUS, Menu.NONE, R.string.workspace_git_status_action);

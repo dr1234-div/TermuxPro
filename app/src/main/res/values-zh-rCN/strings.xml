@@ -233,6 +233,10 @@
     <string name="workspace_keys_shell_applied">已切换为 Shell 键区</string>
     <string name="workspace_keys_ai_applied">已切换为 AI CLI 键区</string>
     <string name="workspace_keys_vim_applied">已切换为 Vim 键区</string>
+    <string name="terminal_touch_scroll_switch_to_scrollback">触摸滚动：终端历史</string>
+    <string name="terminal_touch_scroll_switch_to_tui">触摸滚动：AI/TUI 面板</string>
+    <string name="terminal_touch_scroll_scrollback_applied">手指滑动将滚动终端历史</string>
+    <string name="terminal_touch_scroll_tui_applied">手指滑动将在支持时滚动 AI/TUI 面板</string>
     <string name="workspace_review_diff_action">Git 修改</string>
     <string name="git_diff_title">Git 工作台</string>
     <string name="git_diff_back">返回</string>
