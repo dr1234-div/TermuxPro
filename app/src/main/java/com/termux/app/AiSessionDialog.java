@@ -16,9 +16,17 @@ final class AiSessionDialog {
 
     private AiSessionDialog() {}
 
+    static void show(Activity activity, AlertDialog dialog) {
+        TermuxProDialogStyle.show(activity, dialog,
+            shownDialog -> applyReadableStyleAfterBase(activity, shownDialog));
+    }
+
     static void applyReadableStyle(Activity activity, AlertDialog dialog) {
         TermuxProDialogStyle.apply(activity, dialog);
+        applyReadableStyleAfterBase(activity, dialog);
+    }
 
+    private static void applyReadableStyleAfterBase(Activity activity, AlertDialog dialog) {
         // 会话选择项本身承担确认动作，底部只有“取消”一个按钮；继续使用品牌主色，
         // 避免套用双按钮弹窗的次要操作色后降低可发现性。
         if (dialog.getButton(AlertDialog.BUTTON_NEGATIVE) != null) {
@@ -29,6 +37,7 @@ final class AiSessionDialog {
         ListView list = dialog.getListView();
         int minimumEndPadding = Math.round(TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP, 32, activity.getResources().getDisplayMetrics()));
+        if (list == null) return;
         for (int index = 0; index < list.getChildCount(); index++) {
             View row = list.getChildAt(index);
             if (!(row instanceof TextView)) continue;

@@ -731,8 +731,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                     AiCliLaunchCommand.Mode.PICK_HISTORY)))
             .setNegativeButton(android.R.string.cancel, null)
             .create();
-        dialog.setOnShowListener(ignored -> AiSessionDialog.applyReadableStyle(this, dialog));
-        dialog.show();
+        AiSessionDialog.show(this, dialog);
     }
 
     private void showProjectTools(View anchor) {
@@ -1016,12 +1015,13 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         dialog.setOnDismissListener(ignored -> {
             if (!sent[0]) mPromptDraft = input.getText().toString();
         });
-        dialog.setOnShowListener(ignored -> {
+        TermuxProDialogStyle.show(this, dialog, shownDialog -> {
             input.requestFocus();
-            TermuxProDialogStyle.apply(this, dialog);
-            dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+            if (shownDialog.getWindow() != null) {
+                shownDialog.getWindow().setSoftInputMode(
+                    WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+            }
         });
-        dialog.show();
     }
 
     private void confirmAndSendCommand(String command) {
