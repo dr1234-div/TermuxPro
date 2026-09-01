@@ -38,7 +38,24 @@ public class WorkspaceTargetStoreTest {
         assertEquals("b@example.com", target.host);
         assertEquals(2222, target.port);
         assertEquals("~/b", target.path);
+        assertEquals(5173, target.remotePort);
+        assertEquals(5173, target.localPort);
+        assertTrue(target.hasValidPreviewPorts());
         assertTrue(target.isConfigured());
+    }
+
+    @Test
+    public void readsPreviewPortsFromActiveProfile() {
+        preferences.edit()
+            .putString(WorkspaceTargetStore.KEY_PROFILES,
+                "[{\"id\":\"a\",\"name\":\"A\",\"host\":\"a@example.com\",\"port\":\"22\","
+                    + "\"path\":\"~/a\",\"remotePort\":\"3000\",\"localPort\":\"13000\"}]")
+            .putString(WorkspaceTargetStore.KEY_ACTIVE_PROFILE, "a").commit();
+
+        WorkspaceTarget target = WorkspaceTargetStore.readActive(RuntimeEnvironment.getApplication());
+        assertEquals(3000, target.remotePort);
+        assertEquals(13000, target.localPort);
+        assertTrue(target.hasValidPreviewPorts());
     }
 
     @Test
@@ -73,5 +90,17 @@ public class WorkspaceTargetStoreTest {
             .commit();
         WorkspaceTarget target = WorkspaceTargetStore.readActive(RuntimeEnvironment.getApplication());
         assertFalse(target.isConfigured());
+    }
+
+    @Test
+    public void invalidPreviewPortsFailClosedIndependentlyFromSshTarget() {
+        preferences.edit()
+            .putString(WorkspaceTargetStore.KEY_PROFILES,
+                "[{\"id\":\"a\",\"host\":\"a@example.com\",\"port\":\"22\",\"path\":\"~/a\","
+                    + "\"remotePort\":\"70000\",\"localPort\":\"abc\"}]")
+            .commit();
+        WorkspaceTarget target = WorkspaceTargetStore.readActive(RuntimeEnvironment.getApplication());
+        assertTrue(target.isConfigured());
+        assertFalse(target.hasValidPreviewPorts());
     }
 }

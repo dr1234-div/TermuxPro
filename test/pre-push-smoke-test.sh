@@ -46,6 +46,10 @@ require_contains "$source_text" "ProjectTaskDetectorTest" \
     "项目任务入口或检测器变更必须触发项目任务检测测试。"
 require_contains "$source_text" "RemoteFilesNavigationTest" \
     "远端文件入口变更必须触发远端文件导航测试。"
+require_contains "$source_text" "WebPreviewNavigationTest" \
+    "Web 预览入口变更必须触发 Web 预览导航测试。"
+require_contains "$source_text" "WorkspaceTargetStoreTest" \
+    "工作区快照解析变更必须触发工作区目标存储测试。"
 require_contains "$source_text" "ConnectionDiagnosticNavigationTest" \
     "环境诊断入口变更必须触发连接诊断导航测试。"
 require_contains "$source_text" "SshKeysNavigationTest" \
