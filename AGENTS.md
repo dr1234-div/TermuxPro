@@ -35,6 +35,8 @@ UI/UX 是与功能同等级的持续主线，遵循 `docs/UX_QUALITY.md`。负�
 GitHub API 操作统一通过 `scripts/github-cli.sh`，不要假定项目级 `gh` 已加入当前 shell 的 `PATH`。
 Gradle/Java 操作统一先 source `scripts/resolve-jdk17.sh`；禁止把只有 `java`、没有 `javac` 的系统 JRE
 目录手工设为 `JAVA_HOME`。
+推送研发分支前先运行 `scripts/pre-push-smoke.sh`，由它按相对 `origin/dev` 的变更类型补跑相关
+Robolectric 冒烟测试；不得只跑静态脚本后把 UI/资源/文案断言交给远端 CI 首次发现。
 
 日常维护默认静默：分支、提交、PR、合入 `dev`、普通 CI、小修改和内部验收不发送飞书通知。小改动
 最多每周汇总一次；只有正式/候选安装包需要体验、稳定 Release、严重阻断、安全风险或必须由用户决策
