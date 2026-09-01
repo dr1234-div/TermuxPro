@@ -83,6 +83,7 @@ public final class GitDiffActivity extends AppCompatActivity {
         findViewById(R.id.git_overview_pull_button).setOnClickListener(view -> confirmPullFastForward());
         findViewById(R.id.git_overview_push_button).setOnClickListener(view -> confirmPushUpstream());
         findViewById(R.id.git_overview_changes_button).setOnClickListener(view -> loadDiff());
+        findViewById(R.id.git_overview_files_button).setOnClickListener(view -> showChangedFiles());
         findViewById(R.id.git_overview_stage_all_button).setOnClickListener(
             view -> confirmStageAll());
         findViewById(R.id.git_overview_unstage_all_button).setOnClickListener(
@@ -232,6 +233,9 @@ public final class GitDiffActivity extends AppCompatActivity {
         Button commit = findViewById(R.id.git_overview_commit_button);
         commit.setEnabled(overview.stagedFiles > 0);
         commit.setAlpha(overview.stagedFiles > 0 ? 1f : 0.48f);
+        Button files = findViewById(R.id.git_overview_files_button);
+        files.setEnabled(!overview.fileChanges.isEmpty());
+        files.setAlpha(!overview.fileChanges.isEmpty() ? 1f : 0.48f);
         Button deleteBranch = findViewById(R.id.git_overview_delete_branch_button);
         boolean canDeleteBranch = !deletableLocalBranches(overview).isEmpty();
         deleteBranch.setEnabled(canDeleteBranch);
@@ -287,6 +291,68 @@ public final class GitDiffActivity extends AppCompatActivity {
     private void showBranches() {
         AlertDialog dialog = createBranchesDialog();
         if (dialog != null) showStyledDialog(dialog);
+    }
+
+    private void showChangedFiles() {
+        AlertDialog dialog = createChangedFilesDialog();
+        if (dialog != null) showStyledDialog(dialog);
+    }
+
+    @Nullable
+    AlertDialog createChangedFilesDialog() {
+        if (mOverview == null) return null;
+        if (mOverview.fileChanges.isEmpty()) {
+            showStatus(getString(R.string.git_workbench_no_file_changes), false);
+            return null;
+        }
+        String[] labels = new String[mOverview.fileChanges.size()];
+        for (int index = 0; index < mOverview.fileChanges.size(); index++) {
+            labels[index] = fileChangeLabel(mOverview.fileChanges.get(index));
+        }
+        return new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_files)
+            .setAdapter(new ArrayAdapter<>(this, R.layout.item_termuxpro_list, labels),
+                (selectionDialog, which) -> showFileIndexActions(mOverview.fileChanges.get(which)))
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+    }
+
+    @NonNull
+    private String fileChangeLabel(@NonNull GitRepositoryOverview.FileChange change) {
+        return getString(R.string.git_workbench_file_change,
+            fileChangeScope(change), change.path);
+    }
+
+    @NonNull
+    private String fileChangeScope(@NonNull GitRepositoryOverview.FileChange change) {
+        if (change.hasStagedChange() && change.hasUnstagedChange()) {
+            return getString(R.string.git_workbench_file_scope_mixed);
+        }
+        if (change.hasStagedChange()) return getString(R.string.git_workbench_file_scope_staged);
+        return getString(R.string.git_workbench_file_scope_unstaged);
+    }
+
+    private void showFileIndexActions(@NonNull GitRepositoryOverview.FileChange change) {
+        List<String> actions = new ArrayList<>();
+        List<Boolean> stageActions = new ArrayList<>();
+        if (change.hasUnstagedChange()) {
+            actions.add(getString(R.string.git_workbench_stage_file_action));
+            stageActions.add(true);
+        }
+        if (change.hasStagedChange()) {
+            actions.add(getString(R.string.git_workbench_unstage_file_action));
+            stageActions.add(false);
+        }
+        if (actions.isEmpty()) return;
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(change.path)
+            .setMessage(R.string.git_workbench_file_action_message)
+            .setAdapter(new ArrayAdapter<>(this, R.layout.item_termuxpro_list,
+                actions.toArray(new String[0])), (selectionDialog, which) ->
+                runFileIndexOperation(stageActions.get(which), change.path))
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        showStyledDialog(dialog);
     }
 
     @Nullable
@@ -648,6 +714,32 @@ public final class GitDiffActivity extends AppCompatActivity {
                 else showStatus(getString(stage
                     ? R.string.git_workbench_stage_all_failed
                     : R.string.git_workbench_unstage_all_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    private void runFileIndexOperation(boolean stage, @NonNull String filePath) {
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(stage
+            ? R.string.git_workbench_staging_file
+            : R.string.git_workbench_unstaging_file, filePath));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                stage
+                    ? WorkspaceCommandBuilder.buildGitStageFileRemoteCommand(target.path, filePath)
+                    : WorkspaceCommandBuilder.buildGitUnstageFileRemoteCommand(target.path, filePath),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 75) showStatus(getString(stage
+                    ? R.string.git_workbench_no_unstaged_file_change
+                    : R.string.git_workbench_no_staged_file_change), false);
+                else showStatus(getString(stage
+                    ? R.string.git_workbench_stage_file_failed
+                    : R.string.git_workbench_unstage_file_failed,
                     result.output.trim()), false);
             });
         });

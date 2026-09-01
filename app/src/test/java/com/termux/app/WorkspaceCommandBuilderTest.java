@@ -161,8 +161,14 @@ public class WorkspaceCommandBuilderTest {
         String fetch = WorkspaceCommandBuilder.buildGitFetchUpstreamRemoteCommand("/srv/team's app");
         String pull = WorkspaceCommandBuilder.buildGitPullFastForwardRemoteCommand("/srv/team's app");
         String push = WorkspaceCommandBuilder.buildGitPushUpstreamRemoteCommand("/srv/team's app");
+        String stageFile = WorkspaceCommandBuilder.buildGitStageFileRemoteCommand(
+            "/srv/team's app", "src/user's file.txt");
+        String unstageFile = WorkspaceCommandBuilder.buildGitUnstageFileRemoteCommand(
+            "/srv/team's app", "src/user's file.txt");
 
         assertTrue(overview.contains("TP_OVERVIEW\\t"));
+        assertTrue(overview.contains("TP_STATUS_Z\\000"));
+        assertTrue(overview.contains("git status --porcelain=v1 -z"));
         assertTrue(overview.contains("upstream_name=$(git rev-parse"));
         assertTrue(overview.contains("git status --porcelain=v1 -z"));
         assertTrue(overview.contains("git diff --cached --name-only -z"));
@@ -193,6 +199,12 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(push.contains("if ! upstream=$(git rev-parse"));
         assertTrue(push.contains("git push \"$remote\" \"HEAD:$branch\""));
         assertTrue(push.endsWith("git update-ref \"refs/remotes/$upstream\" HEAD"));
+        assertTrue(stageFile.contains("unstaged_tracked=$(git diff --name-only -z"));
+        assertTrue(stageFile.contains("untracked=$(git ls-files --others --exclude-standard -z"));
+        assertTrue(stageFile.contains("git add -A -- 'src/user'\\''s file.txt'"));
+        assertTrue(!stageFile.contains("git commit"));
+        assertTrue(unstageFile.contains("git restore --staged -- 'src/user'\\''s file.txt'"));
+        assertTrue(!unstageFile.contains("reset --hard"));
         String commit = WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand(
             "/srv/team's app", "fix: user's mobile flow");
         assertTrue(commit.contains("git diff --cached --name-only -z"));
@@ -213,6 +225,10 @@ public class WorkspaceCommandBuilderTest {
             () -> WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand("~/app", ""));
         assertThrows(IllegalArgumentException.class,
             () -> WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand("~/app", "bad\nmessage"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitStageFileRemoteCommand("~/app", ""));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitUnstageFileRemoteCommand("~/app", "bad\000file"));
     }
 
     @Test
@@ -241,8 +257,31 @@ public class WorkspaceCommandBuilderTest {
         assertEquals(1, overview.changedFiles);
         assertEquals(0, overview.stagedFiles);
         assertEquals(1, overview.unstagedFiles);
+        assertEquals("README.md", overview.fileChanges.get(0).path);
+        assertTrue(overview.fileChanges.get(0).hasUnstagedChange());
         assertTrue(overview.localBranches.contains("feature"));
         assertEquals(1, overview.commits.size());
+
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitStageFileRemoteCommand(
+            repository.toString(), "README.md"), new HashMap<>()));
+        ShellOutput singleStaged = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        GitRepositoryOverview singleStagedOverview = GitRepositoryOverview.parse(singleStaged.output);
+        assertEquals(1, singleStagedOverview.stagedFiles);
+        assertEquals(0, singleStagedOverview.unstagedFiles);
+        assertTrue(singleStagedOverview.fileChanges.get(0).hasStagedChange());
+        assertEquals(75, runShell(WorkspaceCommandBuilder.buildGitStageFileRemoteCommand(
+            repository.toString(), "README.md"), new HashMap<>()));
+
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitUnstageFileRemoteCommand(
+            repository.toString(), "README.md"), new HashMap<>()));
+        ShellOutput singleUnstaged = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        GitRepositoryOverview singleUnstagedOverview = GitRepositoryOverview.parse(singleUnstaged.output);
+        assertEquals(0, singleUnstagedOverview.stagedFiles);
+        assertEquals(1, singleUnstagedOverview.unstagedFiles);
+        assertEquals(75, runShell(WorkspaceCommandBuilder.buildGitUnstageFileRemoteCommand(
+            repository.toString(), "README.md"), new HashMap<>()));
 
         assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitStageAllRemoteCommand(
             repository.toString()), new HashMap<>()));

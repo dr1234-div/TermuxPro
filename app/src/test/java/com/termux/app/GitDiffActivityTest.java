@@ -138,6 +138,7 @@ public final class GitDiffActivityTest {
         assertTrue(((Button) activity.findViewById(R.id.git_overview_stage_all_button)).isEnabled());
         assertTrue(((Button) activity.findViewById(R.id.git_overview_unstage_all_button)).isEnabled());
         assertTrue(((Button) activity.findViewById(R.id.git_overview_commit_button)).isEnabled());
+        assertTrue(!((Button) activity.findViewById(R.id.git_overview_files_button)).isEnabled());
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_delete_branch_button)).isEnabled());
 
         activity.showOverviewForTesting("~/repo", "TP_OVERVIEW\tdev\t0\t0\t0\t0\t2\t0\t1\torigin/dev\n"
@@ -154,6 +155,38 @@ public final class GitDiffActivityTest {
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_stage_all_button)).isEnabled());
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_unstage_all_button)).isEnabled());
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_commit_button)).isEnabled());
+        assertTrue(!((Button) activity.findViewById(R.id.git_overview_files_button)).isEnabled());
+    }
+
+    @Test
+    public void changedFilesDialogShowsPerFileIndexActions() {
+        Intent intent = GitDiffActivity.newIntent(RuntimeEnvironment.getApplication(),
+                "hdr@192.168.1.153", 22, "~/repo")
+            .putExtra(GitDiffActivity.EXTRA_UI_TEST_OVERVIEW, "TP_OVERVIEW\tdev\t0\t3\t2\t2\t\t\t0\n"
+                + "TP_LOCAL\tdev\n"
+                + "TP_STATUS_Z\000"
+                + "M  staged.txt\000"
+                + " M unstaged.txt\000"
+                + "MM mixed.txt\000");
+        GitDiffActivity activity = Robolectric.buildActivity(GitDiffActivity.class, intent)
+            .setup().get();
+
+        assertTrue(((Button) activity.findViewById(R.id.git_overview_files_button)).isEnabled());
+        AlertDialog files = activity.createChangedFilesDialog();
+        assertNotNull(files);
+        activity.showStyledDialog(files);
+        assertEquals(3, files.getListView().getAdapter().getCount());
+        assertTrue(files.getListView().getAdapter().getItem(0).toString().contains("已暂存"));
+        assertTrue(files.getListView().getAdapter().getItem(1).toString().contains("未暂存"));
+        assertTrue(files.getListView().getAdapter().getItem(2).toString().contains("已暂存 + 未暂存"));
+        files.getListView().performItemClick(files.getListView().getAdapter().getView(2, null,
+            files.getListView()), 2, 2);
+        AlertDialog actions = ShadowAlertDialog.getLatestAlertDialog();
+        assertEquals(2, actions.getListView().getAdapter().getCount());
+        assertEquals(activity.getString(R.string.git_workbench_stage_file_action),
+            actions.getListView().getAdapter().getItem(0).toString());
+        assertEquals(activity.getString(R.string.git_workbench_unstage_file_action),
+            actions.getListView().getAdapter().getItem(1).toString());
     }
 
     @Test
