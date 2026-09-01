@@ -36,20 +36,22 @@ public class TerminalProjectToolsMenuTest {
         assertFalse(menu.getItem(5).isEnabled());
         assertEquals(TerminalProjectToolsMenu.TOOL_GIT_STATUS, menu.getItem(6).getItemId());
         assertEquals(TerminalProjectToolsMenu.TOOL_GIT_DIFF, menu.getItem(7).getItemId());
-        assertEquals(TerminalProjectToolsMenu.TOOL_PROJECT_CHECK, menu.getItem(8).getItemId());
-        assertEquals("项目任务", menu.getItem(8).getTitle().toString());
+        assertEquals(TerminalProjectToolsMenu.TOOL_REMOTE_FILES, menu.getItem(8).getItemId());
+        assertEquals("远端文件", menu.getItem(8).getTitle().toString());
+        assertEquals(TerminalProjectToolsMenu.TOOL_PROJECT_CHECK, menu.getItem(9).getItemId());
+        assertEquals("项目任务", menu.getItem(9).getTitle().toString());
 
-        assertEquals("AI 安全操作", menu.getItem(9).getTitle().toString());
-        assertFalse(menu.getItem(9).isEnabled());
-        assertEquals(TerminalProjectToolsMenu.TOOL_AI_CONFIRM, menu.getItem(10).getItemId());
-        assertEquals(TerminalProjectToolsMenu.TOOL_AI_REJECT, menu.getItem(11).getItemId());
-        assertEquals(TerminalProjectToolsMenu.TOOL_INTERRUPT, menu.getItem(12).getItemId());
+        assertEquals("AI 安全操作", menu.getItem(10).getTitle().toString());
+        assertFalse(menu.getItem(10).isEnabled());
+        assertEquals(TerminalProjectToolsMenu.TOOL_AI_CONFIRM, menu.getItem(11).getItemId());
+        assertEquals(TerminalProjectToolsMenu.TOOL_AI_REJECT, menu.getItem(12).getItemId());
+        assertEquals(TerminalProjectToolsMenu.TOOL_INTERRUPT, menu.getItem(13).getItemId());
 
-        assertEquals("键区切换", menu.getItem(13).getTitle().toString());
-        assertFalse(menu.getItem(13).isEnabled());
-        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_SHELL, menu.getItem(14).getItemId());
-        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_AI, menu.getItem(15).getItemId());
-        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_VIM, menu.getItem(16).getItemId());
+        assertEquals("键区切换", menu.getItem(14).getTitle().toString());
+        assertFalse(menu.getItem(14).isEnabled());
+        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_SHELL, menu.getItem(15).getItemId());
+        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_AI, menu.getItem(16).getItemId());
+        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_VIM, menu.getItem(17).getItemId());
     }
 
     @Test
