@@ -485,7 +485,7 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
     }
 
 
-    String toToastTitle(TerminalSession session) {
+    public String toToastTitle(TerminalSession session) {
         TermuxService service = mActivity.getTermuxService();
         if (service == null) return null;
 

@@ -20,6 +20,7 @@
 
     <string name="action_new_session">新建会话</string>
     <string name="action_new_session_failsafe">安全模式</string>
+    <string name="action_close_session">关闭</string>
     <string name="title_max_terminals_reached">已达到会话数量上限</string>
     <string name="msg_max_terminals_reached">请先关闭已有会话，再创建新会话。</string>
     <string name="title_rename_session">设置会话名称</string>
@@ -172,7 +173,7 @@
     <string name="workspace_open_workbench">工作台</string>
     <string name="workspace_open_workbench_description">返回服务器、项目目录和远程入口</string>
     <string name="terminal_sessions_title">终端会话</string>
-    <string name="terminal_sessions_hint">点击切换会话，长按可重命名</string>
+    <string name="terminal_sessions_hint">点击切换，长按重命名；点“关闭”停止当前会话</string>
     <string name="workspace_command_confirm_title">发送命令到当前会话？</string>
     <string name="workspace_command_confirm_message">以下命令将输入当前终端：\n\n%1$s</string>
     <string name="workspace_command_confirm_action">发送命令</string>
@@ -421,6 +422,10 @@
     <string name="terminal_search_truncated">搜索范围限制为最近 1 MB，最多展示 100 条结果。</string>
     <string name="terminal_session_switched">已切换到会话：%1$s</string>
     <string name="terminal_session_exited">会话已结束：%1$s</string>
+    <string name="terminal_session_close_title">关闭当前会话？</string>
+    <string name="terminal_session_close_message">将停止本地终端会话 %1$s 及其中的前台进程，不会影响远端 tmux 会话。</string>
+    <string name="terminal_session_close_action">关闭会话</string>
+    <string name="terminal_session_close_missing">当前没有可关闭的活动会话。</string>
     <string name="task_sessions_title">tmux 会话</string>
     <string name="task_sessions_loading">正在读取远端 tmux 会话…</string>
     <string name="task_sessions_ready">点击会话可进入；TermuxPro 自有会话还可重命名或停止。</string>
