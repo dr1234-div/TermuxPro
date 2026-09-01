@@ -533,7 +533,9 @@
     <string name="terminal_tools_section_context">当前上下文</string>
     <string name="terminal_tools_section_project">项目与 Git</string>
     <string name="terminal_tools_section_connection">连接与安全</string>
-    <string name="terminal_tools_section_ai">AI 安全操作</string>
+    <string name="terminal_tools_section_ai">AI 工作</string>
+    <string name="terminal_ai_launch_claude_action">启动 Claude Code</string>
+    <string name="terminal_ai_launch_codex_action">启动 Codex CLI</string>
     <string name="terminal_tools_section_keyboard">键区切换</string>
     <string name="terminal_custom_commands_action">快捷指令</string>
 </resources>

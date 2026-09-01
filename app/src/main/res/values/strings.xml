@@ -654,7 +654,9 @@
     <string name="terminal_tools_section_context">Current context</string>
     <string name="terminal_tools_section_project">Project and Git</string>
     <string name="terminal_tools_section_connection">Connection and security</string>
-    <string name="terminal_tools_section_ai">AI safety actions</string>
+    <string name="terminal_tools_section_ai">AI work</string>
+    <string name="terminal_ai_launch_claude_action">Start Claude Code</string>
+    <string name="terminal_ai_launch_codex_action">Start Codex CLI</string>
     <string name="terminal_tools_section_keyboard">Key rows</string>
     <string name="terminal_custom_commands_action">Quick commands</string>
 
