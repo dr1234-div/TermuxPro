@@ -288,8 +288,9 @@
     <string name="ai_session_codex_guidance">Codex CLI is usually user-scoped, but TermuxPro still never auto-enters the latest session. Confirm the current project before starting or resuming.</string>
     <string name="ai_session_target_message">Current target\n%1$s:%2$d · %3$s\n\n%4$s</string>
     <string name="ai_session_target_incomplete">Current target is incomplete. Fill server, SSH port, and project path before starting AI CLI.\n\n%1$s</string>
-    <string name="ai_session_new_action">New session (safe default)\nStart clean in this project. Recommended for shared Claude accounts.</string>
-    <string name="ai_session_pick_history_action">Choose previous session\nOpen the CLI picker yourself; TermuxPro will not auto-enter the latest session.</string>
+    <string name="ai_session_terminal_context_message">%1$s\n\nNote: from the terminal toolbox, the command is sent to the terminal currently on screen. Confirm you are already in the intended SSH, tmux session, and project directory.</string>
+    <string name="ai_session_new_action">New session (safe default)\nCommand: %1$s\nStart clean in this project. Recommended for shared Claude accounts.</string>
+    <string name="ai_session_pick_history_action">Choose previous session\nCommand: %1$s\nOpen the CLI picker yourself; TermuxPro will not auto-enter the latest session.</string>
     <string name="workspace_open_local_terminal">Open local terminal</string>
     <string name="workspace_security_tip">The first SSH connection still requires explicit host fingerprint confirmation.</string>
     <string name="workspace_error_host">Enter a valid SSH alias, host, or user@host.</string>
