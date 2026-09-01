@@ -633,6 +633,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
         AlertDialog dialog = new AlertDialog.Builder(this)
             .setTitle(getString(R.string.ai_session_launch_title,
                 AiCliLaunchCommand.displayName(tool)))
+            .setMessage(aiLaunchMessage(tool))
             .setItems(actions, (selectionDialog, which) -> launchRemote(AiCliLaunchCommand.command(tool,
                 which == 0 ? AiCliLaunchCommand.Mode.NEW_SESSION :
                     AiCliLaunchCommand.Mode.PICK_HISTORY)))
@@ -640,6 +641,18 @@ public final class WorkspaceActivity extends AppCompatActivity {
             .create();
         dialog.setOnShowListener(ignored -> AiSessionDialog.applyReadableStyle(this, dialog));
         dialog.show();
+    }
+
+    private String aiLaunchMessage(AiCliLaunchCommand.Tool tool) {
+        String guidance = getString(AiCliLaunchCommand.guidanceMessage(tool));
+        String host = mHostInput.getText().toString().trim();
+        int port = parsePort(mPortInput.getText().toString(), 22);
+        String path = mPathInput.getText().toString().trim();
+        if (!SshTargetValidator.isValid(host) || port < 1 || port > 65535 ||
+                TextUtils.isEmpty(path)) {
+            return getString(R.string.ai_session_target_incomplete, guidance);
+        }
+        return getString(R.string.ai_session_target_message, host, port, path, guidance);
     }
 
     private void refreshConnectionState() {
