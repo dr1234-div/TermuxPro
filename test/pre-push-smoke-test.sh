@@ -44,6 +44,10 @@ require_contains "$source_text" "TaskSessionsActivityTest" \
     "tmux 会话中心变更必须触发会话中心测试。"
 require_contains "$source_text" "ProjectTaskDetectorTest" \
     "项目任务入口或检测器变更必须触发项目任务检测测试。"
+require_contains "$source_text" "CustomCommandsActivityTest" \
+    "快捷指令入口或模板变更必须触发快捷指令 UI 测试。"
+require_contains "$source_text" "CustomCommandStoreTest" \
+    "快捷指令存储或校验变更必须触发快捷指令存储测试。"
 require_contains "$source_text" "RemoteFilesNavigationTest" \
     "远端文件入口变更必须触发远端文件导航测试。"
 require_contains "$source_text" "WebPreviewNavigationTest" \

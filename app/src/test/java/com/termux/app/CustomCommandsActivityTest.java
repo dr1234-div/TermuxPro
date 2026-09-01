@@ -12,6 +12,7 @@ import android.os.Looper;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.termux.R;
@@ -50,6 +51,8 @@ public class CustomCommandsActivityTest {
         assertTrue(((TextView) activity.findViewById(R.id.custom_commands_target_details))
             .getText().toString().contains("hdr@192.168.1.153:22"));
         assertEquals(View.VISIBLE, activity.findViewById(R.id.custom_commands_empty).getVisibility());
+        assertEquals(View.VISIBLE, activity.findViewById(
+            R.id.custom_commands_template_hint).getVisibility());
 
         activity.findViewById(R.id.custom_commands_add).performClick();
         shadowOf(Looper.getMainLooper()).idle();
@@ -67,6 +70,49 @@ public class CustomCommandsActivityTest {
         LinearLayout list = activity.findViewById(R.id.custom_commands_list);
         assertEquals(1, list.getChildCount());
         assertEquals(View.GONE, activity.findViewById(R.id.custom_commands_empty).getVisibility());
+        assertEquals(View.GONE, activity.findViewById(
+            R.id.custom_commands_template_hint).getVisibility());
+    }
+
+    @Test
+    public void templatesPrefillEditorWithoutSavingOrExecuting() {
+        CustomCommandsActivity activity = Robolectric.buildActivity(
+            CustomCommandsActivity.class).setup().get();
+
+        activity.findViewById(R.id.custom_commands_templates).performClick();
+        shadowOf(Looper.getMainLooper()).idle();
+        AlertDialog templateDialog = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotNull(templateDialog);
+        assertEquals(activity.getString(R.string.custom_commands_template_title),
+            shadowOf(templateDialog).getTitle());
+        ListView listView = templateDialog.getListView();
+        assertTrue(listView.getAdapter().getCount() >= 6);
+        assertTrue(listView.getAdapter().getItem(0).toString().contains("codex resume"));
+        assertEquals(0, new CustomCommandStore(RuntimeEnvironment.getApplication())
+            .list("workspace-a").size());
+        assertEquals(null, shadowOf(activity).getNextStartedActivity());
+
+        listView.performItemClick(listView.getAdapter().getView(0, null, listView), 0,
+            listView.getAdapter().getItemId(0));
+        shadowOf(Looper.getMainLooper()).idle();
+        AlertDialog editor = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotNull(editor);
+        assertEquals(activity.getString(R.string.custom_commands_create_title),
+            shadowOf(editor).getTitle());
+        assertEquals("Codex：打开历史会话", ((EditText) editor.findViewById(
+            R.id.custom_command_name_input)).getText().toString());
+        assertEquals("codex resume", ((EditText) editor.findViewById(
+            R.id.custom_command_value_input)).getText().toString());
+        assertEquals("AI", ((EditText) editor.findViewById(
+            R.id.custom_command_group_input)).getText().toString());
+        assertEquals(0, new CustomCommandStore(RuntimeEnvironment.getApplication())
+            .list("workspace-a").size());
+
+        editor.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        shadowOf(Looper.getMainLooper()).idle();
+        assertEquals(1, new CustomCommandStore(RuntimeEnvironment.getApplication())
+            .list("workspace-a").size());
+        assertEquals(null, shadowOf(activity).getNextStartedActivity());
     }
 
     @Test
@@ -126,7 +172,10 @@ public class CustomCommandsActivityTest {
             CustomCommandsActivity.class).setup().get();
 
         assertFalse(activity.findViewById(R.id.custom_commands_add).isEnabled());
+        assertFalse(activity.findViewById(R.id.custom_commands_templates).isEnabled());
         assertEquals(activity.getString(R.string.custom_commands_invalid_workspace),
             ((TextView) activity.findViewById(R.id.custom_commands_empty)).getText().toString());
+        assertEquals(View.GONE, activity.findViewById(
+            R.id.custom_commands_template_hint).getVisibility());
     }
 }

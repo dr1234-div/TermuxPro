@@ -33,6 +33,7 @@ public final class CustomCommandsActivity extends AppCompatActivity {
     private WorkspaceTarget mTarget;
     private LinearLayout mList;
     private TextView mEmpty;
+    private View mTemplateHint;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -42,9 +43,11 @@ public final class CustomCommandsActivity extends AppCompatActivity {
         mTarget = WorkspaceTargetStore.readActive(this);
         mList = findViewById(R.id.custom_commands_list);
         mEmpty = findViewById(R.id.custom_commands_empty);
+        mTemplateHint = findViewById(R.id.custom_commands_template_hint);
 
         findViewById(R.id.custom_commands_back).setOnClickListener(view -> finish());
         findViewById(R.id.custom_commands_add).setOnClickListener(view -> showEditor(null));
+        findViewById(R.id.custom_commands_templates).setOnClickListener(view -> showTemplates());
         bindTarget();
         renderCommands();
     }
@@ -53,10 +56,12 @@ public final class CustomCommandsActivity extends AppCompatActivity {
         TextView name = findViewById(R.id.custom_commands_target);
         TextView details = findViewById(R.id.custom_commands_target_details);
         View add = findViewById(R.id.custom_commands_add);
+        View templates = findViewById(R.id.custom_commands_templates);
         if (mTarget == null || !mTarget.isConfigured()) {
             name.setText(R.string.custom_commands_invalid_workspace);
             details.setVisibility(View.GONE);
             add.setEnabled(false);
+            templates.setEnabled(false);
             return;
         }
         name.setText(mTarget.name);
@@ -69,10 +74,12 @@ public final class CustomCommandsActivity extends AppCompatActivity {
         if (mTarget == null || !mTarget.isConfigured()) {
             mEmpty.setText(R.string.custom_commands_invalid_workspace);
             mEmpty.setVisibility(View.VISIBLE);
+            mTemplateHint.setVisibility(View.GONE);
             return;
         }
         List<CustomCommand> commands = mStore.list(mTarget.id);
         mEmpty.setVisibility(commands.isEmpty() ? View.VISIBLE : View.GONE);
+        mTemplateHint.setVisibility(commands.isEmpty() ? View.VISIBLE : View.GONE);
         LayoutInflater inflater = LayoutInflater.from(this);
         for (int index = 0; index < commands.size(); index++) {
             CustomCommand command = commands.get(index);
@@ -148,6 +155,11 @@ public final class CustomCommandsActivity extends AppCompatActivity {
     }
 
     private void showEditor(@Nullable CustomCommand existing) {
+        showEditor(existing, null);
+    }
+
+    private void showEditor(@Nullable CustomCommand existing,
+                            @Nullable CustomCommandTemplate template) {
         View form = LayoutInflater.from(this).inflate(R.layout.dialog_custom_command, null, false);
         EditText name = form.findViewById(R.id.custom_command_name_input);
         EditText value = form.findViewById(R.id.custom_command_value_input);
@@ -163,6 +175,12 @@ public final class CustomCommandsActivity extends AppCompatActivity {
             value.setText(existing.command);
             directory.setText(existing.workingDirectory);
             group.setText(existing.group);
+        } else if (template != null) {
+            name.setText(template.name);
+            value.setText(template.command);
+            directory.setText(template.workingDirectory);
+            group.setText(template.group);
+            alwaysConfirm.setChecked(template.confirmation == CustomCommand.Confirmation.ALWAYS);
         }
 
         AlertDialog dialog = new AlertDialog.Builder(this)
@@ -202,6 +220,22 @@ public final class CustomCommandsActivity extends AppCompatActivity {
                 }
             });
         });
+        dialog.show();
+    }
+
+    private void showTemplates() {
+        CustomCommandTemplate[] templates = CustomCommandTemplate.defaults(this);
+        String[] labels = new String[templates.length];
+        for (int index = 0; index < templates.length; index++) {
+            labels[index] = templates[index].name + "\n" + templates[index].command;
+        }
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.custom_commands_template_title)
+            .setMessage(R.string.custom_commands_template_message)
+            .setItems(labels, (selectionDialog, which) -> showEditor(null, templates[which]))
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        dialog.setOnShowListener(ignored -> TermuxProDialogStyle.apply(this, dialog));
         dialog.show();
     }
 
@@ -248,5 +282,43 @@ public final class CustomCommandsActivity extends AppCompatActivity {
             .create();
         dialog.setOnShowListener(ignored -> TermuxProDialogStyle.apply(this, dialog));
         dialog.show();
+    }
+
+    private static final class CustomCommandTemplate {
+        final String name;
+        final String command;
+        final String workingDirectory;
+        final String group;
+        final CustomCommand.Confirmation confirmation;
+
+        CustomCommandTemplate(String name, String command, String workingDirectory, String group,
+                              CustomCommand.Confirmation confirmation) {
+            this.name = name;
+            this.command = command;
+            this.workingDirectory = workingDirectory;
+            this.group = group;
+            this.confirmation = confirmation;
+        }
+
+        static CustomCommandTemplate[] defaults(AppCompatActivity activity) {
+            return new CustomCommandTemplate[] {
+                new CustomCommandTemplate(activity.getString(R.string.custom_commands_template_codex),
+                    "codex resume", "", "AI", CustomCommand.Confirmation.ALWAYS),
+                new CustomCommandTemplate(activity.getString(R.string.custom_commands_template_claude),
+                    "claude --continue", "", "AI", CustomCommand.Confirmation.ALWAYS),
+                new CustomCommandTemplate(activity.getString(R.string.custom_commands_template_git_status),
+                    "git status --short --branch", "", "Git",
+                    CustomCommand.Confirmation.DANGEROUS_ONLY),
+                new CustomCommandTemplate(activity.getString(R.string.custom_commands_template_git_log),
+                    "git log --oneline --decorate -n 20", "", "Git",
+                    CustomCommand.Confirmation.DANGEROUS_ONLY),
+                new CustomCommandTemplate(activity.getString(R.string.custom_commands_template_tmux_list),
+                    "tmux list-sessions", "", "tmux",
+                    CustomCommand.Confirmation.DANGEROUS_ONLY),
+                new CustomCommandTemplate(activity.getString(R.string.custom_commands_template_frontend_check),
+                    "if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile && pnpm test; elif [ -f package-lock.json ]; then npm ci && npm test; else npm test; fi",
+                    "", "测试", CustomCommand.Confirmation.ALWAYS)
+            };
+        }
     }
 }
