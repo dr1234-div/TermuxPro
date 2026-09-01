@@ -272,6 +272,7 @@
     <string name="git_workbench_overview_truncated">仓库分支或记录过多，无法安全完整展示，请在终端中查看完整结果。</string>
     <string name="git_workbench_branch">当前分支：%1$s</string>
     <string name="git_workbench_detached">游离 HEAD：%1$s</string>
+    <string name="git_workbench_target">%1$s:%2$d · %3$s</string>
     <string name="git_workbench_sync">领先 %1$d · 落后 %2$d</string>
     <string name="git_workbench_sync_with_upstream">跟踪 %1$s · 领先 %2$d · 落后 %3$d</string>
     <string name="git_workbench_unknown_upstream">上游分支</string>

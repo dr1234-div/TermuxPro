@@ -125,6 +125,8 @@ public final class GitDiffActivityTest {
 
         TextView index = activity.findViewById(R.id.git_overview_index_state);
         TextView sync = activity.findViewById(R.id.git_overview_sync);
+        assertEquals("hdr@192.168.1.153:22 · ~/repo",
+            ((TextView) activity.findViewById(R.id.git_overview_path)).getText().toString());
         assertTrue(index.getText().toString().contains("已暂存 2"));
         assertTrue(index.getText().toString().contains("未暂存 1"));
         assertTrue(sync.getText().toString().contains("跟踪 origin/dev"));
