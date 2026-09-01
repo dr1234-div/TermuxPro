@@ -755,13 +755,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                     openGitWorkbench(true);
                     return true;
                 case TerminalProjectToolsMenu.TOOL_PROJECT_CHECK:
-                    confirmAndSendCommand("if [ -f package.json ]; then " +
-                        "if command -v pnpm >/dev/null 2>&1; then pnpm test; " +
-                        "elif command -v npm >/dev/null 2>&1; then npm test; fi; " +
-                        "elif [ -x ./mvnw ]; then ./mvnw test; " +
-                        "elif [ -f pom.xml ]; then mvn test; " +
-                        "elif [ -x ./gradlew ]; then ./gradlew test; " +
-                        "else printf 'No supported project check was detected.\\n'; fi");
+                    openProjectTasks();
                     return true;
                 case TerminalProjectToolsMenu.TOOL_TMUX_SESSIONS:
                     openTaskSessions();
@@ -807,6 +801,15 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         Intent intent = TaskSessionsNavigation.newIntentForActiveWorkspace(this);
         if (intent == null) {
             showToast(getString(R.string.terminal_task_sessions_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
+    }
+
+    private void openProjectTasks() {
+        Intent intent = ProjectTasksNavigation.newIntentForActiveWorkspace(this);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_project_tasks_invalid_workspace), true);
             return;
         }
         startActivity(intent);

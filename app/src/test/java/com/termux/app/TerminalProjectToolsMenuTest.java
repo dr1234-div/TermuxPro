@@ -37,6 +37,7 @@ public class TerminalProjectToolsMenuTest {
         assertEquals(TerminalProjectToolsMenu.TOOL_GIT_STATUS, menu.getItem(6).getItemId());
         assertEquals(TerminalProjectToolsMenu.TOOL_GIT_DIFF, menu.getItem(7).getItemId());
         assertEquals(TerminalProjectToolsMenu.TOOL_PROJECT_CHECK, menu.getItem(8).getItemId());
+        assertEquals("项目任务", menu.getItem(8).getTitle().toString());
 
         assertEquals("AI 安全操作", menu.getItem(9).getTitle().toString());
         assertFalse(menu.getItem(9).isEnabled());

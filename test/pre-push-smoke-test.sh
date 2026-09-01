@@ -42,6 +42,8 @@ require_contains "$source_text" "GitDiffActivityTest" \
     "Git 工作台变更必须触发 Git UI 测试。"
 require_contains "$source_text" "TaskSessionsActivityTest" \
     "tmux 会话中心变更必须触发会话中心测试。"
+require_contains "$source_text" "ProjectTaskDetectorTest" \
+    "项目任务入口或检测器变更必须触发项目任务检测测试。"
 require_contains "$source_text" "scripts/validate-skills.sh" \
     "推送前冒烟必须包含 Skill 校验，避免规则漂移。"
 require_contains "$source_text" "scripts/resource-guard.sh normal" \
