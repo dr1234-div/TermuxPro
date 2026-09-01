@@ -573,7 +573,15 @@ public final class TerminalView extends View {
 
     /** Perform a scroll, either from dragging the screen or by scrolling a mouse wheel. */
     void doScroll(MotionEvent event, int rowsDown) {
-        doScroll(event, rowsDown, false);
+        doScroll(event, rowsDown, shouldForceScrollbackForScrollEvent(event));
+    }
+
+    /**
+     * 手机屏幕触摸滑动的首要语义是阅读终端历史输出，不能向正在运行的 shell/TUI 写入方向键。
+     * 外接鼠标滚轮仍保留程序内滚动能力，兼容 less、vim、tmux pane 和支持鼠标事件的 TUI。
+     */
+    public static boolean shouldForceScrollbackForScrollEvent(@Nullable MotionEvent event) {
+        return event != null && !event.isFromSource(InputDevice.SOURCE_MOUSE);
     }
 
     /**
