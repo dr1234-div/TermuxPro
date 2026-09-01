@@ -61,6 +61,12 @@ for file in "${changed_files[@]}"; do
             add_test "com.termux.app.WorkspaceCommandBuilderTest"
             needs_android_compile=1
             ;;
+        app/src/main/java/com/termux/app/CustomCommand*|app/src/main/java/com/termux/app/CustomCommandsActivity.java)
+            add_test "com.termux.app.CustomCommandsActivityTest"
+            add_test "com.termux.app.CustomCommandStoreTest"
+            add_test "com.termux.app.WorkspaceCommandBuilderTest"
+            needs_android_compile=1
+            ;;
         app/src/main/java/com/termux/app/RemoteFilesNavigation.java|app/src/main/java/com/termux/app/RemoteFilesActivity.java)
             add_test "com.termux.app.RemoteFilesNavigationTest"
             add_test "com.termux.app.RemoteToolRecoveryTest"

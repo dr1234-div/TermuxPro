@@ -627,8 +627,8 @@ public final class WorkspaceActivity extends AppCompatActivity {
 
     private void showAiLaunchDialog(AiCliLaunchCommand.Tool tool) {
         String[] actions = {
-            getString(R.string.ai_session_new_action),
-            getString(R.string.ai_session_pick_history_action)
+            AiCliLaunchMessage.actionLabel(this, tool, AiCliLaunchCommand.Mode.NEW_SESSION),
+            AiCliLaunchMessage.actionLabel(this, tool, AiCliLaunchCommand.Mode.PICK_HISTORY)
         };
         AlertDialog dialog = new AlertDialog.Builder(this)
             .setTitle(getString(R.string.ai_session_launch_title,
@@ -647,7 +647,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
         String host = mHostInput.getText().toString().trim();
         int port = parsePort(mPortInput.getText().toString(), 22);
         String path = mPathInput.getText().toString().trim();
-        return AiCliLaunchMessage.forValues(this, tool, host, port, path);
+        return AiCliLaunchMessage.forWorkspaceValues(this, tool, host, port, path);
     }
 
     private void refreshConnectionState() {

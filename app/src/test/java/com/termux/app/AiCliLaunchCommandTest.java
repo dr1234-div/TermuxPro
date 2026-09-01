@@ -43,7 +43,7 @@ public class AiCliLaunchCommandTest {
 
     @Test
     public void launchMessageShowsTargetForTerminalAndWorkspaceEntrypoints() {
-        String message = AiCliLaunchMessage.forTarget(RuntimeEnvironment.getApplication(),
+        String message = AiCliLaunchMessage.forWorkspaceTarget(RuntimeEnvironment.getApplication(),
             AiCliLaunchCommand.Tool.CODEX,
             new WorkspaceTarget("workspace-a", "远程开发", "hdr@192.168.1.153", 22,
                 "~/termux-pro"));
@@ -55,10 +55,32 @@ public class AiCliLaunchCommandTest {
 
     @Test
     public void launchMessageFailsClosedWhenTerminalHasNoConfiguredWorkspace() {
-        String message = AiCliLaunchMessage.forTarget(RuntimeEnvironment.getApplication(),
+        String message = AiCliLaunchMessage.forWorkspaceTarget(RuntimeEnvironment.getApplication(),
             AiCliLaunchCommand.Tool.CLAUDE, null);
 
         assertTrue(message.contains("当前目标未完整配置"));
         assertTrue(message.contains("Claude Code 常见于共享远程账号"));
+    }
+
+    @Test
+    public void terminalEntrypointWarnsCommandGoesToCurrentVisibleSession() {
+        String message = AiCliLaunchMessage.forTerminalTarget(RuntimeEnvironment.getApplication(),
+            AiCliLaunchCommand.Tool.CLAUDE,
+            new WorkspaceTarget("workspace-a", "远程开发", "hdr@192.168.1.153", 22,
+                "~/termux-pro"));
+
+        assertTrue(message.contains("当前目标"));
+        assertTrue(message.contains("命令会发送到当前正在显示的终端会话"));
+        assertTrue(message.contains("正确的 SSH、tmux 和项目目录"));
+    }
+
+    @Test
+    public void actionLabelsPreviewExactCliCommand() {
+        assertTrue(AiCliLaunchMessage.actionLabel(RuntimeEnvironment.getApplication(),
+            AiCliLaunchCommand.Tool.CLAUDE, AiCliLaunchCommand.Mode.NEW_SESSION)
+            .contains("将执行：claude"));
+        assertTrue(AiCliLaunchMessage.actionLabel(RuntimeEnvironment.getApplication(),
+            AiCliLaunchCommand.Tool.CODEX, AiCliLaunchCommand.Mode.PICK_HISTORY)
+            .contains("将执行：codex resume"));
     }
 }

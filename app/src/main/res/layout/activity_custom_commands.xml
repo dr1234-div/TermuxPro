@@ -45,16 +45,37 @@
                 android:textColor="#F5F8FA"
                 android:textSize="22sp"
                 android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:minHeight="56dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/custom_commands_templates"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:minHeight="48dp"
+                android:text="@string/custom_commands_templates"
+                android:textAllCaps="false"
+                android:textColor="#D8E4EC"
+                android:backgroundTint="#24394A" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/custom_commands_add"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
                 android:minHeight="48dp"
                 android:text="@string/custom_commands_add"
                 android:textAllCaps="false"
-                android:textColor="#68E0B7" />
+                android:textColor="#062118"
+                android:backgroundTint="#68E0B7" />
         </LinearLayout>
 
         <LinearLayout
@@ -92,10 +113,21 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/custom_commands_template_hint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/workspace_card_background"
+            android:padding="14dp"
+            android:text="@string/custom_commands_template_hint"
+            android:textColor="#B8C8D4"
+            android:textSize="14sp" />
+
+        <TextView
             android:id="@+id/custom_commands_empty"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="12dp"
             android:background="@drawable/workspace_card_background"
             android:gravity="center"
             android:padding="24dp"

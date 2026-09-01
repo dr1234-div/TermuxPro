@@ -8,6 +8,10 @@
 兼容回归清单，不能作为主线需求继续研究或重做。评审时必须写明分类：远程工作区、AI CLI、tmux/Git
 可视化、自定义快捷指令、移动端工作流效率、上下文工具箱，或原始能力兼容守护；只有前六类进入主线
 迭代，最后一类只用于证明 TermuxPro 没有破坏官方 Termux 原有能力。
+产品负责人在拆需求时必须先回答“这是不是 TermuxPro 增值层”。如果只是原始终端、PTY、包管理、本地
+shell、基础会话、基础快捷键或基础文件能力，不进入产品主线，只补不破坏回归、上游同步风险和安全回退。
+真正进入主线的工作应围绕手机 SSH 远程开发、Claude/Codex CLI、tmux/Git 管理、自定义快捷指令和低频
+工具箱，把用户从记命令、找入口、判断风险和恢复上下文的负担中解放出来。
 
 ## P0
 
@@ -21,7 +25,9 @@
 | 已完成 | 发布版本单一来源 | `termuxpro-version.properties` 已驱动 Gradle、构建脚本、产物目录和 Release 工作流，并经候选标签与 0.2.0 正式构建验证 |
 | 已完成 | 0.4.0-rc.2 发布前验收门禁 | PR #48 已将 Release 改为先验收待发布签名 APK 再创建公开 Release，并消除研发 PR action_required 噪声；`v0.4.0-rc.2` Release run `33379101232` 已验证签名 APK 覆盖升级先于公开 Release 创建 |
 | 进行中 | 远程 AI 会话中心 | tmux 全量查看、显式进入和 TermuxPro 自有会话停止已实现；Codex/Claude 已支持新建与历史选择，待补历史元数据展示和安全管理能力 |
+| 已完成 | AI CLI 启动上下文防误入 | 增值服务分类：AI CLI、远程工作区、移动端工作流效率。PR #176 已合入 dev：工作台入口继续展示远程目标并创建独立远程终端；终端工具箱入口明确提示命令会发送到当前可见终端，并在新建/历史操作项中预览 `claude`、`claude --resume`、`codex`、`codex resume` 等实际命令；本地 pre-push、分支 CI、Emulator UI 和 dev 收尾 CI 均通过，证据见 `test/reports/ai-launch-context-clarity-20260901.md` |
 | 进行中 | 增值服务优先与原始能力守护 | 不再把 Termux 原有终端基础能力作为重复研发方向；每轮选题必须先通过增值服务准入检查，优先远程/AI/tmux/Git/快捷指令/移动 UX/工具箱增值层；滚动、快捷键、本地会话、PTY、原始 shell 可用性只作为“不受影响”守护测试和回归面 |
+| 已完成 | 快捷指令模板降低手机输入成本 | 增值服务分类：自定义快捷指令、AI CLI、tmux/Git 可视化和移动端工作流效率。PR #174 已合入 dev：新增 Codex、Claude、Git、tmux 和前端检查模板，模板只预填编辑器，不自动保存或执行，并继续走危险命令和秘密检测；本地 pre-push、分支 CI、手动 Emulator UI 和 dev 收尾 CI 均通过，证据见 `test/reports/custom-command-templates-20260901.md` |
 | 进行中 | CI 成本与失败噪声治理 | 文档/规则/验收证据类变更不应触发模拟器和全量 Android 构建；CI 保留静态门禁，自动 PR 按路径判断是否等待 UI run；合并后 dev 收尾 CI 必须按 merge commit 与 dev 分支查询 workflow_dispatch，避免实际成功后 workflow 空等超时并发送失败邮件。2026-09-01 复核最近 100 条 Actions，真实 failure 仅来自已修复的 0.9.0-rc.2 发布链路，近期 cancelled 属于并发取消或被替代 run，不等同代码失败；后续每轮合入后先核查失败 run 再进入下一切片 |
 | 进行中 | 建立持续产品体验闭环 | 已定义体验原则、核心旅程、独立角色驳回权、度量和门禁；首轮产品/UI 审计已完成且结论为不通过，待 QA 独立审计和按纵向旅程推进整改 |
 | 进行中 | 修复 200% 字体关键页面溢出 | PR #25 已修复首页和 AI 选择；PR #28 已修复 Git/远程目录/文件预览；PR #29 当前证据确认 tmux、项目任务和连接诊断的返回/刷新/恢复入口在 200% 字体下完整可见。代码正文保留格式化横向滚动，待补可选自动换行、行号/跳转与英文矩阵 |
@@ -38,6 +44,8 @@
 | 已完成 | 0.9.0 稳定版发布 | `v0.9.0` 已发布为正式版，保留 rc.3 冻结范围并补齐 Release 设备验收脚本空输出诊断；稳定发布 PR #147、master CI run `33507109744` 和 Release run `33507561359` 均通过；APK SHA-256 为 `9818c7b081537d04c74b9390cf878030718dd841619ebf931341296a924ed355`；发布评审见 `test/reports/0.9.0-release-readiness.md` |
 | 已完成 | 0.9.1-rc.1 候选版发布 | `v0.9.0` 后 `dev` 已积累 tmux 归属细分、AI CLI 启动目标上下文、Git 工作台远端目标和 Actions 失败噪声复核等用户可见/维护可见增值改动；`v0.9.1-rc.1` 已发布为 Pre-release，候选 PR #154、分支 CI `33515746823`、自动 PR `33515746920`、dev 收尾 CI `33516217907` 和 Release run `33516755674` 均通过；APK SHA-256 为 `ee34b660a8b448d796864413ccdd6bc4188ac8179914b018e9d2d1b125fba5d3`；发布评审见 `test/reports/0.9.1-rc.1-release-readiness.md` |
 | 已完成 | 0.9.1 稳定版发布 | `v0.9.1` 已发布为正式版，沿用 `0.9.1-rc.1` 已验证冻结范围，不加入新功能；发布 PR #157、CI OOM 修复 PR #158、master CI run `33521956638` 和 Release run `33522531577` 均通过；APK SHA-256 为 `ff0de6b1471ba01dcb6273aba6881862b0e67bad016d6852aeab5278b198d4c4`；发布评审见 `test/reports/0.9.1-release-readiness.md` |
+| 已完成 | 0.9.4-rc.1 候选版发布 | `v0.9.3` 后 `dev` 已积累快捷指令模板、AI CLI 启动上下文防误入、自动 PR 创建稳定性和增值服务边界规则；`v0.9.4-rc.1` 已发布为 Pre-release，候选 PR #178、分支 CI `33551347585`、自动 PR `33551347733`、dev 收尾 CI `33551828340` 和 Release run `33552386533` 均通过；APK SHA-256 为 `a978b62d0285bfd463a7af8e5c108d324fb7bfa146b725b3c06e964c3070e788`；发布评审见 `test/reports/0.9.4-rc.1-release-readiness.md` |
+| 进行中 | 0.9.4 稳定版发布 | `0.9.4-rc.1` 已完成候选门禁且当前无 P0/P1 阻断证据；本轮稳定版沿用候选冻结范围，不新增功能、不研究或重做 Termux 原始能力。当前准备 `0.9.4` 版本源、正式发布说明和稳定发布评审，待通过稳定准备 PR、`dev → master` 发布 PR、master CI、稳定 Release workflow、附件和签名核验后补录证据 |
 | 已完成 | 消除 tmux 名称前缀伪归属 | PR #30 已改为工作区 UUID、目标/端口/路径摘要、tmux server PID、session ID 与创建时间联合核对；名称前缀不再授予管理权限，同名替换必须失败关闭。真实 SSH/tmux fixture、全量 CI 与模拟器 UI 已通过；清除应用数据后的旧会话安全降级为归属未知，不自动认领 |
 | 已完成 | 修复发布设备门禁运行时证据空文件 | `0.6.0-rc.3` Release run `33418901155` 覆盖升级成功，但 artifact 中 `test-artifacts/release-apk/android-runtime.txt` 为空；PR #81 已修复验收脚本，后续即使没有 AndroidRuntime 崩溃也会写入设备型号、Android 版本、ABI、输入法、进程 PID 和无崩溃结论，并补 Fatal Exception 失败回归 |
 
