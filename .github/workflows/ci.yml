@@ -2,6 +2,12 @@ name: TermuxPro CI
 
 on:
   workflow_dispatch:
+    inputs:
+      androidRuntime:
+        description: '是否运行 Android 全量测试、Lint 和 APK 构建'
+        required: false
+        default: 'true'
+        type: boolean
   push:
     branches: [dev, master, 'dev_*', 'hotfix_*']
   pull_request:
@@ -28,7 +34,61 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
+      - name: 判定 Android 运行时门禁
+        id: changes
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          BASE_REF: ${{ github.base_ref }}
+          ANDROID_RUNTIME_INPUT: ${{ inputs.androidRuntime }}
+        run: |
+          is_static_only_file() {
+            case "$1" in
+              README.md|AGENTS.md|docs/**|test/reports/**|.agents/skills/**/*.md|.claude/skills/**/*.md)
+                return 0
+                ;;
+              *)
+                return 1
+                ;;
+            esac
+          }
+
+          if [[ "$EVENT_NAME" == 'workflow_dispatch' && "$ANDROID_RUNTIME_INPUT" == 'false' ]]; then
+            echo 'android_runtime=false' >> "$GITHUB_OUTPUT"
+            echo '仅运行静态门禁：workflow_dispatch 明确关闭 Android 运行时门禁。'
+            exit 0
+          fi
+
+          if [[ "$EVENT_NAME" == 'pull_request' && -n "$BASE_REF" ]]; then
+            git fetch --no-tags --depth=1 origin "$BASE_REF"
+            mapfile -t changed_files < <(git diff --name-only "origin/$BASE_REF"...HEAD)
+          elif [[ -n "${BEFORE_SHA:-}" && "$BEFORE_SHA" != '0000000000000000000000000000000000000000' ]]; then
+            mapfile -t changed_files < <(git diff --name-only "$BEFORE_SHA" "$GITHUB_SHA")
+          else
+            mapfile -t changed_files < <(git diff --name-only HEAD~1 HEAD 2>/dev/null || git ls-files)
+          fi
+
+          if [[ "${#changed_files[@]}" -eq 0 ]]; then
+            echo 'android_runtime=true' >> "$GITHUB_OUTPUT"
+            echo '未识别到变更文件，按完整 Android 门禁处理。'
+            exit 0
+          fi
+
+          android_runtime=false
+          for file in "${changed_files[@]}"; do
+            if ! is_static_only_file "$file"; then
+              android_runtime=true
+              break
+            fi
+          done
+          echo "android_runtime=$android_runtime" >> "$GITHUB_OUTPUT"
+          if [[ "$android_runtime" == 'true' ]]; then
+            echo '检测到 Android/工具链相关变更，运行完整门禁。'
+          else
+            echo '仅检测到文档、规则或验收证据变更，跳过 Android 重门禁。'
+          fi
       - name: 安装 Android NDK
+        if: steps.changes.outputs.android_runtime == 'true'
         run: |
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'ndk;29.0.14206865'
       - name: 检查仓库秘密边界
@@ -39,9 +99,18 @@ jobs:
             printf '%s\n' "$forbidden_files" >&2
             exit 1
           fi
+      - name: 静态门禁
+        run: |
+          ./scripts/validate-skills.sh
+          ./test/version-metadata-test.sh
+          ./test/workflow-trigger-policy-test.sh
+          ./test/github-cli-wrapper-test.sh
+          ./test/github-check-suites-test.sh
       - name: 启动隔离 SSH 与 tmux fixture
+        if: steps.changes.outputs.android_runtime == 'true'
         run: ./scripts/start-ssh-fixture.sh
       - name: 全模块测试
+        if: steps.changes.outputs.android_runtime == 'true'
         run: |
           for attempt in 1 2 3; do
             echo "全模块测试：第 $attempt 次尝试"
@@ -55,6 +124,7 @@ jobs:
           done
           exit 1
       - name: Lint 与 Debug APK
+        if: steps.changes.outputs.android_runtime == 'true'
         run: ./gradlew --no-daemon --max-workers=2 --stacktrace lint :app:assembleDebug
       - name: 上传测试报告
         if: always()
@@ -66,6 +136,7 @@ jobs:
             **/build/reports/lint-results-*.html
           if-no-files-found: ignore
       - name: 上传 Debug APK
+        if: steps.changes.outputs.android_runtime == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: termuxpro-debug-apk
