@@ -95,6 +95,13 @@ public final class TermuxPreferenceConstants {
         public static final String KEY_TERMINAL_MARGIN_ADJUSTMENT =  "terminal_margin_adjustment";
         public static final boolean DEFAULT_TERMINAL_MARGIN_ADJUSTMENT = true;
 
+        /**
+         * Defines how phone touch scroll gestures are handled in terminal view.
+         * The default keeps shell input safe by scrolling terminal history instead of sending arrow keys.
+         */
+        public static final String KEY_TERMINAL_TOUCH_SCROLL_MODE = "terminal_touch_scroll_mode";
+        public static final String DEFAULT_VALUE_TERMINAL_TOUCH_SCROLL_MODE = "scrollback";
+
 
         /**
          * Defines the key for whether to show terminal toolbar containing extra keys and text input field.

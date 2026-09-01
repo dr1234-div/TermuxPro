@@ -20,6 +20,10 @@
 
     <string name="action_new_session">新建会话</string>
     <string name="action_new_session_failsafe">安全模式</string>
+    <string name="action_close_session">关闭</string>
+    <string name="action_switch_session">切换</string>
+    <string name="action_rename_session">重命名</string>
+    <string name="terminal_session_actions_title">会话操作</string>
     <string name="title_max_terminals_reached">已达到会话数量上限</string>
     <string name="msg_max_terminals_reached">请先关闭已有会话，再创建新会话。</string>
     <string name="title_rename_session">设置会话名称</string>
@@ -107,6 +111,16 @@
     <string name="termux_terminal_view_terminal_margin_adjustment_title">终端边距适配</string>
     <string name="termux_terminal_view_terminal_margin_adjustment_off">关闭终端边距适配。</string>
     <string name="termux_terminal_view_terminal_margin_adjustment_on">启用终端边距适配。它可以尝试修复软键盘遮挡快捷键栏或终端的问题；如果导致屏幕闪烁，请关闭此选项。（默认）</string>
+    <string name="termux_terminal_view_touch_scroll_mode_title">触摸滚动模式</string>
+    <string name="termux_terminal_view_touch_scroll_mode_summary">选择手指上下滑动是阅读终端历史，还是滚动支持鼠标滚轮事件的 AI/TUI 面板。</string>
+    <string-array name="termux_terminal_touch_scroll_mode_labels">
+        <item>滚动终端历史（推荐）</item>
+        <item>滚动 AI/TUI 面板</item>
+    </string-array>
+    <string-array name="termux_terminal_touch_scroll_mode_values">
+        <item>scrollback</item>
+        <item>tui</item>
+    </string-array>
 
     <string name="termux_api_preferences_title">&TERMUX_API_APP_NAME;</string>
     <string name="termux_api_preferences_summary">&TERMUX_API_APP_NAME; 应用设置</string>
@@ -150,8 +164,8 @@
     <string name="workspace_start_claude">Claude Code</string>
     <string name="workspace_start_codex">Codex CLI</string>
     <string name="ai_session_launch_title">启动 %1$s</string>
-    <string name="ai_session_new_action">新建会话（安全默认）</string>
-    <string name="ai_session_pick_history_action">选择历史会话</string>
+    <string name="ai_session_new_action">新建会话（安全默认）\n在当前项目干净启动；共享 Claude 账号推荐使用。</string>
+    <string name="ai_session_pick_history_action">选择历史会话\n只打开 CLI 原生选择器，TermuxPro 不自动进入最近会话。</string>
     <string name="workspace_open_local_terminal">打开本地终端</string>
     <string name="workspace_security_tip">首次连接需确认服务器指纹并输入密码或配置 SSH 密钥；TermuxPro 不会自动进入未指定的 tmux 或 AI 历史会话。</string>
     <string name="workspace_error_host">请输入有效的 SSH 别名、主机或“用户名@主机”。</string>
@@ -162,7 +176,7 @@
     <string name="workspace_open_workbench">工作台</string>
     <string name="workspace_open_workbench_description">返回服务器、项目目录和远程入口</string>
     <string name="terminal_sessions_title">终端会话</string>
-    <string name="terminal_sessions_hint">点击切换会话，长按可重命名</string>
+    <string name="terminal_sessions_hint">点击切换，长按重命名；点“关闭”停止当前会话</string>
     <string name="workspace_command_confirm_title">发送命令到当前会话？</string>
     <string name="workspace_command_confirm_message">以下命令将输入当前终端：\n\n%1$s</string>
     <string name="workspace_command_confirm_action">发送命令</string>
@@ -223,6 +237,10 @@
     <string name="workspace_keys_shell_applied">已切换为 Shell 键区</string>
     <string name="workspace_keys_ai_applied">已切换为 AI CLI 键区</string>
     <string name="workspace_keys_vim_applied">已切换为 Vim 键区</string>
+    <string name="terminal_touch_scroll_switch_to_scrollback">触摸滚动：终端历史</string>
+    <string name="terminal_touch_scroll_switch_to_tui">触摸滚动：AI/TUI 面板</string>
+    <string name="terminal_touch_scroll_scrollback_applied">手指滑动将滚动终端历史</string>
+    <string name="terminal_touch_scroll_tui_applied">手指滑动将在支持时滚动 AI/TUI 面板</string>
     <string name="workspace_review_diff_action">Git 修改</string>
     <string name="git_diff_title">Git 工作台</string>
     <string name="git_diff_back">返回</string>
@@ -406,6 +424,11 @@
     <string name="terminal_search_empty">在当前可用的终端历史中没有找到匹配内容。</string>
     <string name="terminal_search_truncated">搜索范围限制为最近 1 MB，最多展示 100 条结果。</string>
     <string name="terminal_session_switched">已切换到会话：%1$s</string>
+    <string name="terminal_session_exited">会话已结束：%1$s</string>
+    <string name="terminal_session_close_title">关闭当前会话？</string>
+    <string name="terminal_session_close_message">将停止本地终端会话 %1$s 及其中的前台进程，不会影响远端 tmux 会话。</string>
+    <string name="terminal_session_close_action">关闭会话</string>
+    <string name="terminal_session_close_missing">当前没有可关闭的活动会话。</string>
     <string name="task_sessions_title">tmux 会话</string>
     <string name="task_sessions_loading">正在读取远端 tmux 会话…</string>
     <string name="task_sessions_ready">点击会话可进入；TermuxPro 自有会话还可重命名或停止。</string>

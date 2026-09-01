@@ -43,6 +43,9 @@ Access、`:danger-full-access` 或 approval policy 为 `never`，禁止传入 `r
 不得因系统 Python 缺少 PyYAML 再次中断或临时向系统环境安装依赖。
 GitHub API 操作统一使用 `scripts/github-cli.sh`，由它解析系统或项目级 CLI，禁止直接依赖当前 `PATH`。
 所有 Gradle/Java 操作先 source `scripts/resolve-jdk17.sh`，禁止再次手工选择只有 JRE 能力的系统目录。
+推送研发分支前先运行 `scripts/pre-push-smoke.sh`，按相对 `origin/dev` 的变更类型自动补跑相关
+Robolectric 冒烟测试。UI、资源、中文文案、终端反馈、Git 或 tmux 入口变更不得只跑静态脚本后依赖
+远端 CI 首次发现断言不匹配；本机资源不足时记录原因并至少运行脚本的静态映射校验。
 
 红线包括：修改系统或其他用户环境、泄露秘密/公司数据、绕过资源守卫、删除公开 Release/稳定标签/
 用户数据、伪造验收证据、向 `master` 发布未经门禁的稳定版，以及超出 TermuxPro 范围的外部变更。

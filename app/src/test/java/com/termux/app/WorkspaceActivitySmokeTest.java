@@ -329,9 +329,13 @@ public class WorkspaceActivitySmokeTest {
         AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
         assertNotNull(dialog);
         assertEquals("启动 Claude Code", shadowOf(dialog).getTitle());
-        assertEquals("新建会话（安全默认）", dialog.getListView().getAdapter().getItem(0));
-        assertEquals("选择历史会话", dialog.getListView().getAdapter().getItem(1));
+        assertEquals("新建会话（安全默认）\n在当前项目干净启动；共享 Claude 账号推荐使用。",
+            dialog.getListView().getAdapter().getItem(0));
+        assertEquals("选择历史会话\n只打开 CLI 原生选择器，TermuxPro 不自动进入最近会话。",
+            dialog.getListView().getAdapter().getItem(1));
         assertEquals(2,
+            dialog.getListView().getAdapter().getCount());
+        assertEquals(3,
             ((android.widget.TextView) dialog.getListView().getChildAt(0)).getMaxLines());
         assertTrue(((android.widget.TextView) dialog.getListView().getChildAt(0)).getPaddingEnd() > 0);
         assertEquals(activity.getColor(R.color.tp_primary),

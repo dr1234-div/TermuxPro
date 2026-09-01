@@ -20,13 +20,16 @@ def require(pattern: str, message: str) -> None:
 
 require(
     r'public boolean onScroll\(MotionEvent e, float distanceX, float distanceY\).*?'
-    r'else \{.*?scrolledWithFinger = true;.*?doScroll\(e, deltaRows, true\);',
-    "手指拖动必须直接进入 scrollback，不能走默认 doScroll 或方向键历史。",
+    r'else \{.*?scrolledWithFinger = true;.*?'
+    r'doScroll\(e, deltaRows, shouldForceScrollbackForScrollEvent\(e,\s*'
+    r'mTouchScrollMode, mEmulator\.isMouseTrackingActive\(\)\)\);',
+    "手指拖动必须经过触摸滚动策略，不能走默认 doScroll 或方向键历史。",
 )
 
 require(
-    r'final boolean forceScrollbackAtStartOfFling = !e2\.isFromSource\(InputDevice\.SOURCE_MOUSE\);',
-    "手指惯性滑动必须以非鼠标事件作为 scrollback 判断来源。",
+    r'final boolean forceScrollbackAtStartOfFling = shouldForceScrollbackForScrollEvent\(e2,\s*'
+    r'mTouchScrollMode, mEmulator\.isMouseTrackingActive\(\)\);',
+    "手指惯性滑动必须经过触摸滚动策略判断。",
 )
 
 require(
@@ -42,8 +45,16 @@ require(
 
 require(
     r'public static boolean shouldForceScrollbackForScrollEvent\(@Nullable MotionEvent event\) \{\s*'
-    r'return event != null && !event\.isFromSource\(InputDevice\.SOURCE_MOUSE\);',
-    "触摸/非鼠标滚动必须强制 scrollback，只有外接鼠标保留程序内滚动兼容。",
+    r'return shouldForceScrollbackForScrollEvent\(event, TOUCH_SCROLL_MODE_SCROLLBACK, false\);',
+    "默认触摸滚动策略必须强制 scrollback，只有外接鼠标保留程序内滚动兼容。",
+)
+
+require(
+    r'public static boolean shouldForceScrollbackForScrollEvent\(@Nullable MotionEvent event,\s*'
+    r'@Nullable String touchScrollMode,\s*boolean mouseTrackingActive\).*?'
+    r'TOUCH_SCROLL_MODE_TUI\.equals\(touchScrollMode\) && mouseTrackingActive\).*?return false;.*?'
+    r'return true;',
+    "AI/TUI 模式只能在鼠标追踪可用时发送滚轮，否则触摸仍必须滚动 scrollback。",
 )
 
 require(
@@ -54,13 +65,13 @@ require(
 )
 PY
 
-if ! grep -Fq 'doScroll(e, deltaRows, true);' "$source_file"; then
-    echo "触摸滑动必须强制滚动 scrollback，不能调用默认 doScroll。" >&2
+if ! grep -Fq 'doScroll(e, deltaRows, shouldForceScrollbackForScrollEvent(e,' "$source_file"; then
+    echo "触摸滑动必须走触摸滚动策略，不能调用默认 doScroll。" >&2
     exit 1
 fi
 
-if ! grep -Fq 'final boolean forceScrollbackAtStartOfFling = !e2.isFromSource(InputDevice.SOURCE_MOUSE);' "$source_file"; then
-    echo "触摸 fling 必须使用 scrollback 范围，不能沿用鼠标追踪范围。" >&2
+if ! grep -Fq 'final boolean forceScrollbackAtStartOfFling = shouldForceScrollbackForScrollEvent(e2,' "$source_file"; then
+    echo "触摸 fling 必须使用触摸滚动策略，不能沿用鼠标追踪范围。" >&2
     exit 1
 fi
 
@@ -71,6 +82,11 @@ fi
 
 if ! grep -Fq 'doScroll(event, rowsDown, shouldForceScrollbackForScrollEvent(event));' "$source_file"; then
     echo "默认 doScroll 必须自动识别触摸来源并强制滚动 scrollback。" >&2
+    exit 1
+fi
+
+if ! grep -Fq 'TOUCH_SCROLL_MODE_TUI.equals(touchScrollMode) && mouseTrackingActive' "$source_file"; then
+    echo "AI/TUI 滚动模式必须只在鼠标追踪可用时发送滚轮。" >&2
     exit 1
 fi
 
