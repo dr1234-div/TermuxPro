@@ -41,17 +41,25 @@ public class TerminalProjectToolsMenuTest {
         assertEquals(TerminalProjectToolsMenu.TOOL_PROJECT_CHECK, menu.getItem(9).getItemId());
         assertEquals("项目任务", menu.getItem(9).getTitle().toString());
 
-        assertEquals("AI 安全操作", menu.getItem(10).getTitle().toString());
+        assertEquals("连接与安全", menu.getItem(10).getTitle().toString());
         assertFalse(menu.getItem(10).isEnabled());
-        assertEquals(TerminalProjectToolsMenu.TOOL_AI_CONFIRM, menu.getItem(11).getItemId());
-        assertEquals(TerminalProjectToolsMenu.TOOL_AI_REJECT, menu.getItem(12).getItemId());
-        assertEquals(TerminalProjectToolsMenu.TOOL_INTERRUPT, menu.getItem(13).getItemId());
+        assertEquals(TerminalProjectToolsMenu.TOOL_CONNECTION_DIAGNOSTIC,
+            menu.getItem(11).getItemId());
+        assertEquals("环境诊断", menu.getItem(11).getTitle().toString());
+        assertEquals(TerminalProjectToolsMenu.TOOL_SSH_KEYS, menu.getItem(12).getItemId());
+        assertEquals("SSH 密钥", menu.getItem(12).getTitle().toString());
 
-        assertEquals("键区切换", menu.getItem(14).getTitle().toString());
-        assertFalse(menu.getItem(14).isEnabled());
-        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_SHELL, menu.getItem(15).getItemId());
-        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_AI, menu.getItem(16).getItemId());
-        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_VIM, menu.getItem(17).getItemId());
+        assertEquals("AI 安全操作", menu.getItem(13).getTitle().toString());
+        assertFalse(menu.getItem(13).isEnabled());
+        assertEquals(TerminalProjectToolsMenu.TOOL_AI_CONFIRM, menu.getItem(14).getItemId());
+        assertEquals(TerminalProjectToolsMenu.TOOL_AI_REJECT, menu.getItem(15).getItemId());
+        assertEquals(TerminalProjectToolsMenu.TOOL_INTERRUPT, menu.getItem(16).getItemId());
+
+        assertEquals("键区切换", menu.getItem(17).getTitle().toString());
+        assertFalse(menu.getItem(17).isEnabled());
+        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_SHELL, menu.getItem(18).getItemId());
+        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_AI, menu.getItem(19).getItemId());
+        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_VIM, menu.getItem(20).getItemId());
     }
 
     @Test

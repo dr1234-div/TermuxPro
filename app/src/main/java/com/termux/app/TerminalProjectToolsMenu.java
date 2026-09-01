@@ -24,6 +24,8 @@ final class TerminalProjectToolsMenu {
     static final int TOOL_CUSTOM_COMMANDS = 12;
     static final int TOOL_TOUCH_SCROLL_MODE = 13;
     static final int TOOL_REMOTE_FILES = 14;
+    static final int TOOL_CONNECTION_DIAGNOSTIC = 15;
+    static final int TOOL_SSH_KEYS = 16;
 
     private TerminalProjectToolsMenu() {}
 
@@ -46,6 +48,10 @@ final class TerminalProjectToolsMenu {
         menu.add(Menu.NONE, TOOL_GIT_DIFF, Menu.NONE, R.string.workspace_git_diff_action);
         menu.add(Menu.NONE, TOOL_REMOTE_FILES, Menu.NONE, R.string.workspace_remote_files_action);
         menu.add(Menu.NONE, TOOL_PROJECT_CHECK, Menu.NONE, R.string.workspace_project_tasks_action);
+
+        addHeader(context, menu, R.string.terminal_tools_section_connection);
+        menu.add(Menu.NONE, TOOL_CONNECTION_DIAGNOSTIC, Menu.NONE, R.string.workspace_diagnostic_action);
+        menu.add(Menu.NONE, TOOL_SSH_KEYS, Menu.NONE, R.string.workspace_ssh_keys_action);
 
         addHeader(context, menu, R.string.terminal_tools_section_ai);
         menu.add(Menu.NONE, TOOL_AI_CONFIRM, Menu.NONE, R.string.ai_action_confirm_selection);

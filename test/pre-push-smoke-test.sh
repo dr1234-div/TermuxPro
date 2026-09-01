@@ -46,6 +46,10 @@ require_contains "$source_text" "ProjectTaskDetectorTest" \
     "项目任务入口或检测器变更必须触发项目任务检测测试。"
 require_contains "$source_text" "RemoteFilesNavigationTest" \
     "远端文件入口变更必须触发远端文件导航测试。"
+require_contains "$source_text" "ConnectionDiagnosticNavigationTest" \
+    "环境诊断入口变更必须触发连接诊断导航测试。"
+require_contains "$source_text" "SshKeysNavigationTest" \
+    "SSH 密钥入口变更必须触发 SSH 密钥导航测试。"
 require_contains "$source_text" "scripts/validate-skills.sh" \
     "推送前冒烟必须包含 Skill 校验，避免规则漂移。"
 require_contains "$source_text" "scripts/resource-guard.sh normal" \

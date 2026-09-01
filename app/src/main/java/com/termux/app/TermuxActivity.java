@@ -760,6 +760,12 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 case TerminalProjectToolsMenu.TOOL_PROJECT_CHECK:
                     openProjectTasks();
                     return true;
+                case TerminalProjectToolsMenu.TOOL_CONNECTION_DIAGNOSTIC:
+                    openConnectionDiagnostic();
+                    return true;
+                case TerminalProjectToolsMenu.TOOL_SSH_KEYS:
+                    openSshKeys();
+                    return true;
                 case TerminalProjectToolsMenu.TOOL_TMUX_SESSIONS:
                     openTaskSessions();
                     return true;
@@ -822,6 +828,24 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         Intent intent = RemoteFilesNavigation.newIntentForActiveWorkspace(this);
         if (intent == null) {
             showToast(getString(R.string.terminal_remote_files_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
+    }
+
+    private void openConnectionDiagnostic() {
+        Intent intent = ConnectionDiagnosticNavigation.newIntentForActiveWorkspace(this);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_connection_diagnostic_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
+    }
+
+    private void openSshKeys() {
+        Intent intent = SshKeysNavigation.newIntentForActiveWorkspace(this);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_ssh_keys_invalid_workspace), true);
             return;
         }
         startActivity(intent);
