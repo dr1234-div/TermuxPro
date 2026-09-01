@@ -156,6 +156,8 @@ public class WorkspaceCommandBuilderTest {
             "/srv/team's app", "feature/local-ui");
         String remoteBranch = WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(
             "/srv/team's app", "origin/feature/user's-work");
+        String deleteBranch = WorkspaceCommandBuilder.buildGitDeleteLocalBranchRemoteCommand(
+            "/srv/team's app", "feature/local-ui");
         String fetch = WorkspaceCommandBuilder.buildGitFetchUpstreamRemoteCommand("/srv/team's app");
         String pull = WorkspaceCommandBuilder.buildGitPullFastForwardRemoteCommand("/srv/team's app");
         String push = WorkspaceCommandBuilder.buildGitPushUpstreamRemoteCommand("/srv/team's app");
@@ -172,6 +174,11 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(branch.endsWith("'feature/user'\\''s-work'"));
         assertTrue(newBranch.contains("git check-ref-format --branch 'feature/local-ui'"));
         assertTrue(newBranch.contains("git switch -c 'feature/local-ui'"));
+        assertTrue(deleteBranch.contains("git branch -d -- 'feature/local-ui'"));
+        assertTrue(!deleteBranch.contains("git branch -D"));
+        assertTrue(!deleteBranch.contains("git push"));
+        assertTrue(deleteBranch.contains("exit 79"));
+        assertTrue(deleteBranch.contains("exit 80"));
         assertTrue(remoteBranch.contains("git show-ref --verify --quiet refs/heads/'feature/user'\\''s-work'"));
         assertTrue(remoteBranch.endsWith("git switch --track 'origin/feature/user'\\''s-work'"));
         assertTrue(fetch.contains("git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}'"));
@@ -198,6 +205,10 @@ public class WorkspaceCommandBuilderTest {
             () -> WorkspaceCommandBuilder.buildGitCreateBranchRemoteCommand("~/app", "bad branch"));
         assertThrows(IllegalArgumentException.class,
             () -> WorkspaceCommandBuilder.buildGitCreateBranchRemoteCommand("~/app", "-bad"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitDeleteLocalBranchRemoteCommand("~/app", "bad branch"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitDeleteLocalBranchRemoteCommand("~/app", "-bad"));
         assertThrows(IllegalArgumentException.class,
             () -> WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand("~/app", ""));
         assertThrows(IllegalArgumentException.class,
@@ -288,6 +299,28 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(createdOverview.localBranches.contains("mobile-ui"));
         assertEquals(74, runShell(WorkspaceCommandBuilder.buildGitCreateBranchRemoteCommand(
             repository.toString(), "mobile-ui"), new HashMap<>()));
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitDeleteLocalBranchRemoteCommand(
+            repository.toString(), "feature"), new HashMap<>()));
+        ShellOutput deleted = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        assertTrue(!GitRepositoryOverview.parse(deleted.output).localBranches.contains("feature"));
+        assertEquals(80, runShell(WorkspaceCommandBuilder.buildGitDeleteLocalBranchRemoteCommand(
+            repository.toString(), "feature"), new HashMap<>()));
+        assertEquals(79, runShell(WorkspaceCommandBuilder.buildGitDeleteLocalBranchRemoteCommand(
+            repository.toString(), "mobile-ui"), new HashMap<>()));
+
+        String unmerged = "cd -- " + WorkspaceCommandBuilder.shellQuote(repository.toString())
+            + " && git switch -q -c unmerged-delete"
+            + " && printf unmerged > unmerged.txt && git add unmerged.txt"
+            + " && git commit -q -m unmerged-delete"
+            + " && git switch -q master";
+        assertEquals(0, runShell(unmerged, new HashMap<>()));
+        assertTrue(runShell(WorkspaceCommandBuilder.buildGitDeleteLocalBranchRemoteCommand(
+            repository.toString(), "unmerged-delete"), new HashMap<>()) != 0);
+        ShellOutput preserved = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        assertTrue(GitRepositoryOverview.parse(preserved.output).localBranches
+            .contains("unmerged-delete"));
     }
 
     @Test

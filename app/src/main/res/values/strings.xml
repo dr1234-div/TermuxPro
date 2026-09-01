@@ -418,6 +418,14 @@
     <string name="git_workbench_creating_branch">Creating and switching to %1$s…</string>
     <string name="git_workbench_create_branch_conflict">Branch was not created: local branch %1$s already exists. Refresh, then switch from the local branch list.</string>
     <string name="git_workbench_create_branch_failed">Git did not create the branch. Your working tree was preserved.\n\n%1$s</string>
+    <string name="git_workbench_delete_branch">Delete local branch</string>
+    <string name="git_workbench_delete_branch_message">Delete local branch %1$s? This only runs safe deletion: it will not delete the current branch, will not delete any remote branch, and will not force. If Git sees the branch as unmerged, it will refuse.</string>
+    <string name="git_workbench_delete_branch_action">Delete branch</string>
+    <string name="git_workbench_deleting_branch">Safely deleting local branch %1$s…</string>
+    <string name="git_workbench_no_deletable_local_branches">There are no local branches that can be safely deleted. The current branch cannot be deleted here, and remote branches are not deleted here.</string>
+    <string name="git_workbench_delete_branch_current_blocked">The current branch cannot be deleted. Switch to another branch first, then delete the target local branch.</string>
+    <string name="git_workbench_delete_branch_missing">Local branch %1$s does not exist. Refresh, then retry.</string>
+    <string name="git_workbench_delete_branch_failed">Git did not delete the local branch. Your working tree and remote branches were preserved.\n\n%1$s</string>
     <string name="git_workbench_current_branch">%1$s  ·  current</string>
     <string name="git_workbench_local_branch">Local  ·  %1$s</string>
     <string name="git_workbench_remote_branch">Remote  ·  %1$s</string>

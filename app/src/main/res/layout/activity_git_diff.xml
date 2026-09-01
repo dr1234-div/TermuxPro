@@ -160,6 +160,16 @@
                             android:textColor="#F5F8FA" />
 
                         <Button
+                            android:id="@+id/git_overview_delete_branch_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="#4A2A2F"
+                            android:minHeight="48dp"
+                            android:text="@string/git_workbench_delete_branch"
+                            android:textColor="#FFDDD8" />
+
+                        <Button
                             android:id="@+id/git_overview_fetch_button"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"

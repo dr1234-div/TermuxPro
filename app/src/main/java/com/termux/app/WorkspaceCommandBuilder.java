@@ -181,6 +181,24 @@ final class WorkspaceCommandBuilder {
             + " && git switch -c " + shellQuote(branch);
     }
 
+    /**
+     * 安全删除本地分支。
+     *
+     * 只使用 `git branch -d`，不会删除当前分支、不会 force、不会删除远端分支或推送。
+     */
+    @NonNull
+    static String buildGitDeleteLocalBranchRemoteCommand(@NonNull String path, @NonNull String branch) {
+        if (!isSafeGitBranchName(branch)) throw new IllegalArgumentException("Invalid branch");
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && git check-ref-format --branch " + shellQuote(branch) + " >/dev/null"
+            + " && if ! git show-ref --verify --quiet refs/heads/" + shellQuote(branch)
+            + "; then exit 80; fi"
+            + " && if current=$(git symbolic-ref --quiet --short HEAD 2>/dev/null)"
+            + " && [ \"$current\" = " + shellQuote(branch) + " ]; then exit 79; fi"
+            + " && git branch -d -- " + shellQuote(branch);
+    }
+
     /** 暂存当前 Git 仓库的全部工作区改动；只改 index，不提交也不推送。 */
     @NonNull
     static String buildGitStageAllRemoteCommand(@NonNull String path) {
