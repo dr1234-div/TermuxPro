@@ -39,6 +39,7 @@ public class TaskSessionsActivityTest {
         assertEquals(View.VISIBLE, create.getVisibility());
         TextView ownedRow = (TextView) sessions.getAdapter().getView(0, null, sessions);
         String rowText = ownedRow.getText().toString();
+        assertTrue(rowText.startsWith("feature-login"));
         assertTrue(rowText.contains("TermuxPro 创建"));
         assertTrue(rowText.contains("创建 "));
         assertTrue(rowText.contains("活跃 "));

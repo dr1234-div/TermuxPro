@@ -116,7 +116,8 @@ public final class TaskSessionsActivity extends AppCompatActivity {
             + "1788150000\000\000\000";
         mProgress.setVisibility(View.GONE);
         mSessions.clear();
-        mSessions.addAll(TmuxSessionParser.parse(output, mOwnerToken, fingerprint));
+        mSessions.addAll(TmuxSessionDisplayOrder.sorted(TmuxSessionParser.parse(output,
+            mOwnerToken, fingerprint)));
         mAdapter.notifyDataSetChanged();
         mCreate.setVisibility(View.VISIBLE);
         styleCreateButton(false);
@@ -153,8 +154,8 @@ public final class TaskSessionsActivity extends AppCompatActivity {
             showMissingTmux();
             return;
         }
-        mSessions.addAll(TmuxSessionParser.parse(result.output, mOwnerToken,
-            WorkspaceCommandBuilder.workspaceFingerprint(mHost, mPort, mProjectPath)));
+        mSessions.addAll(TmuxSessionDisplayOrder.sorted(TmuxSessionParser.parse(result.output,
+            mOwnerToken, WorkspaceCommandBuilder.workspaceFingerprint(mHost, mPort, mProjectPath))));
         mAdapter.notifyDataSetChanged();
         mCreate.setEnabled(true);
         mCreate.setVisibility(View.VISIBLE);
