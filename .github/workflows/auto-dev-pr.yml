@@ -65,8 +65,14 @@ jobs:
             return 1
           }
 
-          wait_for_workflow '.github/workflows/ci.yml' '完整 CI'
-          wait_for_workflow '.github/workflows/ui-emulator.yml' '模拟器 UI'
+          if ! wait_for_workflow '.github/workflows/ci.yml' '完整 CI'; then
+            echo "预合并完整 CI 未通过；PR #$pr_number 已保留等待后续提交修复，自动 PR 工作流不再重复上报失败。"
+            exit 0
+          fi
+          if ! wait_for_workflow '.github/workflows/ui-emulator.yml' '模拟器 UI'; then
+            echo "预合并模拟器 UI 未通过；PR #$pr_number 已保留等待后续提交修复，自动 PR 工作流不再重复上报失败。"
+            exit 0
+          fi
 
           is_candidate_release_branch() {
             [[ "$HEAD_BRANCH" =~ ^dev_release[0-9]+Rc[1-9][0-9]*_[0-9]{8}$ ]]
