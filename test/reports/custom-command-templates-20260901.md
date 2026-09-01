@@ -32,6 +32,13 @@
   `BUILD SUCCESSFUL in 36s`。
 - 推送后自动 PR 若创建阶段卡住，应由同分支后续提交自动取消旧 run；后续工作流使用非交互 Pulls API
   创建 PR。
+- PR #174：`https://github.com/heydarey/TermuxPro/pull/174`，已合入 `dev`，merge commit
+  `0020fdc0c3dd3d4e751a4af441986c5d41f1fbe9`。
+- 分支 CI：`33546873516`，成功。
+- 手动 Emulator UI：`33547207303`，成功；用于补齐第二次 push path filter 未自动触发的最新 SHA
+  UI 验收。
+- 自动 PR 收尾：`33546873485`，重跑后成功。
+- dev 合并后 CI：`33547913740`，成功。
 
 ## 回归面
 
