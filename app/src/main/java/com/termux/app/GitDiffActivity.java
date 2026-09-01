@@ -35,6 +35,7 @@ public final class GitDiffActivity extends AppCompatActivity {
     private static final String EXTRA_HOST = "host";
     private static final String EXTRA_PORT = "port";
     private static final String EXTRA_PATH = "path";
+    static final String EXTRA_START_IN_DIFF = "start_in_diff";
     static final String EXTRA_UI_TEST_OVERVIEW = "ui_test_overview";
     private static final int MAX_OUTPUT_BYTES = 1_500_000;
 
@@ -98,7 +99,8 @@ public final class GitDiffActivity extends AppCompatActivity {
         });
         String uiTestOverview = getIntent().getStringExtra(EXTRA_UI_TEST_OVERVIEW);
         if (uiTestOverview == null) {
-            loadOverview();
+            if (getIntent().getBooleanExtra(EXTRA_START_IN_DIFF, false)) loadDiff();
+            else loadOverview();
         } else {
             String path = getIntent().getStringExtra(EXTRA_PATH);
             showOverviewForTesting(path == null ? "" : path, uiTestOverview);

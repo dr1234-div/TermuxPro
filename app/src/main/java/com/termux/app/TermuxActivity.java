@@ -331,6 +331,8 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
         if (mIsInvalidState) return;
 
+        updateTerminalToolsButtonState();
+
         if (mTermuxTerminalSessionActivityClient != null)
             mTermuxTerminalSessionActivityClient.onResume();
 
@@ -695,6 +697,18 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             showAiLaunchDialog(AiCliLaunchCommand.Tool.CODEX));
         findViewById(R.id.terminal_prompt_button).setOnClickListener(view -> showPromptComposer());
         findViewById(R.id.terminal_tools_button).setOnClickListener(this::showProjectTools);
+        updateTerminalToolsButtonState();
+    }
+
+    /** 在 TermuxPro 增值工具入口直接暴露当前触摸滚动语义，避免用户误以为滑动失效。 */
+    private void updateTerminalToolsButtonState() {
+        TextView tools = findViewById(R.id.terminal_tools_button);
+        if (tools == null || mPreferences == null) return;
+        boolean tuiMode = TerminalView.TOUCH_SCROLL_MODE_TUI.equals(
+            mPreferences.getTerminalTouchScrollMode());
+        int label = TerminalProjectToolsMenu.toolsButtonLabel(tuiMode);
+        tools.setText(label);
+        tools.setContentDescription(getString(label));
     }
 
     private void startAiCli(String command) {
@@ -710,6 +724,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         AlertDialog dialog = new AlertDialog.Builder(this)
             .setTitle(getString(R.string.ai_session_launch_title,
                 AiCliLaunchCommand.displayName(tool)))
+            .setMessage(AiCliLaunchCommand.guidanceMessage(tool))
             .setItems(actions, (selectionDialog, which) -> startAiCli(AiCliLaunchCommand.command(tool,
                 which == 0 ? AiCliLaunchCommand.Mode.NEW_SESSION :
                     AiCliLaunchCommand.Mode.PICK_HISTORY)))
@@ -735,22 +750,31 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                     startActivity(new Intent(this, CustomCommandsActivity.class));
                     return true;
                 case TerminalProjectToolsMenu.TOOL_GIT_STATUS:
-                    confirmAndSendCommand("git status --short --branch");
+                    openGitWorkbench(false);
                     return true;
                 case TerminalProjectToolsMenu.TOOL_GIT_DIFF:
-                    confirmAndSendCommand("git diff --color=always --stat && git diff --color=always");
+                    openGitWorkbench(true);
+                    return true;
+                case TerminalProjectToolsMenu.TOOL_REMOTE_FILES:
+                    openRemoteFiles();
                     return true;
                 case TerminalProjectToolsMenu.TOOL_PROJECT_CHECK:
-                    confirmAndSendCommand("if [ -f package.json ]; then " +
-                        "if command -v pnpm >/dev/null 2>&1; then pnpm test; " +
-                        "elif command -v npm >/dev/null 2>&1; then npm test; fi; " +
-                        "elif [ -x ./mvnw ]; then ./mvnw test; " +
-                        "elif [ -f pom.xml ]; then mvn test; " +
-                        "elif [ -x ./gradlew ]; then ./gradlew test; " +
-                        "else printf 'No supported project check was detected.\\n'; fi");
+                    openProjectTasks();
+                    return true;
+                case TerminalProjectToolsMenu.TOOL_START_WEB_PREVIEW:
+                    startWebPreviewTunnel();
+                    return true;
+                case TerminalProjectToolsMenu.TOOL_OPEN_WEB_PREVIEW:
+                    openWebPreviewBrowser();
+                    return true;
+                case TerminalProjectToolsMenu.TOOL_CONNECTION_DIAGNOSTIC:
+                    openConnectionDiagnostic();
+                    return true;
+                case TerminalProjectToolsMenu.TOOL_SSH_KEYS:
+                    openSshKeys();
                     return true;
                 case TerminalProjectToolsMenu.TOOL_TMUX_SESSIONS:
-                    confirmAndSendCommand("tmux list-sessions");
+                    openTaskSessions();
                     return true;
                 case TerminalProjectToolsMenu.TOOL_AI_CONFIRM:
                     confirmAiSelection();
@@ -780,6 +804,78 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         popup.show();
     }
 
+    private void openGitWorkbench(boolean startInDiff) {
+        Intent intent = GitWorkbenchNavigation.newIntentForActiveWorkspace(this, startInDiff);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_git_workbench_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
+    }
+
+    private void openTaskSessions() {
+        Intent intent = TaskSessionsNavigation.newIntentForActiveWorkspace(this);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_task_sessions_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
+    }
+
+    private void openProjectTasks() {
+        Intent intent = ProjectTasksNavigation.newIntentForActiveWorkspace(this);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_project_tasks_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
+    }
+
+    private void openRemoteFiles() {
+        Intent intent = RemoteFilesNavigation.newIntentForActiveWorkspace(this);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_remote_files_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
+    }
+
+    private void startWebPreviewTunnel() {
+        Intent intent = WebPreviewNavigation.newStartTunnelIntentForActiveWorkspace(this);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_web_preview_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
+    }
+
+    private void openWebPreviewBrowser() {
+        Intent intent = WebPreviewNavigation.newOpenBrowserIntentForActiveWorkspace(this);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_web_preview_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
+    }
+
+    private void openConnectionDiagnostic() {
+        Intent intent = ConnectionDiagnosticNavigation.newIntentForActiveWorkspace(this);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_connection_diagnostic_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
+    }
+
+    private void openSshKeys() {
+        Intent intent = SshKeysNavigation.newIntentForActiveWorkspace(this);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_ssh_keys_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
+    }
+
     private void toggleTouchScrollMode() {
         boolean tuiMode = TerminalView.TOUCH_SCROLL_MODE_TUI.equals(
             mPreferences.getTerminalTouchScrollMode());
@@ -787,6 +883,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             TerminalView.TOUCH_SCROLL_MODE_TUI;
         mPreferences.setTerminalTouchScrollMode(nextMode);
         mTerminalView.setTouchScrollMode(nextMode);
+        updateTerminalToolsButtonState();
         showToast(getString(tuiMode ?
             R.string.terminal_touch_scroll_scrollback_applied :
             R.string.terminal_touch_scroll_tui_applied), false);

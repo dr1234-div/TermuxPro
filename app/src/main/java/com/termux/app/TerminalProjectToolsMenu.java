@@ -23,6 +23,11 @@ final class TerminalProjectToolsMenu {
     static final int TOOL_SEARCH_OUTPUT = 11;
     static final int TOOL_CUSTOM_COMMANDS = 12;
     static final int TOOL_TOUCH_SCROLL_MODE = 13;
+    static final int TOOL_REMOTE_FILES = 14;
+    static final int TOOL_CONNECTION_DIAGNOSTIC = 15;
+    static final int TOOL_SSH_KEYS = 16;
+    static final int TOOL_START_WEB_PREVIEW = 17;
+    static final int TOOL_OPEN_WEB_PREVIEW = 18;
 
     private TerminalProjectToolsMenu() {}
 
@@ -43,7 +48,14 @@ final class TerminalProjectToolsMenu {
         addHeader(context, menu, R.string.terminal_tools_section_project);
         menu.add(Menu.NONE, TOOL_GIT_STATUS, Menu.NONE, R.string.workspace_git_status_action);
         menu.add(Menu.NONE, TOOL_GIT_DIFF, Menu.NONE, R.string.workspace_git_diff_action);
-        menu.add(Menu.NONE, TOOL_PROJECT_CHECK, Menu.NONE, R.string.workspace_project_check_action);
+        menu.add(Menu.NONE, TOOL_REMOTE_FILES, Menu.NONE, R.string.workspace_remote_files_action);
+        menu.add(Menu.NONE, TOOL_PROJECT_CHECK, Menu.NONE, R.string.workspace_project_tasks_action);
+        menu.add(Menu.NONE, TOOL_START_WEB_PREVIEW, Menu.NONE, R.string.workspace_start_preview_action);
+        menu.add(Menu.NONE, TOOL_OPEN_WEB_PREVIEW, Menu.NONE, R.string.workspace_open_preview_action);
+
+        addHeader(context, menu, R.string.terminal_tools_section_connection);
+        menu.add(Menu.NONE, TOOL_CONNECTION_DIAGNOSTIC, Menu.NONE, R.string.workspace_diagnostic_action);
+        menu.add(Menu.NONE, TOOL_SSH_KEYS, Menu.NONE, R.string.workspace_ssh_keys_action);
 
         addHeader(context, menu, R.string.terminal_tools_section_ai);
         menu.add(Menu.NONE, TOOL_AI_CONFIRM, Menu.NONE, R.string.ai_action_confirm_selection);
@@ -59,5 +71,10 @@ final class TerminalProjectToolsMenu {
     private static void addHeader(@NonNull Context context, @NonNull Menu menu, int title) {
         MenuItem header = menu.add(Menu.NONE, Menu.NONE, Menu.NONE, context.getString(title));
         header.setEnabled(false);
+    }
+
+    static int toolsButtonLabel(boolean tuiTouchScrollMode) {
+        return tuiTouchScrollMode ? R.string.workspace_tools_tui_scroll_action :
+            R.string.workspace_tools_scrollback_action;
     }
 }

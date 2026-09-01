@@ -2,6 +2,8 @@ package com.termux.app;
 
 import androidx.annotation.NonNull;
 
+import com.termux.R;
+
 /** AI CLI 启动策略。历史会话只能通过用户可见的原生选择器进入。 */
 final class AiCliLaunchCommand {
 
@@ -19,5 +21,10 @@ final class AiCliLaunchCommand {
     @NonNull
     static String displayName(Tool tool) {
         return tool == Tool.CLAUDE ? "Claude Code" : "Codex CLI";
+    }
+
+    static int guidanceMessage(Tool tool) {
+        return tool == Tool.CLAUDE ? R.string.ai_session_claude_guidance :
+            R.string.ai_session_codex_guidance;
     }
 }
