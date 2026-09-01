@@ -140,5 +140,17 @@ if ! grep -Fq 'androidRuntime=false' "$auto_dev_pr_file"; then
     echo "自动研发 PR 的文档/证据类 dev 收尾 CI 必须显式关闭 Android 运行时门禁。" >&2
     exit 1
 fi
+if ! grep -Fq 'wait_for_candidate_release()' "$auto_dev_pr_file"; then
+    echo "候选发布等待必须有 Release 页面兜底，避免 Release 已成功但 run list 查询延迟导致自动 PR 空等。" >&2
+    exit 1
+fi
+if ! grep -Fq 'gh_safe release view "$tag"' "$auto_dev_pr_file"; then
+    echo "候选发布等待必须核验 GitHub Release 页面，而不是只依赖 Actions run list。" >&2
+    exit 1
+fi
+if ! grep -Fq 'APK_SIGNATURE.txt' "$auto_dev_pr_file" || ! grep -Fq 'SHA256SUMS' "$auto_dev_pr_file"; then
+    echo "候选发布 Release 兜底必须核验 APK、SHA256SUMS 和签名报告附件齐全。" >&2
+    exit 1
+fi
 
 echo "研发 PR 与发布 PR 的 workflow 触发策略校验通过。"
