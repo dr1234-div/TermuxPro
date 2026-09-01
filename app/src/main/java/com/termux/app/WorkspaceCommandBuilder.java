@@ -154,7 +154,9 @@ final class WorkspaceCommandBuilder {
             + " && git for-each-ref --sort=-committerdate --format='TP_REMOTE%09%(refname:short)' refs/remotes"
             + " | grep -v '/HEAD$' || true"
             + " && (git log -20 --date=relative --pretty=format:'TP_LOG%x09%h%x09%ar%x09%s'"
-            + " 2>/dev/null || true)";
+            + " 2>/dev/null || true)"
+            + " && printf '\\nTP_STATUS_Z\\000'"
+            + " && git status --porcelain=v1 -z";
     }
 
     /** 只允许调用方从已读取的本地分支列表中选择目标；这里仍执行完整 Shell 转义。 */
@@ -223,6 +225,46 @@ final class WorkspaceCommandBuilder {
             + " && if [ \"$staged\" -eq 0 ]; then exit 75; fi"
             + " && if git rev-parse --verify HEAD >/dev/null 2>&1; then "
             + "git restore --staged -- .; else git rm -r --cached -- . >/dev/null; fi";
+    }
+
+    /** 暂存用户从 Git 状态列表中显式选择的单个路径；只改 index，不提交、不推送、不丢弃内容。 */
+    @NonNull
+    static String buildGitStageFileRemoteCommand(@NonNull String path, @NonNull String filePath) {
+        validateGitFilePath(filePath);
+        String quotedFile = shellQuote(filePath);
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && root=$(git rev-parse --show-toplevel)"
+            + " && cd -- \"$root\""
+            + " && unstaged_tracked=$(git diff --name-only -z -- " + quotedFile
+            + " | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && untracked=$(git ls-files --others --exclude-standard -z -- " + quotedFile
+            + " | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && if [ $((unstaged_tracked + untracked)) -eq 0 ]; then exit 75; fi"
+            + " && git add -A -- " + quotedFile;
+    }
+
+    /** 取消暂存用户从 Git 状态列表中显式选择的单个路径；保留工作区内容，不执行 hard reset。 */
+    @NonNull
+    static String buildGitUnstageFileRemoteCommand(@NonNull String path, @NonNull String filePath) {
+        validateGitFilePath(filePath);
+        String quotedFile = shellQuote(filePath);
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && root=$(git rev-parse --show-toplevel)"
+            + " && cd -- \"$root\""
+            + " && staged=$(git diff --cached --name-only -z -- " + quotedFile
+            + " | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && if [ \"$staged\" -eq 0 ]; then exit 75; fi"
+            + " && if git rev-parse --verify HEAD >/dev/null 2>&1; then "
+            + "git restore --staged -- " + quotedFile + "; else git rm --cached -- "
+            + quotedFile + " >/dev/null; fi";
+    }
+
+    private static void validateGitFilePath(@NonNull String filePath) {
+        if (filePath.isEmpty() || filePath.indexOf('\000') >= 0) {
+            throw new IllegalArgumentException("Invalid file path");
+        }
     }
 
     static boolean isSafeGitBranchName(@NonNull String branch) {

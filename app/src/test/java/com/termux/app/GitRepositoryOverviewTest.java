@@ -30,6 +30,27 @@ public final class GitRepositoryOverviewTest {
         assertEquals(2, result.localBranches.size());
         assertEquals("origin/dev", result.remoteBranches.get(0));
         assertEquals("修复切换逻辑", result.commits.get(0).subject);
+        assertTrue(result.fileChanges.isEmpty());
+    }
+
+    @Test
+    public void parsesNulSeparatedFileChanges() {
+        GitRepositoryOverview result = GitRepositoryOverview.parse(
+            "TP_OVERVIEW\tdev\t0\t3\t2\t2\t\t\t0\n"
+                + "TP_STATUS_Z\000"
+                + "M  staged.txt\000"
+                + " M unstaged.txt\000"
+                + "MM mixed.txt\000"
+                + "?? new file.txt\000");
+
+        assertEquals(4, result.fileChanges.size());
+        assertTrue(result.fileChanges.get(0).hasStagedChange());
+        assertFalse(result.fileChanges.get(0).hasUnstagedChange());
+        assertFalse(result.fileChanges.get(1).hasStagedChange());
+        assertTrue(result.fileChanges.get(1).hasUnstagedChange());
+        assertTrue(result.fileChanges.get(2).hasStagedChange());
+        assertTrue(result.fileChanges.get(2).hasUnstagedChange());
+        assertEquals("new file.txt", result.fileChanges.get(3).path);
     }
 
     @Test
