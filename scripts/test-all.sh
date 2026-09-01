@@ -12,6 +12,7 @@ source "$project_dir/scripts/resolve-jdk17.sh"
 ./test/github-check-suites-test.sh
 ./test/workflow-trigger-policy-test.sh
 ./test/terminal-touch-scrollback-test.sh
+./test/terminal-session-actions-test.sh
 ./test/dialog-readable-style-test.sh
 ./test/skill-validator-bootstrap-test.sh
 ./test/ui-screenshot-manifest-test.sh

@@ -21,6 +21,9 @@
     <string name="action_new_session">新建会话</string>
     <string name="action_new_session_failsafe">安全模式</string>
     <string name="action_close_session">关闭</string>
+    <string name="action_switch_session">切换</string>
+    <string name="action_rename_session">重命名</string>
+    <string name="terminal_session_actions_title">会话操作</string>
     <string name="title_max_terminals_reached">已达到会话数量上限</string>
     <string name="msg_max_terminals_reached">请先关闭已有会话，再创建新会话。</string>
     <string name="title_rename_session">设置会话名称</string>

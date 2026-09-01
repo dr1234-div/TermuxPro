@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -28,6 +29,10 @@ import com.termux.terminal.TerminalSession;
 import java.util.List;
 
 public class TermuxSessionsListViewController extends ArrayAdapter<TermuxSession> implements AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
+
+    private static final int ACTION_SWITCH = 1;
+    private static final int ACTION_RENAME = 2;
+    private static final int ACTION_CLOSE = 3;
 
     final TermuxActivity mActivity;
 
@@ -102,8 +107,33 @@ public class TermuxSessionsListViewController extends ArrayAdapter<TermuxSession
     @Override
     public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
         final TermuxSession selectedSession = getItem(position);
-        mActivity.getTermuxTerminalSessionClient().renameSession(selectedSession.getTerminalSession());
+        showSessionActions(view, selectedSession);
         return true;
+    }
+
+    private void showSessionActions(View anchor, TermuxSession selectedSession) {
+        if (selectedSession == null || selectedSession.getTerminalSession() == null) return;
+        TerminalSession terminalSession = selectedSession.getTerminalSession();
+        PopupMenu popup = new PopupMenu(mActivity, anchor);
+        popup.getMenu().add(0, ACTION_SWITCH, 0, R.string.action_switch_session);
+        popup.getMenu().add(0, ACTION_RENAME, 1, R.string.action_rename_session);
+        popup.getMenu().add(0, ACTION_CLOSE, 2, R.string.action_close_session);
+        popup.setOnMenuItemClickListener(item -> {
+            int itemId = item.getItemId();
+            if (itemId == ACTION_SWITCH) {
+                mActivity.getTermuxTerminalSessionClient().setCurrentSession(terminalSession);
+                mActivity.getDrawer().closeDrawers();
+                return true;
+            } else if (itemId == ACTION_RENAME) {
+                mActivity.getTermuxTerminalSessionClient().renameSession(terminalSession);
+                return true;
+            } else if (itemId == ACTION_CLOSE) {
+                mActivity.confirmCloseSession(terminalSession);
+                return true;
+            }
+            return false;
+        });
+        popup.show();
     }
 
 }

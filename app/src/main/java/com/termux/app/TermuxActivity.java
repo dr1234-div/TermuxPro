@@ -654,14 +654,18 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             return;
         }
 
-        String title = mTermuxTerminalSessionActivityClient.toToastTitle(currentSession);
+        confirmCloseSession(currentSession);
+    }
+
+    public void confirmCloseSession(@NonNull TerminalSession session) {
+        String title = mTermuxTerminalSessionActivityClient.toToastTitle(session);
         if (title == null || title.length() == 0) title = getString(R.string.terminal_sessions_title);
         TermuxProDialogStyle.show(this, new AlertDialog.Builder(this)
             .setTitle(R.string.terminal_session_close_title)
             .setMessage(getString(R.string.terminal_session_close_message, title))
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.terminal_session_close_action,
-                (dialog, which) -> mTermuxTerminalSessionActivityClient.removeFinishedSession(currentSession))
+                (dialog, which) -> mTermuxTerminalSessionActivityClient.removeFinishedSession(session))
             .create());
     }
 
