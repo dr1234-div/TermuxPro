@@ -25,15 +25,34 @@ jobs:
           HEAD_BRANCH: ${{ github.ref_name }}
           COMMIT_TITLE: ${{ github.event.head_commit.message }}
           COMMIT_SHA: ${{ github.sha }}
+          GH_COMMAND_TIMEOUT_SECONDS: 45
         run: |
+          gh_safe() {
+            timeout --foreground "${GH_COMMAND_TIMEOUT_SECONDS:-45}s" gh "$@"
+          }
+
+          gh_retry() {
+            local attempt
+            local max_attempts=3
+            for attempt in $(seq 1 "$max_attempts"); do
+              if gh_safe "$@"; then
+                return 0
+              fi
+              echo "GitHub CLI 调用失败或超时：gh $*；第 $attempt/$max_attempts 次。" >&2
+              sleep $((attempt * 5))
+            done
+            echo "GitHub CLI 调用连续失败：gh $*" >&2
+            return 1
+          }
+
           title="${COMMIT_TITLE%%$'\n'*}"
-          existing="$(gh pr list --repo "$REPOSITORY" --base dev --head "$HEAD_BRANCH" \
+          existing="$(gh_retry pr list --repo "$REPOSITORY" --base dev --head "$HEAD_BRANCH" \
             --state open --json number --jq '.[0].number // empty')"
           if [[ -n "$existing" ]]; then
             echo "研发 PR #$existing 已存在。"
             pr_number="$existing"
           else
-            pr_url="$(gh pr create --repo "$REPOSITORY" --base dev --head "$HEAD_BRANCH" \
+            pr_url="$(gh_retry pr create --repo "$REPOSITORY" --base dev --head "$HEAD_BRANCH" \
               --title "$title" \
               --body "由 TermuxPro 自治研发流水线创建。完整变更、测试证据与验收结果以本 PR 的提交和 Checks 为准。\n\n触发提交：\`$COMMIT_SHA\`")"
             pr_number="${pr_url##*/}"
@@ -44,9 +63,13 @@ jobs:
             label="$2"
             target_sha="${3:-$COMMIT_SHA}"
             for attempt in $(seq 1 180); do
-              record="$(gh run list --repo "$REPOSITORY" --commit "$target_sha" \
+              if ! record="$(gh_safe run list --repo "$REPOSITORY" --commit "$target_sha" \
                 --workflow "$workflow" --limit 10 --json status,conclusion,databaseId,event \
-                --jq 'map(select(.event == "push" or .event == "workflow_dispatch"))[0] // empty')"
+                --jq 'map(select(.event == "push" or .event == "workflow_dispatch"))[0] // empty')"; then
+                echo "$label 查询 GitHub Actions 超时或失败，第 $attempt 次后继续等待。"
+                sleep 20
+                continue
+              fi
               if [[ -n "$record" ]]; then
                 status="$(jq -r '.status' <<<"$record")"
                 conclusion="$(jq -r '.conclusion // ""' <<<"$record")"
@@ -81,7 +104,7 @@ jobs:
           should_publish_candidate=false
           candidate_version_name=''
           if is_candidate_release_branch; then
-            head_version_file="$(gh api "repos/$REPOSITORY/contents/termuxpro-version.properties?ref=$COMMIT_SHA" \
+            head_version_file="$(gh_retry api "repos/$REPOSITORY/contents/termuxpro-version.properties?ref=$COMMIT_SHA" \
               --jq '.content' | base64 --decode)"
             candidate_version_name="$(sed -n 's/^versionName=//p' <<<"$head_version_file")"
             if [[ "$candidate_version_name" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]]; then
@@ -93,26 +116,26 @@ jobs:
             echo "分支 $HEAD_BRANCH 不是候选发布分支格式；按普通研发 PR 合并，不创建候选 Release。"
           fi
 
-          gh pr merge "$pr_number" --repo "$REPOSITORY" --merge \
+          gh_retry pr merge "$pr_number" --repo "$REPOSITORY" --merge \
             --subject "Merge pull request #$pr_number from ${{ github.repository_owner }}/$HEAD_BRANCH" \
             --body "$title"
-          merge_sha="$(gh pr view "$pr_number" --repo "$REPOSITORY" --json mergeCommit \
+          merge_sha="$(gh_retry pr view "$pr_number" --repo "$REPOSITORY" --json mergeCommit \
             --jq '.mergeCommit.oid')"
-          gh workflow run '.github/workflows/ci.yml' --repo "$REPOSITORY" --ref dev
+          gh_retry workflow run '.github/workflows/ci.yml' --repo "$REPOSITORY" --ref dev
           wait_for_workflow '.github/workflows/ci.yml' 'dev 合并后 CI' "$merge_sha"
 
           if [[ "$should_publish_candidate" == true ]]; then
             version_name="$candidate_version_name"
             tag="v$version_name"
-            if existing_tag="$(gh api "repos/$REPOSITORY/git/ref/tags/$tag" --jq '.object.sha' 2>/dev/null)"; then
+            if existing_tag="$(gh_safe api "repos/$REPOSITORY/git/ref/tags/$tag" --jq '.object.sha' 2>/dev/null)"; then
               [[ "$existing_tag" == "$merge_sha" ]] || {
                 echo "标签 $tag 已指向其他提交，拒绝覆盖。" >&2
                 exit 1
               }
             else
-              gh api --method POST "repos/$REPOSITORY/git/refs" \
+              gh_retry api --method POST "repos/$REPOSITORY/git/refs" \
                 -f "ref=refs/tags/$tag" -f "sha=$merge_sha" >/dev/null
             fi
-            gh workflow run '.github/workflows/release.yml' --repo "$REPOSITORY" --ref "$tag"
+            gh_retry workflow run '.github/workflows/release.yml' --repo "$REPOSITORY" --ref "$tag"
             wait_for_workflow '.github/workflows/release.yml' '候选 Release' "$merge_sha"
           fi
