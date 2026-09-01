@@ -140,6 +140,14 @@ if ! grep -Fq 'androidRuntime=false' "$auto_dev_pr_file"; then
     echo "自动研发 PR 的文档/证据类 dev 收尾 CI 必须显式关闭 Android 运行时门禁。" >&2
     exit 1
 fi
+if ! grep -Fq '单一控制器' "$project_dir/AGENTS.md" || ! grep -Fq '单一控制器' "$project_dir/.agents/skills/termuxpro-development/SKILL.md"; then
+    echo "项目规则必须明确自动 PR 工作流是 dev/hotfix 分支的单一控制器，避免手工抢跑制造 pending 或取消噪声。" >&2
+    exit 1
+fi
+if ! grep -Fq '限定时间内创建 PR' "$project_dir/AGENTS.md" || ! grep -Fq '限定时间内创建 PR' "$project_dir/.agents/skills/termuxpro-development/SKILL.md"; then
+    echo "项目规则必须说明自动 PR 失效后的人工接管条件，不能在工作流仍运行时重复接管同一分支。" >&2
+    exit 1
+fi
 if ! grep -Fq 'wait_for_candidate_release()' "$auto_dev_pr_file"; then
     echo "候选发布等待必须有 Release 页面兜底，避免 Release 已成功但 run list 查询延迟导致自动 PR 空等。" >&2
     exit 1
