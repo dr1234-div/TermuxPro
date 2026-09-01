@@ -33,6 +33,7 @@
 | 已完成 | 0.9.0-rc.1 候选版发布 | `v0.9.0-rc.1` 已发布为 Pre-release，冻结 0.8.1 之后的终端工具箱增值入口：Git、tmux、项目任务、远端文件、Web 预览、环境诊断、SSH 密钥，以及 CI 快速通道和自动 PR 收尾修复；Release run `33497699230` 通过签名 APK 构建和覆盖升级验收，APK SHA-256 为 `de7369a06b15ce35090028aa2683a8598b2ebce7e5e9a41f342abe0f536e2de7`；发布评审见 `test/reports/0.9.0-rc.1-release-readiness.md` |
 | HOLD | 0.9.0-rc.2 候选版发布 | `0.9.0-rc.1` 后 dev 合入发布等待兜底和 AI CLI 上下文提示；由于后者是用户可见体验改动，`0.9.0` 正式版不得直接跳过候选验证。本轮冻结 `0.9.0-rc.2`，但 Release run `33501845633` 在发布设备验收脚本空输出路径失败，公开 Release 未创建；修复见 `test/reports/release-device-gate-empty-output-20260901.md`，下一步递增 `0.9.0-rc.3` |
 | 已完成 | 0.9.0-rc.3 候选版发布 | `v0.9.0-rc.3` 已发布为 Pre-release，保留 rc.2 增值体验冻结范围，补齐 Release 设备验收脚本空输出诊断和回归；Release run `33504695802` 通过签名 APK 构建、覆盖升级验收和公开 Pre-release 创建；APK SHA-256 为 `acefb97ad6000d0a5f8dc860bace8ff03984e13dba7ce668c2c73302bce3331d`；不覆盖、不删除、不移动 `v0.9.0-rc.2` 失败证据；发布评审见 `test/reports/0.9.0-rc.3-release-readiness.md` |
+| 进行中 | 0.9.0 稳定版发布 | `0.9.0-rc.3` 候选门禁已通过，当前冻结范围内无新增 P0/P1 阻断；按发布规则进入 `0.9.0` 稳定版准备，版本源为 `0.9.0 (90004)`，发布评审见 `test/reports/0.9.0-release-readiness.md` |
 | 已完成 | 消除 tmux 名称前缀伪归属 | PR #30 已改为工作区 UUID、目标/端口/路径摘要、tmux server PID、session ID 与创建时间联合核对；名称前缀不再授予管理权限，同名替换必须失败关闭。真实 SSH/tmux fixture、全量 CI 与模拟器 UI 已通过；清除应用数据后的旧会话安全降级为归属未知，不自动认领 |
 | 已完成 | 修复发布设备门禁运行时证据空文件 | `0.6.0-rc.3` Release run `33418901155` 覆盖升级成功，但 artifact 中 `test-artifacts/release-apk/android-runtime.txt` 为空；PR #81 已修复验收脚本，后续即使没有 AndroidRuntime 崩溃也会写入设备型号、Android 版本、ABI、输入法、进程 PID 和无崩溃结论，并补 Fatal Exception 失败回归 |
 
