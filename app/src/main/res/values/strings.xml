@@ -286,6 +286,8 @@
     <string name="ai_session_launch_title">Start %1$s</string>
     <string name="ai_session_claude_guidance">Claude Code is often used from a shared remote account. New session is the safe default. To resume history, choose the exact session from Claude’s own picker.</string>
     <string name="ai_session_codex_guidance">Codex CLI is usually user-scoped, but TermuxPro still never auto-enters the latest session. Confirm the current project before starting or resuming.</string>
+    <string name="ai_session_target_message">Current target\n%1$s:%2$d · %3$s\n\n%4$s</string>
+    <string name="ai_session_target_incomplete">Current target is incomplete. Fill server, SSH port, and project path before starting AI CLI.\n\n%1$s</string>
     <string name="ai_session_new_action">New session (safe default)\nStart clean in this project. Recommended for shared Claude accounts.</string>
     <string name="ai_session_pick_history_action">Choose previous session\nOpen the CLI picker yourself; TermuxPro will not auto-enter the latest session.</string>
     <string name="workspace_open_local_terminal">Open local terminal</string>
@@ -390,6 +392,7 @@
     <string name="git_workbench_overview_truncated">This repository has too many branches or records to display safely. Use the terminal for the complete result.</string>
     <string name="git_workbench_branch">Branch: %1$s</string>
     <string name="git_workbench_detached">Detached HEAD: %1$s</string>
+    <string name="git_workbench_target">%1$s:%2$d · %3$s</string>
     <string name="git_workbench_sync">Ahead %1$d · behind %2$d</string>
     <string name="git_workbench_sync_with_upstream">Tracking %1$s · ahead %2$d · behind %3$d</string>
     <string name="git_workbench_unknown_upstream">upstream</string>
@@ -585,9 +588,15 @@
     <string name="task_sessions_background">running in background</string>
     <string name="task_sessions_attached">attached</string>
     <string name="task_sessions_owned">created by TermuxPro</string>
+    <string name="task_sessions_other_workspace">other TermuxPro workspace</string>
+    <string name="task_sessions_other_owner">other TermuxPro owner</string>
+    <string name="task_sessions_incomplete_marker">incomplete TermuxPro marker</string>
     <string name="task_sessions_unknown_owner">ownership unknown</string>
     <string name="task_sessions_time_unknown">unknown</string>
     <string name="task_sessions_unknown_owner_warning">TermuxPro cannot reliably identify who created this session. It can be attached, but not deleted here, to avoid disrupting other work.</string>
+    <string name="task_sessions_other_workspace_warning">This session was created by TermuxPro, but not for the current workspace. It can be attached only after explicit confirmation; rename and stop are disabled to avoid modifying another project.</string>
+    <string name="task_sessions_other_owner_warning">This session was created by another TermuxPro owner on the same remote account. It can be attached only after explicit confirmation; rename and stop are disabled to avoid disrupting shared work.</string>
+    <string name="task_sessions_incomplete_marker_warning">This session has incomplete TermuxPro ownership metadata. TermuxPro treats it as read-only here: attach is allowed, but rename and stop stay disabled until the metadata is verified by reconnecting or recreating the session.</string>
     <string name="task_sessions_target">Remote target · %1$s:%2$d · %3$s</string>
     <string name="task_sessions_owned_context">TermuxPro-owned session · %1$s:%2$d · %3$s</string>
     <string name="task_sessions_name_label">Session name</string>

@@ -35,13 +35,15 @@ public class TaskSessionsActivityTest {
 
         ListView sessions = activity.findViewById(R.id.task_sessions_list);
         View create = activity.findViewById(R.id.task_sessions_create_button);
-        assertEquals(2, sessions.getAdapter().getCount());
+        assertEquals(3, sessions.getAdapter().getCount());
         assertEquals(View.VISIBLE, create.getVisibility());
         TextView ownedRow = (TextView) sessions.getAdapter().getView(0, null, sessions);
         String rowText = ownedRow.getText().toString();
         assertTrue(rowText.contains("TermuxPro 创建"));
         assertTrue(rowText.contains("创建 "));
         assertTrue(rowText.contains("活跃 "));
+        TextView otherWorkspaceRow = (TextView) sessions.getAdapter().getView(1, null, sessions);
+        assertTrue(otherWorkspaceRow.getText().toString().contains("其他工作区"));
 
         create.performClick();
         AlertDialog dialog = (AlertDialog) ShadowDialog.getLatestDialog();
@@ -75,13 +77,22 @@ public class TaskSessionsActivityTest {
         owned.dismiss();
 
         sessions.performItemClick(sessions.getAdapter().getView(1, null, sessions), 1, 1);
+        AlertDialog otherWorkspace = (AlertDialog) ShadowDialog.getLatestDialog();
+        assertAttachOnlyWithWarning(otherWorkspace, "不属于当前工作区");
+        otherWorkspace.dismiss();
+
+        sessions.performItemClick(sessions.getAdapter().getView(2, null, sessions), 2, 2);
         AlertDialog unknown = (AlertDialog) ShadowDialog.getLatestDialog();
-        assertEquals(1, unknown.getListView().getAdapter().getCount());
-        assertTrue(unknown.getButton(AlertDialog.BUTTON_NEUTRAL) == null
-            || unknown.getButton(AlertDialog.BUTTON_NEUTRAL).getVisibility() != View.VISIBLE
-            || unknown.getButton(AlertDialog.BUTTON_NEUTRAL).getText().length() == 0);
-        assertTrue(((android.widget.TextView) unknown.findViewById(android.R.id.message))
-            .getText().toString().contains("只允许进入"));
+        assertAttachOnlyWithWarning(unknown, "无法可靠判断");
+    }
+
+    private void assertAttachOnlyWithWarning(AlertDialog dialog, String expectedWarning) {
+        assertEquals(1, dialog.getListView().getAdapter().getCount());
+        assertTrue(dialog.getButton(AlertDialog.BUTTON_NEUTRAL) == null
+            || dialog.getButton(AlertDialog.BUTTON_NEUTRAL).getVisibility() != View.VISIBLE
+            || dialog.getButton(AlertDialog.BUTTON_NEUTRAL).getText().length() == 0);
+        assertTrue(((android.widget.TextView) dialog.findViewById(android.R.id.message))
+            .getText().toString().contains(expectedWarning));
     }
 
     private TaskSessionsActivity previewActivity() {

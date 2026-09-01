@@ -132,7 +132,7 @@ public final class GitDiffActivity extends AppCompatActivity {
                 }
                 try {
                     mOverview = GitRepositoryOverview.parse(result.output);
-                    showOverview(target.path, mOverview);
+                    showOverview(target, mOverview);
                 } catch (IllegalArgumentException exception) {
                     showStatus(getString(R.string.git_workbench_invalid_response), true);
                 }
@@ -207,7 +207,8 @@ public final class GitDiffActivity extends AppCompatActivity {
         mContent.setText(colorize(output));
     }
 
-    private void showOverview(@NonNull String path, @NonNull GitRepositoryOverview overview) {
+    private void showOverview(@NonNull ConnectionTarget target,
+                              @NonNull GitRepositoryOverview overview) {
         mOverview = overview;
         mProgress.setVisibility(View.GONE);
         mStatusState.setVisibility(View.GONE);
@@ -216,7 +217,8 @@ public final class GitDiffActivity extends AppCompatActivity {
         ((TextView) findViewById(R.id.git_overview_head)).setText(getString(
             overview.detached ? R.string.git_workbench_detached : R.string.git_workbench_branch,
             overview.head));
-        ((TextView) findViewById(R.id.git_overview_path)).setText(path);
+        ((TextView) findViewById(R.id.git_overview_path)).setText(getString(
+            R.string.git_workbench_target, target.host, target.port, target.path));
         ((TextView) findViewById(R.id.git_overview_changes)).setText(getResources().getQuantityString(
             R.plurals.git_workbench_changed_files, overview.changedFiles, overview.changedFiles));
         ((TextView) findViewById(R.id.git_overview_index_state)).setText(getString(
@@ -260,7 +262,7 @@ public final class GitDiffActivity extends AppCompatActivity {
 
     /** 模拟器截图只注入脱敏协议数据，仍走与真实 SSH 结果相同的解析和渲染路径。 */
     void showOverviewForTesting(@NonNull String path, @NonNull String protocolOutput) {
-        showOverview(path, GitRepositoryOverview.parse(protocolOutput));
+        showOverview(overviewTarget(path), GitRepositoryOverview.parse(protocolOutput));
     }
 
     private void showCommits() {
@@ -816,10 +818,19 @@ public final class GitDiffActivity extends AppCompatActivity {
         if (mMode != Mode.OVERVIEW && mOverview != null) {
             mMode = Mode.OVERVIEW;
             String path = getIntent().getStringExtra(EXTRA_PATH);
-            showOverview(path == null ? "" : path, mOverview);
+            showOverview(overviewTarget(path == null ? "" : path), mOverview);
         } else {
             finish();
         }
+    }
+
+    @NonNull
+    private ConnectionTarget overviewTarget(@NonNull String fallbackPath) {
+        String host = getIntent().getStringExtra(EXTRA_HOST);
+        String path = getIntent().getStringExtra(EXTRA_PATH);
+        int port = getIntent().getIntExtra(EXTRA_PORT, 22);
+        return new ConnectionTarget(host == null ? "" : host, port,
+            path == null ? fallbackPath : path);
     }
 
     private void showStatus(@NonNull String message, boolean recoverable) {

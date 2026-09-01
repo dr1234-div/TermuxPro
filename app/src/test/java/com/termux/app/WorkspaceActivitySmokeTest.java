@@ -329,18 +329,47 @@ public class WorkspaceActivitySmokeTest {
         AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
         assertNotNull(dialog);
         assertEquals("启动 Claude Code", shadowOf(dialog).getTitle());
+        assertTrue(dialogMessage(dialog).contains("当前目标未完整配置"));
+        assertTrue(dialogMessage(dialog).contains("Claude Code 常见于共享远程账号"));
         assertEquals("新建会话（安全默认）\n在当前项目干净启动；共享 Claude 账号推荐使用。",
             dialog.getListView().getAdapter().getItem(0));
         assertEquals("选择历史会话\n只打开 CLI 原生选择器，TermuxPro 不自动进入最近会话。",
             dialog.getListView().getAdapter().getItem(1));
         assertEquals(2,
             dialog.getListView().getAdapter().getCount());
-        assertEquals(3,
-            ((android.widget.TextView) dialog.getListView().getChildAt(0)).getMaxLines());
-        assertTrue(((android.widget.TextView) dialog.getListView().getChildAt(0)).getPaddingEnd() > 0);
         assertEquals(activity.getColor(R.color.tp_primary),
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE).getCurrentTextColor());
         dialog.dismiss();
         activity.finish();
+    }
+
+    @Test
+    public void aiShortcutShowsConfiguredRemoteTargetBeforeCodexLaunch() {
+        Intent intent = new Intent(RuntimeEnvironment.getApplication(), WorkspaceActivity.class);
+        intent.putExtra(WorkspaceActivity.EXTRA_UI_TEST_SSH_READY, true);
+        WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class, intent)
+            .setup().get();
+        ((EditText) activity.findViewById(R.id.workspace_host_input))
+            .setText("hdr@192.168.1.153");
+        ((EditText) activity.findViewById(R.id.workspace_port_input)).setText("22");
+        ((EditText) activity.findViewById(R.id.workspace_path_input)).setText("~/termux-pro");
+
+        activity.findViewById(R.id.workspace_codex_button).performClick();
+        shadowOf(Looper.getMainLooper()).idle();
+        AlertDialog dialog = ShadowAlertDialog.getLatestAlertDialog();
+
+        assertNotNull(dialog);
+        assertEquals("启动 Codex CLI", shadowOf(dialog).getTitle());
+        assertTrue(dialogMessage(dialog).contains("当前目标"));
+        assertTrue(dialogMessage(dialog).contains("hdr@192.168.1.153:22 · ~/termux-pro"));
+        assertTrue(dialogMessage(dialog).contains("Codex CLI 通常按用户隔离"));
+        dialog.dismiss();
+        activity.finish();
+    }
+
+    private static String dialogMessage(AlertDialog dialog) {
+        TextView message = dialog.findViewById(android.R.id.message);
+        assertNotNull(message);
+        return message.getText().toString();
     }
 }

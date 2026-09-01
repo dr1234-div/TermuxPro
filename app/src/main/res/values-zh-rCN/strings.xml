@@ -166,6 +166,8 @@
     <string name="ai_session_launch_title">启动 %1$s</string>
     <string name="ai_session_claude_guidance">Claude Code 常见于共享远程账号。默认新建最安全；如果要恢复历史，请只从 Claude 原生选择器里手动选择目标会话。</string>
     <string name="ai_session_codex_guidance">Codex CLI 通常按用户隔离，但仍不自动进入最近会话。确认当前项目正确后再选择新建或历史。</string>
+    <string name="ai_session_target_message">当前目标\n%1$s:%2$d · %3$s\n\n%4$s</string>
+    <string name="ai_session_target_incomplete">当前目标未完整配置。请先填写服务器、SSH 端口和远程项目路径，再启动 AI CLI。\n\n%1$s</string>
     <string name="ai_session_new_action">新建会话（安全默认）\n在当前项目干净启动；共享 Claude 账号推荐使用。</string>
     <string name="ai_session_pick_history_action">选择历史会话\n只打开 CLI 原生选择器，TermuxPro 不自动进入最近会话。</string>
     <string name="workspace_open_local_terminal">打开本地终端</string>
@@ -270,6 +272,7 @@
     <string name="git_workbench_overview_truncated">仓库分支或记录过多，无法安全完整展示，请在终端中查看完整结果。</string>
     <string name="git_workbench_branch">当前分支：%1$s</string>
     <string name="git_workbench_detached">游离 HEAD：%1$s</string>
+    <string name="git_workbench_target">%1$s:%2$d · %3$s</string>
     <string name="git_workbench_sync">领先 %1$d · 落后 %2$d</string>
     <string name="git_workbench_sync_with_upstream">跟踪 %1$s · 领先 %2$d · 落后 %3$d</string>
     <string name="git_workbench_unknown_upstream">上游分支</string>
@@ -464,9 +467,15 @@
     <string name="task_sessions_background">后台运行</string>
     <string name="task_sessions_attached">已连接</string>
     <string name="task_sessions_owned">TermuxPro 创建</string>
+    <string name="task_sessions_other_workspace">其他工作区</string>
+    <string name="task_sessions_other_owner">其他 TermuxPro 使用者</string>
+    <string name="task_sessions_incomplete_marker">TermuxPro 标记不完整</string>
     <string name="task_sessions_unknown_owner">归属未知</string>
     <string name="task_sessions_time_unknown">未知</string>
     <string name="task_sessions_unknown_owner_warning">无法可靠判断该会话由谁创建。TermuxPro 只允许进入，不提供删除操作，避免影响其他工作。</string>
+    <string name="task_sessions_other_workspace_warning">这个会话由 TermuxPro 创建，但不属于当前工作区。只允许你明确确认后进入；重命名和停止已禁用，避免误改其他项目。</string>
+    <string name="task_sessions_other_owner_warning">这个会话由同一远端账号下的其他 TermuxPro 使用者创建。只允许你明确确认后进入；重命名和停止已禁用，避免影响共享账号中的其他工作。</string>
+    <string name="task_sessions_incomplete_marker_warning">这个会话存在不完整的 TermuxPro 归属元数据。当前只按只读处理：允许进入，但禁用重命名和停止；请重新连接或重建会话后再管理。</string>
     <string name="task_sessions_target">远端目标 · %1$s:%2$d · %3$s</string>
     <string name="task_sessions_owned_context">TermuxPro 自有会话 · %1$s:%2$d · %3$s</string>
     <string name="task_sessions_name_label">会话名称</string>

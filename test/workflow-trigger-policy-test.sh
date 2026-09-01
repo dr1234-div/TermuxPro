@@ -41,6 +41,15 @@ if ! grep -Fq "if: steps.changes.outputs.android_runtime == 'true'" "$project_di
     echo "CI Android 重步骤必须受变更类型门禁控制。" >&2
     exit 1
 fi
+if ! grep -Fq -- '--stacktrace lint' "$project_dir/.github/workflows/ci.yml" \
+    || ! grep -Fq -- '--stacktrace -Dorg.gradle.jvmargs="-Xmx4096M -Dfile.encoding=UTF-8" :app:assembleDebug' "$project_dir/.github/workflows/ci.yml"; then
+    echo "CI 必须将 Lint 与 Debug APK 拆成独立 Gradle 进程，并为 APK 打包单独配置堆内存，避免 GitHub Runner OOM。" >&2
+    exit 1
+fi
+if grep -Fq -- '--stacktrace lint :app:assembleDebug' "$project_dir/.github/workflows/ci.yml"; then
+    echo "CI 禁止在同一个 Gradle 进程内连续运行 lint 和 assembleDebug，避免 APK 分包压缩阶段堆内存耗尽。" >&2
+    exit 1
+fi
 if ! grep -Fq "'terminal-view/src/main/**'" "$project_dir/.github/workflows/ui-emulator.yml"; then
     echo "UI pull_request 门禁必须覆盖 terminal-view 触摸、渲染和输入层变更。" >&2
     exit 1
@@ -138,6 +147,14 @@ if ! grep -Fq 'requires_emulator_ui' "$auto_dev_pr_file"; then
 fi
 if ! grep -Fq 'androidRuntime=false' "$auto_dev_pr_file"; then
     echo "自动研发 PR 的文档/证据类 dev 收尾 CI 必须显式关闭 Android 运行时门禁。" >&2
+    exit 1
+fi
+if ! grep -Fq '单一控制器' "$project_dir/AGENTS.md" || ! grep -Fq '单一控制器' "$project_dir/.agents/skills/termuxpro-development/SKILL.md"; then
+    echo "项目规则必须明确自动 PR 工作流是 dev/hotfix 分支的单一控制器，避免手工抢跑制造 pending 或取消噪声。" >&2
+    exit 1
+fi
+if ! grep -Fq '限定时间内创建 PR' "$project_dir/AGENTS.md" || ! grep -Fq '限定时间内创建 PR' "$project_dir/.agents/skills/termuxpro-development/SKILL.md"; then
+    echo "项目规则必须说明自动 PR 失效后的人工接管条件，不能在工作流仍运行时重复接管同一分支。" >&2
     exit 1
 fi
 if ! grep -Fq 'wait_for_candidate_release()' "$auto_dev_pr_file"; then

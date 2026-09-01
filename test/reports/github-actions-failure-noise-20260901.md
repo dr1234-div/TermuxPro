@@ -27,3 +27,21 @@
 
 - 每轮合并后检查最近失败 run 是否由真实代码缺陷、GitHub 外部集成还是工作流噪声导致。
 - 如果仍出现 `pull_request action_required` 且无 jobs，优先区分 GitHub Actions 与外部 App check suite，不能直接当作项目 CI 失败。
+
+## 2026-09-01 复核
+
+用户反馈邮件中 PR 和 CLI 操作持续出现 fail 后，重新查询最近 100 条 Actions：
+
+- 最近窗口内没有新的 `TermuxPro CI` 或 `TermuxPro Emulator UI` 真实失败。
+- 真实 `failure` 只来自 `v0.9.0-rc.2` 发布链路：
+  - Release run `33501845633`：发布设备验收脚本空输出路径失败。
+  - 自动 PR run `33501017144`：同一候选发布链路失败。
+  - 该问题已在后续 rc.3 与 `v0.9.0` 稳定版发布中修复并通过。
+- 近期 `cancelled` 记录来自并发策略取消旧 run 或 dev push run 被后续 workflow_dispatch 收尾 run 替代，
+  不代表 APK、代码或模拟器验收失败。
+
+处理规则：
+
+- 每轮合入后必须核对最近失败 run；若是新 failure，立即定位并修，不进入下一功能切片。
+- 对 `cancelled` 必须先确认是否存在替代成功 run；有替代成功 run 时记录为通知噪声，不升级为产品失败。
+- 对候选/正式 Release 失败必须记录失败 run、原因、修复版本和后续成功 run，禁止用“后来好了”覆盖失败证据。
