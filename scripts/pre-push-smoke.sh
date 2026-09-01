@@ -55,6 +55,12 @@ for file in "${changed_files[@]}"; do
             add_test "com.termux.app.WorkspaceCommandBuilderTest"
             needs_android_compile=1
             ;;
+        app/src/main/java/com/termux/app/ProjectTask*|app/src/main/java/com/termux/app/ProjectTasksActivity.java)
+            add_test "com.termux.app.ProjectTaskDetectorTest"
+            add_test "com.termux.app.RemoteToolRecoveryTest"
+            add_test "com.termux.app.WorkspaceCommandBuilderTest"
+            needs_android_compile=1
+            ;;
         app/src/main/java/com/termux/app/Terminal*|terminal-view/*|terminal-emulator/*)
             add_test "com.termux.app.TerminalProjectToolsMenuTest"
             add_test "com.termux.app.TerminalTouchScrollPolicyTest"
