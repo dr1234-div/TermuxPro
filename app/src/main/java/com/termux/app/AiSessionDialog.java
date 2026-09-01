@@ -34,7 +34,7 @@ final class AiSessionDialog {
             if (!(row instanceof TextView)) continue;
             TextView label = (TextView) row;
             label.setSingleLine(false);
-            label.setMaxLines(2);
+            label.setMaxLines(3);
             label.setEllipsize(null);
             label.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
             // 预留明确的行尾换行空间，避免 200% 字体在系统弹窗右边缘只截出半个词。
