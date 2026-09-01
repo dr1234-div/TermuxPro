@@ -119,6 +119,19 @@ if ! grep -Fq '查询 GitHub Actions 超时或失败' "$auto_dev_pr_file"; then
     echo "自动研发 PR 工作流等待 CI 时必须容忍短暂查询失败，不能把 GitHub API 抖动误判成项目失败。" >&2
     exit 1
 fi
+if grep -Fq -- '--commit "$target_sha"' "$auto_dev_pr_file"; then
+    echo "自动研发 PR 不得用 --commit 等待 workflow_dispatch 的 dev 收尾 CI，避免已触发 run 查询不到而空等超时。" >&2
+    exit 1
+fi
+if ! grep -Fq '.headSha == \"$target_sha\"' "$auto_dev_pr_file"; then
+    echo "自动研发 PR 必须按 headSha 精确匹配目标 run，防止误等其他提交或漏等 workflow_dispatch。" >&2
+    exit 1
+fi
+dev_merge_wait_pattern="wait_for_workflow '.github/workflows/ci.yml' 'dev 合并后 CI' \"\$merge_sha\" dev"
+if ! grep -Fq "$dev_merge_wait_pattern" "$auto_dev_pr_file"; then
+    echo "自动研发 PR 等待 dev 收尾 CI 时必须按 dev 分支和 merge commit 查询。" >&2
+    exit 1
+fi
 if ! grep -Fq 'requires_emulator_ui' "$auto_dev_pr_file"; then
     echo "自动研发 PR 必须按变更路径判断是否等待模拟器 UI，文档分支不能卡在不存在的 UI run。" >&2
     exit 1
