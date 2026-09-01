@@ -98,10 +98,15 @@ jobs:
             workflow="$1"
             label="$2"
             target_sha="${3:-$COMMIT_SHA}"
+            target_ref="${4:-$HEAD_BRANCH}"
             for attempt in $(seq 1 180); do
-              if ! record="$(gh_safe run list --repo "$REPOSITORY" --commit "$target_sha" \
-                --workflow "$workflow" --limit 10 --json status,conclusion,databaseId,event \
-                --jq 'map(select(.event == "push" or .event == "workflow_dispatch"))[0] // empty')"; then
+              args=(run list --repo "$REPOSITORY" --workflow "$workflow" --limit 20 \
+                --json status,conclusion,databaseId,event,headSha,headBranch)
+              if [[ -n "$target_ref" ]]; then
+                args+=(--branch "$target_ref")
+              fi
+              if ! record="$(gh_safe "${args[@]}" \
+                --jq "map(select((.event == \"push\" or .event == \"workflow_dispatch\") and .headSha == \"$target_sha\"))[0] // empty")"; then
                 echo "$label 查询 GitHub Actions 超时或失败，第 $attempt 次后继续等待。"
                 sleep 20
                 continue
@@ -167,7 +172,7 @@ jobs:
             gh_retry workflow run '.github/workflows/ci.yml' --repo "$REPOSITORY" --ref dev \
               -f androidRuntime=false
           fi
-          wait_for_workflow '.github/workflows/ci.yml' 'dev 合并后 CI' "$merge_sha"
+          wait_for_workflow '.github/workflows/ci.yml' 'dev 合并后 CI' "$merge_sha" dev
 
           if [[ "$should_publish_candidate" == true ]]; then
             version_name="$candidate_version_name"
@@ -182,5 +187,5 @@ jobs:
                 -f "ref=refs/tags/$tag" -f "sha=$merge_sha" >/dev/null
             fi
             gh_retry workflow run '.github/workflows/release.yml' --repo "$REPOSITORY" --ref "$tag"
-            wait_for_workflow '.github/workflows/release.yml' '候选 Release' "$merge_sha"
+            wait_for_workflow '.github/workflows/release.yml' '候选 Release' "$merge_sha" ''
           fi
