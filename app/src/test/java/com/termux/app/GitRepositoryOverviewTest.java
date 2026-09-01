@@ -17,7 +17,8 @@ public final class GitRepositoryOverviewTest {
                 + "TP_LOCAL\tdev\nTP_LOCAL\tmaster\n"
                 + "TP_REMOTE\torigin/dev\n"
                 + "TP_REMOTE\torigin/HEAD\n"
-                + "TP_LOG\ta1b2c3d\t2 hours ago\t修复切换逻辑\n");
+                + "TP_LOG\ta1b2c3d\t2 hours ago\t修复切换逻辑\n"
+                + "TP_STASH\tstash@{0}\t3 minutes ago\tWIP before review\n");
 
         assertEquals("dev", result.head);
         assertFalse(result.detached);
@@ -30,6 +31,8 @@ public final class GitRepositoryOverviewTest {
         assertEquals(2, result.localBranches.size());
         assertEquals("origin/dev", result.remoteBranches.get(0));
         assertEquals("修复切换逻辑", result.commits.get(0).subject);
+        assertEquals("stash@{0}", result.stashes.get(0).ref);
+        assertEquals("WIP before review", result.stashes.get(0).subject);
         assertTrue(result.fileChanges.isEmpty());
     }
 
@@ -83,5 +86,8 @@ public final class GitRepositoryOverviewTest {
             () -> GitRepositoryOverview.parse("TP_LOCAL\tdev\n"));
         assertThrows(IllegalArgumentException.class,
             () -> GitRepositoryOverview.parse("TP_OVERVIEW\tdev\t0\t-1\t0\t0\t\t\t0\n"));
+        assertThrows(IllegalArgumentException.class,
+            () -> GitRepositoryOverview.parse("TP_OVERVIEW\tdev\t0\t0\t0\t0\t\t\t0\n"
+                + "TP_STASH\tstash@{bad}\tnow\tinvalid\n"));
     }
 }

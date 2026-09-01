@@ -155,6 +155,9 @@ final class WorkspaceCommandBuilder {
             + " | grep -v '/HEAD$' || true"
             + " && (git log -20 --date=relative --pretty=format:'TP_LOG%x09%h%x09%ar%x09%s'"
             + " 2>/dev/null || true)"
+            + " && printf '\\n'"
+            + " && (git stash list --pretty=format:'TP_STASH%x09%gd%x09%cr%x09%s'"
+            + " 2>/dev/null || true)"
             + " && printf '\\nTP_STATUS_Z\\000'"
             + " && git status --porcelain=v1 -z";
     }
@@ -296,6 +299,17 @@ final class WorkspaceCommandBuilder {
         return true;
     }
 
+    static boolean isSafeGitStashRef(@NonNull String ref) {
+        if (!ref.startsWith("stash@{") || !ref.endsWith("}") || ref.length() < 9
+            || ref.length() > 16) {
+            return false;
+        }
+        for (int index = "stash@{".length(); index < ref.length() - 1; index++) {
+            if (!Character.isDigit(ref.charAt(index))) return false;
+        }
+        return true;
+    }
+
     /** 只提交已经暂存的内容；不自动 add、不推送、不丢弃工作区文件。 */
     @NonNull
     static String buildGitCommitStagedRemoteCommand(@NonNull String path, @NonNull String message) {
@@ -308,6 +322,52 @@ final class WorkspaceCommandBuilder {
             + " && staged=$(git diff --cached --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
             + " && if [ \"$staged\" -eq 0 ]; then exit 75; fi"
             + " && git commit -m " + shellQuote(trimmed);
+    }
+
+    /** 将当前工作树安全保存到 stash；包含未跟踪文件，不提交、不推送、不丢弃。 */
+    @NonNull
+    static String buildGitStashPushRemoteCommand(@NonNull String path, @NonNull String message) {
+        String trimmed = message.trim();
+        if (!isSafeGitCommitMessage(trimmed)) throw new IllegalArgumentException("Invalid stash message");
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && root=$(git rev-parse --show-toplevel)"
+            + " && cd -- \"$root\""
+            + " && staged=$(git diff --cached --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && unstaged_tracked=$(git diff --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && untracked=$(git ls-files --others --exclude-standard -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && if [ $((staged + unstaged_tracked + untracked)) -eq 0 ]; then exit 75; fi"
+            + " && git stash push -u -m " + shellQuote(trimmed);
+    }
+
+    /** 仅在当前工作树干净时应用指定 stash；不删除 stash，不执行 pop。 */
+    @NonNull
+    static String buildGitStashApplyRemoteCommand(@NonNull String path, @NonNull String stashRef) {
+        if (!isSafeGitStashRef(stashRef)) throw new IllegalArgumentException("Invalid stash ref");
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && root=$(git rev-parse --show-toplevel)"
+            + " && cd -- \"$root\""
+            + " && if ! git rev-parse --verify --quiet " + shellQuote(stashRef)
+            + " >/dev/null; then exit 81; fi"
+            + " && staged=$(git diff --cached --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && unstaged_tracked=$(git diff --name-only -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && untracked=$(git ls-files --others --exclude-standard -z | tr -cd '\\000' | wc -c | tr -d ' ')"
+            + " && if [ $((staged + unstaged_tracked + untracked)) -ne 0 ]; then exit 77; fi"
+            + " && git stash apply --index " + shellQuote(stashRef);
+    }
+
+    /** 删除用户显式选择的 stash；不触碰工作树、不执行清空全部 stash。 */
+    @NonNull
+    static String buildGitStashDropRemoteCommand(@NonNull String path, @NonNull String stashRef) {
+        if (!isSafeGitStashRef(stashRef)) throw new IllegalArgumentException("Invalid stash ref");
+        return "cd -- " + remotePathExpression(path)
+            + " && git rev-parse --is-inside-work-tree >/dev/null 2>&1"
+            + " && root=$(git rev-parse --show-toplevel)"
+            + " && cd -- \"$root\""
+            + " && if ! git rev-parse --verify --quiet " + shellQuote(stashRef)
+            + " >/dev/null; then exit 81; fi"
+            + " && git stash drop " + shellQuote(stashRef);
     }
 
     /** 只刷新当前上游所在远端；不 merge、不 rebase、不修改工作树或 index。 */

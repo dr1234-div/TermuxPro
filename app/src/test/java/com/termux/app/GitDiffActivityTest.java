@@ -140,13 +140,18 @@ public final class GitDiffActivityTest {
         assertTrue(((Button) activity.findViewById(R.id.git_overview_commit_button)).isEnabled());
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_files_button)).isEnabled());
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_delete_branch_button)).isEnabled());
+        assertTrue(((Button) activity.findViewById(R.id.git_overview_stash_button)).isEnabled());
+        assertTrue(!((Button) activity.findViewById(R.id.git_overview_stashes_button)).isEnabled());
 
         activity.showOverviewForTesting("~/repo", "TP_OVERVIEW\tdev\t0\t0\t0\t0\t2\t0\t1\torigin/dev\n"
             + "TP_LOCAL\tdev\n"
-            + "TP_LOCAL\tmobile-ui\n");
+            + "TP_LOCAL\tmobile-ui\n"
+            + "TP_STASH\tstash@{0}\t1 hour ago\tWIP mobile\n");
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_pull_button)).isEnabled());
         assertTrue(((Button) activity.findViewById(R.id.git_overview_push_button)).isEnabled());
         assertTrue(((Button) activity.findViewById(R.id.git_overview_delete_branch_button)).isEnabled());
+        assertTrue(!((Button) activity.findViewById(R.id.git_overview_stash_button)).isEnabled());
+        assertTrue(((Button) activity.findViewById(R.id.git_overview_stashes_button)).isEnabled());
 
         activity.showOverviewForTesting("~/repo", "TP_OVERVIEW\tdev\t0\t0\t0\t0\t\t\t0\n");
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_fetch_button)).isEnabled());
@@ -156,6 +161,68 @@ public final class GitDiffActivityTest {
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_unstage_all_button)).isEnabled());
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_commit_button)).isEnabled());
         assertTrue(!((Button) activity.findViewById(R.id.git_overview_files_button)).isEnabled());
+    }
+
+    @Test
+    public void stashDialogsExplainSafeCreateApplyAndDropRules() {
+        Intent dirtyIntent = GitDiffActivity.newIntent(RuntimeEnvironment.getApplication(),
+                "hdr@192.168.1.153", 22, "~/repo")
+            .putExtra(GitDiffActivity.EXTRA_UI_TEST_OVERVIEW, "TP_OVERVIEW\tdev\t0\t3\t1\t2\t\t\t0\n"
+                + "TP_LOCAL\tdev\n"
+                + "TP_STASH\tstash@{0}\t1 hour ago\tWIP mobile flow\n");
+        GitDiffActivity dirty = Robolectric.buildActivity(GitDiffActivity.class, dirtyIntent)
+            .setup().get();
+
+        AlertDialog stash = dirty.createStashDialog();
+        assertNotNull(stash);
+        stash.show();
+        shadowOf(Looper.getMainLooper()).idle();
+        assertEquals(dirty.getString(R.string.git_workbench_stash_save_action),
+            stash.getButton(AlertDialog.BUTTON_POSITIVE).getText().toString());
+        assertTrue(((TextView) stash.findViewById(android.R.id.message)).getText().toString()
+            .contains("不会提交，也不会推送"));
+        ((EditText) stash.findViewById(android.R.id.edit)).setText("bad\nstash");
+        stash.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+        assertNotNull(((EditText) stash.findViewById(android.R.id.edit)).getError());
+        stash.dismiss();
+
+        AlertDialog stashes = dirty.createStashesDialog();
+        assertNotNull(stashes);
+        dirty.showStyledDialog(stashes);
+        assertEquals(1, stashes.getListView().getAdapter().getCount());
+        assertTrue(stashes.getListView().getAdapter().getItem(0).toString()
+            .contains("WIP mobile flow"));
+
+        dirty.confirmApplyStash(dirty.mOverviewForTesting().stashes.get(0));
+        assertTrue(((TextView) dirty.findViewById(R.id.git_diff_status_message)).getText()
+            .toString().contains("已阻止应用 stash"));
+
+        Intent cleanIntent = GitDiffActivity.newIntent(RuntimeEnvironment.getApplication(),
+                "hdr@192.168.1.153", 22, "~/repo")
+            .putExtra(GitDiffActivity.EXTRA_UI_TEST_OVERVIEW, "TP_OVERVIEW\tdev\t0\t0\t0\t0\t\t\t0\n"
+                + "TP_LOCAL\tdev\n"
+                + "TP_STASH\tstash@{0}\t1 hour ago\tWIP mobile flow\n");
+        GitDiffActivity clean = Robolectric.buildActivity(GitDiffActivity.class, cleanIntent)
+            .setup().get();
+        GitRepositoryOverview.StashEntry entry = clean.mOverviewForTesting().stashes.get(0);
+
+        clean.confirmApplyStash(entry);
+        AlertDialog apply = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotNull(apply);
+        assertTrue(((TextView) apply.findViewById(android.R.id.message)).getText()
+            .toString().contains("stash 会保留"));
+        apply.dismiss();
+
+        clean.confirmDropStash(entry);
+        AlertDialog drop = ShadowAlertDialog.getLatestAlertDialog();
+        assertNotNull(drop);
+        shadowOf(Looper.getMainLooper()).idle();
+        assertEquals(clean.getString(R.string.git_workbench_stash_drop_action),
+            drop.getButton(AlertDialog.BUTTON_POSITIVE).getText().toString());
+        assertEquals(clean.getColor(R.color.tp_danger),
+            drop.getButton(AlertDialog.BUTTON_POSITIVE).getCurrentTextColor());
+        assertTrue(((TextView) drop.findViewById(android.R.id.message)).getText()
+            .toString().contains("不触碰工作树和远端仓库"));
     }
 
     @Test
