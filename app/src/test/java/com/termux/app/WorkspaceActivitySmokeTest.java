@@ -143,6 +143,11 @@ public class WorkspaceActivitySmokeTest {
         assertEquals(2, selector.getCount());
         assertEquals(View.VISIBLE, selector.getVisibility());
         assertEquals("远程开发 副本", selector.getSelectedItem().toString());
+        TextView selectedView = (TextView) selector.getAdapter().getView(
+            selector.getSelectedItemPosition(), null, selector);
+        assertTrue(selectedView.getText().toString().contains("远程开发 副本"));
+        assertTrue(selectedView.getText().toString().contains("hdr@192.168.1.153"));
+        assertTrue(selectedView.getText().toString().contains("~/termux-pro"));
         assertEquals("hdr@192.168.1.153",
             ((EditText) activity.findViewById(R.id.workspace_host_input)).getText().toString());
         assertEquals(View.GONE,
@@ -151,6 +156,9 @@ public class WorkspaceActivitySmokeTest {
 
         WorkspaceActivity restored = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
         assertEquals(2, ((Spinner) restored.findViewById(R.id.workspace_selector)).getCount());
+        TextView restoredOption = (TextView) ((Spinner) restored.findViewById(R.id.workspace_selector))
+            .getAdapter().getView(1, null, restored.findViewById(R.id.workspace_selector));
+        assertTrue(restoredOption.getText().toString().contains("hdr@192.168.1.153"));
         assertEquals("hdr@192.168.1.153",
             ((EditText) restored.findViewById(R.id.workspace_host_input)).getText().toString());
         restored.finish();
