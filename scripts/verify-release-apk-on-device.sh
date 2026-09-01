@@ -24,7 +24,7 @@ collect_evidence() {
 trap collect_evidence EXIT
 
 require_contains() {
-    local haystack="${1:?}"
+    local haystack="${1-}"
     local needle="${2:?}"
     local message="${3:?}"
     if [[ "$haystack" != *"$needle"* ]]; then
@@ -35,7 +35,7 @@ require_contains() {
 }
 
 require_regex() {
-    local haystack="${1:?}"
+    local haystack="${1-}"
     local pattern="${2:?}"
     local message="${3:?}"
     if ! grep -Eq "$pattern" <<<"$haystack"; then
