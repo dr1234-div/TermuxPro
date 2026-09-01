@@ -224,6 +224,8 @@
     <string name="workspace_project_check_action">运行项目检查</string>
     <string name="terminal_project_tasks_invalid_workspace">当前没有可用的远程工作区。请先回到工作台配置服务器和项目目录。</string>
     <string name="terminal_remote_files_invalid_workspace">当前没有可用的远程工作区。请先回到工作台配置服务器和项目目录。</string>
+    <string name="terminal_connection_diagnostic_invalid_workspace">当前没有可用的远程工作区。请先回到工作台配置服务器和项目目录。</string>
+    <string name="terminal_ssh_keys_invalid_workspace">当前没有可用的远程工作区。请先回到工作台配置服务器和项目目录。</string>
     <string name="workspace_tmux_sessions_action">tmux 会话</string>
     <string name="terminal_task_sessions_invalid_workspace">当前没有可用的远程工作区。请先回到工作台配置服务器、项目目录和 tmux 策略。</string>
     <string name="workspace_interrupt_action">中断（Ctrl+C）</string>
@@ -518,6 +520,7 @@
     <string name="custom_commands_invalid_workspace">当前没有可用的远程工作区。请先返回工作台配置服务器和项目目录。</string>
     <string name="terminal_tools_section_context">当前上下文</string>
     <string name="terminal_tools_section_project">项目与 Git</string>
+    <string name="terminal_tools_section_connection">连接与安全</string>
     <string name="terminal_tools_section_ai">AI 安全操作</string>
     <string name="terminal_tools_section_keyboard">键区切换</string>
     <string name="terminal_custom_commands_action">快捷指令</string>

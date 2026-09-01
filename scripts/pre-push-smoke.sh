@@ -67,6 +67,18 @@ for file in "${changed_files[@]}"; do
             add_test "com.termux.app.WorkspaceCommandBuilderTest"
             needs_android_compile=1
             ;;
+        app/src/main/java/com/termux/app/ConnectionDiagnosticNavigation.java|app/src/main/java/com/termux/app/ConnectionDiagnosticActivity.java)
+            add_test "com.termux.app.ConnectionDiagnosticNavigationTest"
+            add_test "com.termux.app.ConnectionDiagnosticReportTest"
+            add_test "com.termux.app.RemoteToolRecoveryTest"
+            add_test "com.termux.app.WorkspaceCommandBuilderTest"
+            needs_android_compile=1
+            ;;
+        app/src/main/java/com/termux/app/SshKeysNavigation.java|app/src/main/java/com/termux/app/SshKeysActivity.java)
+            add_test "com.termux.app.SshKeysNavigationTest"
+            add_test "com.termux.app.RemoteToolRecoveryTest"
+            needs_android_compile=1
+            ;;
         app/src/main/java/com/termux/app/Terminal*|terminal-view/*|terminal-emulator/*)
             add_test "com.termux.app.TerminalProjectToolsMenuTest"
             add_test "com.termux.app.TerminalTouchScrollPolicyTest"

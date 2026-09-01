@@ -344,6 +344,8 @@
     <string name="workspace_project_check_action">Run project checks</string>
     <string name="terminal_project_tasks_invalid_workspace">No valid remote workspace is selected. Return to the workbench and configure a server and project directory first.</string>
     <string name="terminal_remote_files_invalid_workspace">No valid remote workspace is selected. Return to the workbench and configure a server and project directory first.</string>
+    <string name="terminal_connection_diagnostic_invalid_workspace">No valid remote workspace is selected. Return to the workbench and configure a server and project directory first.</string>
+    <string name="terminal_ssh_keys_invalid_workspace">No valid remote workspace is selected. Return to the workbench and configure a server and project directory first.</string>
     <string name="workspace_tmux_sessions_action">tmux sessions</string>
     <string name="terminal_task_sessions_invalid_workspace">No valid remote workspace is selected. Return to the workbench and configure the server, project directory, and tmux policy first.</string>
     <string name="workspace_interrupt_action">Interrupt (Ctrl+C)</string>
@@ -639,6 +641,7 @@
     <string name="custom_commands_invalid_workspace">No valid remote workspace is selected. Return to the workspace and configure a server and project directory first.</string>
     <string name="terminal_tools_section_context">Current context</string>
     <string name="terminal_tools_section_project">Project and Git</string>
+    <string name="terminal_tools_section_connection">Connection and security</string>
     <string name="terminal_tools_section_ai">AI safety actions</string>
     <string name="terminal_tools_section_keyboard">Key rows</string>
     <string name="terminal_custom_commands_action">Quick commands</string>
