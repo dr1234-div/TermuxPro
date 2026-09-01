@@ -754,6 +754,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 case TerminalProjectToolsMenu.TOOL_GIT_DIFF:
                     openGitWorkbench(true);
                     return true;
+                case TerminalProjectToolsMenu.TOOL_REMOTE_FILES:
+                    openRemoteFiles();
+                    return true;
                 case TerminalProjectToolsMenu.TOOL_PROJECT_CHECK:
                     openProjectTasks();
                     return true;
@@ -810,6 +813,15 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         Intent intent = ProjectTasksNavigation.newIntentForActiveWorkspace(this);
         if (intent == null) {
             showToast(getString(R.string.terminal_project_tasks_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
+    }
+
+    private void openRemoteFiles() {
+        Intent intent = RemoteFilesNavigation.newIntentForActiveWorkspace(this);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_remote_files_invalid_workspace), true);
             return;
         }
         startActivity(intent);

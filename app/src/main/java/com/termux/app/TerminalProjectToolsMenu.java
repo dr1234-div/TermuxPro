@@ -23,6 +23,7 @@ final class TerminalProjectToolsMenu {
     static final int TOOL_SEARCH_OUTPUT = 11;
     static final int TOOL_CUSTOM_COMMANDS = 12;
     static final int TOOL_TOUCH_SCROLL_MODE = 13;
+    static final int TOOL_REMOTE_FILES = 14;
 
     private TerminalProjectToolsMenu() {}
 
@@ -43,6 +44,7 @@ final class TerminalProjectToolsMenu {
         addHeader(context, menu, R.string.terminal_tools_section_project);
         menu.add(Menu.NONE, TOOL_GIT_STATUS, Menu.NONE, R.string.workspace_git_status_action);
         menu.add(Menu.NONE, TOOL_GIT_DIFF, Menu.NONE, R.string.workspace_git_diff_action);
+        menu.add(Menu.NONE, TOOL_REMOTE_FILES, Menu.NONE, R.string.workspace_remote_files_action);
         menu.add(Menu.NONE, TOOL_PROJECT_CHECK, Menu.NONE, R.string.workspace_project_tasks_action);
 
         addHeader(context, menu, R.string.terminal_tools_section_ai);
