@@ -72,6 +72,11 @@ public final class GitDiffActivityTest {
             remote.getButton(AlertDialog.BUTTON_NEGATIVE).getCurrentTextColor());
         assertTrue(((TextView) remote.findViewById(android.R.id.message)).getText().toString()
             .contains("2 个未提交文件"));
+        branches.getListView().performItemClick(branches.getListView().getAdapter()
+                .getView(1, null, branches.getListView()), 1,
+            branches.getListView().getAdapter().getItemId(1));
+        assertTrue(((TextView) activity.findViewById(R.id.git_diff_status_message)).getText()
+            .toString().contains("已阻止切换分支"));
 
         activity.confirmDeleteLocalBranch("mobile-ui");
         AlertDialog confirmDelete = ShadowAlertDialog.getLatestAlertDialog();

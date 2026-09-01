@@ -512,6 +512,11 @@ public final class GitDiffActivity extends AppCompatActivity {
     }
 
     private void confirmTrackRemoteBranch(@NonNull String branch) {
+        if (mOverview != null && mOverview.changedFiles > 0) {
+            showStatus(getString(R.string.git_workbench_switch_dirty_blocked,
+                mOverview.changedFiles), false);
+            return;
+        }
         AlertDialog dialog = createTrackRemoteBranchDialog(branch);
         if (dialog != null) showStyledDialog(dialog);
     }
@@ -534,6 +539,11 @@ public final class GitDiffActivity extends AppCompatActivity {
 
     private void confirmSwitch(@NonNull String branch) {
         if (mOverview == null || branch.equals(mOverview.head)) return;
+        if (mOverview.changedFiles > 0) {
+            showStatus(getString(R.string.git_workbench_switch_dirty_blocked,
+                mOverview.changedFiles), false);
+            return;
+        }
         int message = mOverview.changedFiles > 0
             ? R.string.git_workbench_switch_dirty_message : R.string.git_workbench_switch_message;
         AlertDialog dialog = new AlertDialog.Builder(this)
@@ -722,6 +732,8 @@ public final class GitDiffActivity extends AppCompatActivity {
             mMainHandler.post(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 77) showStatus(getString(
+                    R.string.git_workbench_switch_dirty_blocked_remote), false);
                 else showStatus(getString(R.string.git_workbench_switch_failed,
                     result.output.trim()), false);
             });
@@ -791,6 +803,8 @@ public final class GitDiffActivity extends AppCompatActivity {
                 if (result.exitCode == 0) loadOverview();
                 else if (result.exitCode == 74) showStatus(getString(
                     R.string.git_workbench_track_remote_conflict, branch), false);
+                else if (result.exitCode == 77) showStatus(getString(
+                    R.string.git_workbench_switch_dirty_blocked_remote), false);
                 else showStatus(getString(R.string.git_workbench_switch_failed,
                     result.output.trim()), false);
             });

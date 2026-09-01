@@ -399,6 +399,8 @@
     <string name="git_workbench_switch_branch">切换分支</string>
     <string name="git_workbench_switch_message">从 %1$s 切换到 %2$s？</string>
     <string name="git_workbench_switch_dirty_message">从 %1$s 切换到 %2$s？当前有 %3$d 个未提交文件；若可能覆盖修改，Git 会停止切换。</string>
+    <string name="git_workbench_switch_dirty_blocked">已阻止切换分支：当前有 %1$d 个未提交文件。请先 stash、提交或手动处理后再重试。</string>
+    <string name="git_workbench_switch_dirty_blocked_remote">已阻止切换分支：远端工作区在执行前出现新改动。请刷新后先 stash 或提交。</string>
     <string name="git_workbench_switch_action">切换</string>
     <string name="git_workbench_switching">正在切换到 %1$s…</string>
     <string name="git_workbench_switch_failed">Git 未切换分支，当前工作树已保留。\n\n%1$s</string>
