@@ -299,6 +299,7 @@
     <string name="git_workbench_push_detached_blocked">当前处于游离 HEAD，已阻止推送。请先切换到分支。</string>
     <string name="git_workbench_push_failed">Git 未完成推送，且没有尝试 force push。\n\n%1$s</string>
     <string name="git_workbench_changes">修改</string>
+    <string name="git_workbench_files">按文件</string>
     <string name="git_workbench_index_state">已暂存 %1$d · 未暂存 %2$d</string>
     <string name="git_workbench_stage_all">暂存全部</string>
     <string name="git_workbench_unstage_all">取消暂存</string>
@@ -312,6 +313,20 @@
     <string name="git_workbench_no_staged_changes">没有可取消暂存的改动。</string>
     <string name="git_workbench_stage_all_failed">Git 未完成暂存，当前工作树已保留。\n\n%1$s</string>
     <string name="git_workbench_unstage_all_failed">Git 未完成取消暂存，当前工作树已保留。\n\n%1$s</string>
+    <string name="git_workbench_no_file_changes">当前没有可操作的文件改动。</string>
+    <string name="git_workbench_file_change">%1$s · %2$s</string>
+    <string name="git_workbench_file_scope_staged">已暂存</string>
+    <string name="git_workbench_file_scope_unstaged">未暂存</string>
+    <string name="git_workbench_file_scope_mixed">已暂存 + 未暂存</string>
+    <string name="git_workbench_file_action_message">只调整这个文件的暂存状态；不会提交、推送、丢弃或重置工作区内容。</string>
+    <string name="git_workbench_stage_file_action">暂存这个文件</string>
+    <string name="git_workbench_unstage_file_action">取消暂存这个文件</string>
+    <string name="git_workbench_staging_file">正在暂存 %1$s…</string>
+    <string name="git_workbench_unstaging_file">正在取消暂存 %1$s…</string>
+    <string name="git_workbench_no_unstaged_file_change">这个文件当前没有未暂存改动，请刷新后再核对。</string>
+    <string name="git_workbench_no_staged_file_change">这个文件当前没有已暂存改动，请刷新后再核对。</string>
+    <string name="git_workbench_stage_file_failed">Git 没有暂存该文件，工作区内容保持不变。\n\n%1$s</string>
+    <string name="git_workbench_unstage_file_failed">Git 没有取消暂存该文件，工作区内容保持不变。\n\n%1$s</string>
     <string name="git_workbench_commit">提交</string>
     <string name="git_workbench_commit_hint">例如 fix: 优化手机终端体验</string>
     <string name="git_workbench_commit_message">提交 %1$d 个已暂存文件；%2$d 个未暂存文件不会进入本次提交。不会推送远端。</string>
@@ -477,6 +492,7 @@
     <string name="task_sessions_other_owner_warning">这个会话由同一远端账号下的其他 TermuxPro 使用者创建。只允许你明确确认后进入；重命名和停止已禁用，避免影响共享账号中的其他工作。</string>
     <string name="task_sessions_incomplete_marker_warning">这个会话存在不完整的 TermuxPro 归属元数据。当前只按只读处理：允许进入，但禁用重命名和停止；请重新连接或重建会话后再管理。</string>
     <string name="task_sessions_target">远端目标 · %1$s:%2$d · %3$s</string>
+    <string name="task_sessions_safety_hint">当前工作区会话优先显示；其他工作区、其他使用者和归属未知会话只允许进入，不允许在这里重命名或停止。</string>
     <string name="task_sessions_owned_context">TermuxPro 自有会话 · %1$s:%2$d · %3$s</string>
     <string name="task_sessions_name_label">会话名称</string>
     <string name="task_sessions_creating">正在新建“%1$s”…</string>
@@ -533,7 +549,9 @@
     <string name="terminal_tools_section_context">当前上下文</string>
     <string name="terminal_tools_section_project">项目与 Git</string>
     <string name="terminal_tools_section_connection">连接与安全</string>
-    <string name="terminal_tools_section_ai">AI 安全操作</string>
+    <string name="terminal_tools_section_ai">AI 工作</string>
+    <string name="terminal_ai_launch_claude_action">启动 Claude Code</string>
+    <string name="terminal_ai_launch_codex_action">启动 Codex CLI</string>
     <string name="terminal_tools_section_keyboard">键区切换</string>
     <string name="terminal_custom_commands_action">快捷指令</string>
 </resources>

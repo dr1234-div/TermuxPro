@@ -14,6 +14,7 @@ final class GitRepositoryOverview {
     private static final String LOCAL_BRANCH = "TP_LOCAL\t";
     private static final String REMOTE_BRANCH = "TP_REMOTE\t";
     private static final String LOG = "TP_LOG\t";
+    private static final String STATUS_Z = "TP_STATUS_Z\000";
 
     @NonNull final String head;
     final boolean detached;
@@ -26,6 +27,7 @@ final class GitRepositoryOverview {
     @NonNull final List<String> localBranches;
     @NonNull final List<String> remoteBranches;
     @NonNull final List<Commit> commits;
+    @NonNull final List<FileChange> fileChanges;
 
     private GitRepositoryOverview(@NonNull String head, boolean detached, int changedFiles,
                                   int stagedFiles, int unstagedFiles,
@@ -33,7 +35,8 @@ final class GitRepositoryOverview {
                                   @Nullable String upstream,
                                   @NonNull List<String> localBranches,
                                   @NonNull List<String> remoteBranches,
-                                  @NonNull List<Commit> commits) {
+                                  @NonNull List<Commit> commits,
+                                  @NonNull List<FileChange> fileChanges) {
         this.head = head;
         this.detached = detached;
         this.changedFiles = changedFiles;
@@ -45,10 +48,18 @@ final class GitRepositoryOverview {
         this.localBranches = Collections.unmodifiableList(localBranches);
         this.remoteBranches = Collections.unmodifiableList(remoteBranches);
         this.commits = Collections.unmodifiableList(commits);
+        this.fileChanges = Collections.unmodifiableList(fileChanges);
     }
 
     @NonNull
     static GitRepositoryOverview parse(@NonNull String output) {
+        String overviewOutput = output;
+        String statusOutput = "";
+        int statusIndex = output.indexOf(STATUS_Z);
+        if (statusIndex >= 0) {
+            overviewOutput = output.substring(0, statusIndex);
+            statusOutput = output.substring(statusIndex + STATUS_Z.length());
+        }
         String head = null;
         boolean detached = false;
         int changedFiles = 0;
@@ -61,7 +72,7 @@ final class GitRepositoryOverview {
         List<String> remote = new ArrayList<>();
         List<Commit> commits = new ArrayList<>();
 
-        for (String line : output.split("\n")) {
+        for (String line : overviewOutput.split("\n")) {
             if (line.startsWith(OVERVIEW)) {
                 String[] fields = line.split("\t", -1);
                 if (fields.length != 7 && fields.length != 9 && fields.length != 10) {
@@ -104,7 +115,30 @@ final class GitRepositoryOverview {
         if (head == null) throw new IllegalArgumentException("Missing Git overview record");
         return new GitRepositoryOverview(head, detached, changedFiles, stagedFiles, unstagedFiles,
             ahead, behind, upstream,
-            local, remote, commits);
+            local, remote, commits, parseFileChanges(statusOutput));
+    }
+
+    @NonNull
+    private static List<FileChange> parseFileChanges(@NonNull String statusOutput) {
+        List<FileChange> changes = new ArrayList<>();
+        if (statusOutput.isEmpty()) return changes;
+        String[] entries = statusOutput.split("\000", -1);
+        for (int index = 0; index < entries.length; index++) {
+            String entry = entries[index];
+            if (entry.isEmpty()) continue;
+            if (entry.length() < 4 || entry.charAt(2) != ' ') {
+                throw new IllegalArgumentException("Invalid Git file status record");
+            }
+            char indexStatus = entry.charAt(0);
+            char worktreeStatus = entry.charAt(1);
+            String path = requireValue(entry.substring(3), "file path");
+            changes.add(new FileChange(indexStatus, worktreeStatus, path));
+            if ((indexStatus == 'R' || indexStatus == 'C') && index + 1 < entries.length
+                && !entries[index + 1].isEmpty()) {
+                index++;
+            }
+        }
+        return changes;
     }
 
     static boolean isRemoteHead(@NonNull String branch) {
@@ -136,6 +170,26 @@ final class GitRepositoryOverview {
             this.shortHash = shortHash;
             this.relativeTime = relativeTime;
             this.subject = subject;
+        }
+    }
+
+    static final class FileChange {
+        final char indexStatus;
+        final char worktreeStatus;
+        @NonNull final String path;
+
+        FileChange(char indexStatus, char worktreeStatus, @NonNull String path) {
+            this.indexStatus = indexStatus;
+            this.worktreeStatus = worktreeStatus;
+            this.path = path;
+        }
+
+        boolean hasStagedChange() {
+            return indexStatus != ' ' && indexStatus != '?';
+        }
+
+        boolean hasUnstagedChange() {
+            return worktreeStatus != ' ' || indexStatus == '?';
         }
     }
 }
