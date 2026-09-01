@@ -220,6 +220,7 @@
     <string name="workspace_tools_tui_scroll_action">工具箱 · TUI</string>
     <string name="workspace_git_status_action">Git 状态</string>
     <string name="workspace_git_diff_action">审查 Git Diff</string>
+    <string name="terminal_git_workbench_invalid_workspace">当前没有可用的远程工作区。请先回到工作台配置服务器和项目目录。</string>
     <string name="workspace_project_check_action">运行项目检查</string>
     <string name="workspace_tmux_sessions_action">tmux 会话</string>
     <string name="workspace_interrupt_action">中断（Ctrl+C）</string>

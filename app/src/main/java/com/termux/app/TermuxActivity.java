@@ -749,10 +749,10 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                     startActivity(new Intent(this, CustomCommandsActivity.class));
                     return true;
                 case TerminalProjectToolsMenu.TOOL_GIT_STATUS:
-                    confirmAndSendCommand("git status --short --branch");
+                    openGitWorkbench(false);
                     return true;
                 case TerminalProjectToolsMenu.TOOL_GIT_DIFF:
-                    confirmAndSendCommand("git diff --color=always --stat && git diff --color=always");
+                    openGitWorkbench(true);
                     return true;
                 case TerminalProjectToolsMenu.TOOL_PROJECT_CHECK:
                     confirmAndSendCommand("if [ -f package.json ]; then " +
@@ -792,6 +792,15 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             }
         });
         popup.show();
+    }
+
+    private void openGitWorkbench(boolean startInDiff) {
+        Intent intent = GitWorkbenchNavigation.newIntentForActiveWorkspace(this, startInDiff);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_git_workbench_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
     }
 
     private void toggleTouchScrollMode() {

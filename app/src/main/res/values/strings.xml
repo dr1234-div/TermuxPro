@@ -340,6 +340,7 @@
     <string name="workspace_tools_tui_scroll_action">Toolbox · TUI</string>
     <string name="workspace_git_status_action">Git status</string>
     <string name="workspace_git_diff_action">Review Git diff</string>
+    <string name="terminal_git_workbench_invalid_workspace">No valid remote workspace is selected. Return to the workbench and configure a server and project directory first.</string>
     <string name="workspace_project_check_action">Run project checks</string>
     <string name="workspace_tmux_sessions_action">tmux sessions</string>
     <string name="workspace_interrupt_action">Interrupt (Ctrl+C)</string>
