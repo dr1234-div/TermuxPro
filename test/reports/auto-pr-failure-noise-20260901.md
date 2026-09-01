@@ -12,6 +12,16 @@
 用户收到失败邮件的主要原因是：研发分支中间提交失败后，后续强推修复会重新触发成功运行，但 GitHub
 不会撤回已发送的旧失败邮件。
 
+2026-09-01 复核最近运行记录：
+
+- `v0.8.0` 稳定 Release 已完成，`master` 合并提交 `ad67821c`。
+- PR #114、#115、#116、#117、#118 已合入 `dev`，对应合并后 `dev` CI 均为 success。
+- 旧失败 run `33468317649` 的真实根因是 `TermuxTerminalSessionActivityClientTest` 两个单测失败。
+- 同时间旧失败 run `33468317719` 是自动 PR 工作流把上述 CI 失败再次冒泡为 failure，属于重复告警。
+- 后续修复提交 run `33468669492`、`33468669486`、`33468669501` 已通过并合入 PR #115。
+- `dev` 当前 check suite 中存在 `vercel`、`4everland`、`cursor` 的 queued 空检查，但 GitHub Actions
+  自身为 success；`dev` 和 `master` 当前均未配置分支保护必需检查，因此这些外部空检查不阻断合并。
+
 ## 确认的问题
 
 `自动创建研发 PR` workflow 以前会等待预合并 CI 和模拟器 UI。如果其中任一失败，自动 PR workflow

@@ -284,8 +284,8 @@
     <string name="workspace_start_claude">Claude Code</string>
     <string name="workspace_start_codex">Codex CLI</string>
     <string name="ai_session_launch_title">Start %1$s</string>
-    <string name="ai_session_new_action">New session (safe default)</string>
-    <string name="ai_session_pick_history_action">Choose a previous session</string>
+    <string name="ai_session_new_action">New session (safe default)\nStart clean in this project. Recommended for shared Claude accounts.</string>
+    <string name="ai_session_pick_history_action">Choose previous session\nOpen the CLI picker yourself; TermuxPro will not auto-enter the latest session.</string>
     <string name="workspace_open_local_terminal">Open local terminal</string>
     <string name="workspace_security_tip">The first SSH connection still requires explicit host fingerprint confirmation.</string>
     <string name="workspace_error_host">Enter a valid SSH alias, host, or user@host.</string>
