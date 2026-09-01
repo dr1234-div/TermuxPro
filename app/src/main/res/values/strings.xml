@@ -344,6 +344,7 @@
     <string name="workspace_project_check_action">Run project checks</string>
     <string name="terminal_project_tasks_invalid_workspace">No valid remote workspace is selected. Return to the workbench and configure a server and project directory first.</string>
     <string name="terminal_remote_files_invalid_workspace">No valid remote workspace is selected. Return to the workbench and configure a server and project directory first.</string>
+    <string name="terminal_web_preview_invalid_workspace">No valid Web preview ports are configured for the current workspace. Return to the workbench and configure the remote and phone ports first.</string>
     <string name="terminal_connection_diagnostic_invalid_workspace">No valid remote workspace is selected. Return to the workbench and configure a server and project directory first.</string>
     <string name="terminal_ssh_keys_invalid_workspace">No valid remote workspace is selected. Return to the workbench and configure a server and project directory first.</string>
     <string name="workspace_tmux_sessions_action">tmux sessions</string>
@@ -353,8 +354,8 @@
     <string name="workspace_preview_description">Create a loopback-only SSH tunnel, then open the project in your browser.</string>
     <string name="workspace_remote_port_hint">Remote port</string>
     <string name="workspace_local_port_hint">Phone port</string>
-    <string name="workspace_start_preview_action">Start tunnel</string>
-    <string name="workspace_open_preview_action">Open browser</string>
+    <string name="workspace_start_preview_action">Start Web tunnel</string>
+    <string name="workspace_open_preview_action">Open Web preview</string>
     <string name="workspace_error_preview_port">Port must be between 1 and 65535.</string>
     <string name="ai_attention_channel_name">Terminal attention</string>
     <string name="ai_attention_title">Terminal needs attention</string>

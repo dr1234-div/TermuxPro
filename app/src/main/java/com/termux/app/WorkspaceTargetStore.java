@@ -48,7 +48,9 @@ final class WorkspaceTargetStore {
         if (id.isEmpty()) return null;
         return new WorkspaceTarget(id, item.optString("name", "远程开发"),
             item.optString("host").trim(), parsePort(item.optString("port", "22")),
-            item.optString("path", "~/").trim());
+            item.optString("path", "~/").trim(),
+            parsePort(item.optString("remotePort", "5173")),
+            parsePort(item.optString("localPort", "5173")));
     }
 
     @Nullable
@@ -57,7 +59,9 @@ final class WorkspaceTargetStore {
         if (host.isEmpty()) return null;
         return new WorkspaceTarget("legacy", preferences.getString("name", "远程开发"), host,
             parsePort(preferences.getString("port", "22")),
-            preferences.getString("path", "~/").trim());
+            preferences.getString("path", "~/").trim(),
+            parsePort(preferences.getString("remotePort", "5173")),
+            parsePort(preferences.getString("localPort", "5173")));
     }
 
     private static int parsePort(String value) {

@@ -26,6 +26,8 @@ final class TerminalProjectToolsMenu {
     static final int TOOL_REMOTE_FILES = 14;
     static final int TOOL_CONNECTION_DIAGNOSTIC = 15;
     static final int TOOL_SSH_KEYS = 16;
+    static final int TOOL_START_WEB_PREVIEW = 17;
+    static final int TOOL_OPEN_WEB_PREVIEW = 18;
 
     private TerminalProjectToolsMenu() {}
 
@@ -48,6 +50,8 @@ final class TerminalProjectToolsMenu {
         menu.add(Menu.NONE, TOOL_GIT_DIFF, Menu.NONE, R.string.workspace_git_diff_action);
         menu.add(Menu.NONE, TOOL_REMOTE_FILES, Menu.NONE, R.string.workspace_remote_files_action);
         menu.add(Menu.NONE, TOOL_PROJECT_CHECK, Menu.NONE, R.string.workspace_project_tasks_action);
+        menu.add(Menu.NONE, TOOL_START_WEB_PREVIEW, Menu.NONE, R.string.workspace_start_preview_action);
+        menu.add(Menu.NONE, TOOL_OPEN_WEB_PREVIEW, Menu.NONE, R.string.workspace_open_preview_action);
 
         addHeader(context, menu, R.string.terminal_tools_section_connection);
         menu.add(Menu.NONE, TOOL_CONNECTION_DIAGNOSTIC, Menu.NONE, R.string.workspace_diagnostic_action);

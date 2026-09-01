@@ -67,6 +67,12 @@ for file in "${changed_files[@]}"; do
             add_test "com.termux.app.WorkspaceCommandBuilderTest"
             needs_android_compile=1
             ;;
+        app/src/main/java/com/termux/app/WebPreviewNavigation.java|app/src/main/java/com/termux/app/WorkspaceTarget.java|app/src/main/java/com/termux/app/WorkspaceTargetStore.java)
+            add_test "com.termux.app.WebPreviewNavigationTest"
+            add_test "com.termux.app.WorkspaceTargetStoreTest"
+            add_test "com.termux.app.WorkspaceCommandBuilderTest"
+            needs_android_compile=1
+            ;;
         app/src/main/java/com/termux/app/ConnectionDiagnosticNavigation.java|app/src/main/java/com/termux/app/ConnectionDiagnosticActivity.java)
             add_test "com.termux.app.ConnectionDiagnosticNavigationTest"
             add_test "com.termux.app.ConnectionDiagnosticReportTest"

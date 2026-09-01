@@ -40,26 +40,32 @@ public class TerminalProjectToolsMenuTest {
         assertEquals("远端文件", menu.getItem(8).getTitle().toString());
         assertEquals(TerminalProjectToolsMenu.TOOL_PROJECT_CHECK, menu.getItem(9).getItemId());
         assertEquals("项目任务", menu.getItem(9).getTitle().toString());
-
-        assertEquals("连接与安全", menu.getItem(10).getTitle().toString());
-        assertFalse(menu.getItem(10).isEnabled());
-        assertEquals(TerminalProjectToolsMenu.TOOL_CONNECTION_DIAGNOSTIC,
+        assertEquals(TerminalProjectToolsMenu.TOOL_START_WEB_PREVIEW,
+            menu.getItem(10).getItemId());
+        assertEquals("启动 Web 隧道", menu.getItem(10).getTitle().toString());
+        assertEquals(TerminalProjectToolsMenu.TOOL_OPEN_WEB_PREVIEW,
             menu.getItem(11).getItemId());
-        assertEquals("环境诊断", menu.getItem(11).getTitle().toString());
-        assertEquals(TerminalProjectToolsMenu.TOOL_SSH_KEYS, menu.getItem(12).getItemId());
-        assertEquals("SSH 密钥", menu.getItem(12).getTitle().toString());
+        assertEquals("打开 Web 预览", menu.getItem(11).getTitle().toString());
 
-        assertEquals("AI 安全操作", menu.getItem(13).getTitle().toString());
-        assertFalse(menu.getItem(13).isEnabled());
-        assertEquals(TerminalProjectToolsMenu.TOOL_AI_CONFIRM, menu.getItem(14).getItemId());
-        assertEquals(TerminalProjectToolsMenu.TOOL_AI_REJECT, menu.getItem(15).getItemId());
-        assertEquals(TerminalProjectToolsMenu.TOOL_INTERRUPT, menu.getItem(16).getItemId());
+        assertEquals("连接与安全", menu.getItem(12).getTitle().toString());
+        assertFalse(menu.getItem(12).isEnabled());
+        assertEquals(TerminalProjectToolsMenu.TOOL_CONNECTION_DIAGNOSTIC,
+            menu.getItem(13).getItemId());
+        assertEquals("环境诊断", menu.getItem(13).getTitle().toString());
+        assertEquals(TerminalProjectToolsMenu.TOOL_SSH_KEYS, menu.getItem(14).getItemId());
+        assertEquals("SSH 密钥", menu.getItem(14).getTitle().toString());
 
-        assertEquals("键区切换", menu.getItem(17).getTitle().toString());
-        assertFalse(menu.getItem(17).isEnabled());
-        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_SHELL, menu.getItem(18).getItemId());
-        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_AI, menu.getItem(19).getItemId());
-        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_VIM, menu.getItem(20).getItemId());
+        assertEquals("AI 安全操作", menu.getItem(15).getTitle().toString());
+        assertFalse(menu.getItem(15).isEnabled());
+        assertEquals(TerminalProjectToolsMenu.TOOL_AI_CONFIRM, menu.getItem(16).getItemId());
+        assertEquals(TerminalProjectToolsMenu.TOOL_AI_REJECT, menu.getItem(17).getItemId());
+        assertEquals(TerminalProjectToolsMenu.TOOL_INTERRUPT, menu.getItem(18).getItemId());
+
+        assertEquals("键区切换", menu.getItem(19).getTitle().toString());
+        assertFalse(menu.getItem(19).isEnabled());
+        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_SHELL, menu.getItem(20).getItemId());
+        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_AI, menu.getItem(21).getItemId());
+        assertEquals(TerminalProjectToolsMenu.TOOL_KEYS_VIM, menu.getItem(22).getItemId());
     }
 
     @Test

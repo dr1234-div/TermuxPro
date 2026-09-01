@@ -760,6 +760,12 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 case TerminalProjectToolsMenu.TOOL_PROJECT_CHECK:
                     openProjectTasks();
                     return true;
+                case TerminalProjectToolsMenu.TOOL_START_WEB_PREVIEW:
+                    startWebPreviewTunnel();
+                    return true;
+                case TerminalProjectToolsMenu.TOOL_OPEN_WEB_PREVIEW:
+                    openWebPreviewBrowser();
+                    return true;
                 case TerminalProjectToolsMenu.TOOL_CONNECTION_DIAGNOSTIC:
                     openConnectionDiagnostic();
                     return true;
@@ -828,6 +834,24 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         Intent intent = RemoteFilesNavigation.newIntentForActiveWorkspace(this);
         if (intent == null) {
             showToast(getString(R.string.terminal_remote_files_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
+    }
+
+    private void startWebPreviewTunnel() {
+        Intent intent = WebPreviewNavigation.newStartTunnelIntentForActiveWorkspace(this);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_web_preview_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
+    }
+
+    private void openWebPreviewBrowser() {
+        Intent intent = WebPreviewNavigation.newOpenBrowserIntentForActiveWorkspace(this);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_web_preview_invalid_workspace), true);
             return;
         }
         startActivity(intent);
