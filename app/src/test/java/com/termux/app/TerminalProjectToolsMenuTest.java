@@ -30,7 +30,7 @@ public class TerminalProjectToolsMenuTest {
         assertEquals(TerminalProjectToolsMenu.TOOL_CUSTOM_COMMANDS, menu.getItem(2).getItemId());
         assertEquals(TerminalProjectToolsMenu.TOOL_SEARCH_OUTPUT, menu.getItem(3).getItemId());
         assertEquals(TerminalProjectToolsMenu.TOOL_TOUCH_SCROLL_MODE, menu.getItem(4).getItemId());
-        assertEquals("触摸滚动：AI/TUI 面板", menu.getItem(4).getTitle().toString());
+        assertEquals("当前：终端历史；点此切换到 AI/TUI 面板", menu.getItem(4).getTitle().toString());
 
         assertEquals("项目与 Git", menu.getItem(5).getTitle().toString());
         assertFalse(menu.getItem(5).isEnabled());
@@ -60,6 +60,15 @@ public class TerminalProjectToolsMenuTest {
 
         assertEquals(TerminalProjectToolsMenu.TOOL_TOUCH_SCROLL_MODE,
             popup.getMenu().getItem(4).getItemId());
-        assertEquals("触摸滚动：终端历史", popup.getMenu().getItem(4).getTitle().toString());
+        assertEquals("当前：AI/TUI 面板；点此切换到终端历史",
+            popup.getMenu().getItem(4).getTitle().toString());
+    }
+
+    @Test
+    public void toolsButtonShowsCurrentTouchScrollMode() {
+        assertEquals(com.termux.R.string.workspace_tools_scrollback_action,
+            TerminalProjectToolsMenu.toolsButtonLabel(false));
+        assertEquals(com.termux.R.string.workspace_tools_tui_scroll_action,
+            TerminalProjectToolsMenu.toolsButtonLabel(true));
     }
 }

@@ -336,6 +336,8 @@
     <string name="workspace_delete_title">Delete this workspace?</string>
     <string name="workspace_delete_message">Connection metadata for “%1$s” will be removed. SSH keys and remote files are not affected.</string>
     <string name="workspace_tools_action">Toolbox</string>
+    <string name="workspace_tools_scrollback_action">Toolbox · History</string>
+    <string name="workspace_tools_tui_scroll_action">Toolbox · TUI</string>
     <string name="workspace_git_status_action">Git status</string>
     <string name="workspace_git_diff_action">Review Git diff</string>
     <string name="workspace_project_check_action">Run project checks</string>
@@ -357,8 +359,8 @@
     <string name="workspace_keys_shell_applied">Shell keys enabled</string>
     <string name="workspace_keys_ai_applied">AI CLI keys enabled</string>
     <string name="workspace_keys_vim_applied">Vim keys enabled</string>
-    <string name="terminal_touch_scroll_switch_to_scrollback">Touch scroll: terminal history</string>
-    <string name="terminal_touch_scroll_switch_to_tui">Touch scroll: AI/TUI panels</string>
+    <string name="terminal_touch_scroll_switch_to_scrollback">Current: AI/TUI panels; tap to switch to terminal history</string>
+    <string name="terminal_touch_scroll_switch_to_tui">Current: terminal history; tap to switch to AI/TUI panels</string>
     <string name="terminal_touch_scroll_scrollback_applied">Finger swipes now scroll terminal history</string>
     <string name="terminal_touch_scroll_tui_applied">Finger swipes now scroll AI/TUI panels when supported</string>
     <string name="workspace_review_diff_action">Git changes</string>

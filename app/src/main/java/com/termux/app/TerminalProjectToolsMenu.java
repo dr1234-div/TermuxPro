@@ -60,4 +60,9 @@ final class TerminalProjectToolsMenu {
         MenuItem header = menu.add(Menu.NONE, Menu.NONE, Menu.NONE, context.getString(title));
         header.setEnabled(false);
     }
+
+    static int toolsButtonLabel(boolean tuiTouchScrollMode) {
+        return tuiTouchScrollMode ? R.string.workspace_tools_tui_scroll_action :
+            R.string.workspace_tools_scrollback_action;
+    }
 }
