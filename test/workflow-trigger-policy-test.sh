@@ -124,6 +124,14 @@ if ! grep -Fq 'gh_retry()' "$auto_dev_pr_file"; then
     echo "自动研发 PR 工作流必须封装 GitHub CLI 重试，避免偶发 API 抖动直接中断自治流水线。" >&2
     exit 1
 fi
+if grep -Fq 'gh_retry pr create' "$auto_dev_pr_file"; then
+    echo "自动研发 PR 禁止使用 gh pr create，避免 GitHub CLI 在 Actions 中进入交互式等待。" >&2
+    exit 1
+fi
+if ! grep -Fq 'gh_retry api --method POST "repos/$REPOSITORY/pulls"' "$auto_dev_pr_file"; then
+    echo "自动研发 PR 必须通过 GitHub Pulls API 创建 PR，确保非交互、可超时、可重试。" >&2
+    exit 1
+fi
 if ! grep -Fq '查询 GitHub Actions 超时或失败' "$auto_dev_pr_file"; then
     echo "自动研发 PR 工作流等待 CI 时必须容忍短暂查询失败，不能把 GitHub API 抖动误判成项目失败。" >&2
     exit 1

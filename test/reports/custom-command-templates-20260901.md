@@ -16,6 +16,8 @@
 - 模板入口与“新建”按钮拆到独立动作栏，保持 48dp 触控目标和 200% 字体可用性。
 - `scripts/pre-push-smoke.sh` 增加快捷指令相关变更到 `CustomCommandsActivityTest`、
   `CustomCommandStoreTest` 和 `WorkspaceCommandBuilderTest` 的映射，避免后续漏测。
+- `auto-dev-pr.yml` 创建 PR 改为调用 GitHub Pulls API，避免 `gh pr create` 在 Actions 中进入
+  交互式等待，减少 pending/fail 邮件噪声。
 
 ## 验收证据
 
@@ -28,6 +30,8 @@
   `WorkspaceActivitySmokeTest` 和 `WorkspaceCommandBuilderTest`。
 - `scripts/pre-push-smoke.sh origin/dev`：通过；Gradle 编译与相关 Robolectric 单测成功，
   `BUILD SUCCESSFUL in 36s`。
+- 推送后自动 PR 若创建阶段卡住，应由同分支后续提交自动取消旧 run；后续工作流使用非交互 Pulls API
+  创建 PR。
 
 ## 回归面
 

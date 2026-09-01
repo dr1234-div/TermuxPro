@@ -52,9 +52,12 @@ jobs:
             echo "研发 PR #$existing 已存在。"
             pr_number="$existing"
           else
-            pr_url="$(gh_retry pr create --repo "$REPOSITORY" --base dev --head "$HEAD_BRANCH" \
-              --title "$title" \
-              --body "由 TermuxPro 自治研发流水线创建。完整变更、测试证据与验收结果以本 PR 的提交和 Checks 为准。\n\n触发提交：\`$COMMIT_SHA\`")"
+            pr_url="$(gh_retry api --method POST "repos/$REPOSITORY/pulls" \
+              -f base=dev \
+              -f head="$HEAD_BRANCH" \
+              -f title="$title" \
+              -f body="由 TermuxPro 自治研发流水线创建。完整变更、测试证据与验收结果以本 PR 的提交和 Checks 为准。\n\n触发提交：\`$COMMIT_SHA\`" \
+              --jq '.html_url')"
             pr_number="${pr_url##*/}"
           fi
 
