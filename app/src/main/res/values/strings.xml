@@ -353,6 +353,10 @@
     <string name="workspace_keys_shell_applied">Shell keys enabled</string>
     <string name="workspace_keys_ai_applied">AI CLI keys enabled</string>
     <string name="workspace_keys_vim_applied">Vim keys enabled</string>
+    <string name="terminal_touch_scroll_switch_to_scrollback">Touch scroll: terminal history</string>
+    <string name="terminal_touch_scroll_switch_to_tui">Touch scroll: AI/TUI panels</string>
+    <string name="terminal_touch_scroll_scrollback_applied">Finger swipes now scroll terminal history</string>
+    <string name="terminal_touch_scroll_tui_applied">Finger swipes now scroll AI/TUI panels when supported</string>
     <string name="workspace_review_diff_action">Git changes</string>
     <string name="git_diff_title">Git workbench</string>
     <string name="git_diff_back">Back</string>

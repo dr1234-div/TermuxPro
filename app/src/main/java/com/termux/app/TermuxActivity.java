@@ -693,11 +693,15 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
     private void showProjectTools(View anchor) {
         PopupMenu popup = new PopupMenu(this, anchor);
-        TerminalProjectToolsMenu.populate(this, popup.getMenu());
+        TerminalProjectToolsMenu.populate(this, popup.getMenu(),
+            TerminalView.TOUCH_SCROLL_MODE_TUI.equals(mPreferences.getTerminalTouchScrollMode()));
         popup.setOnMenuItemClickListener(item -> {
             switch (item.getItemId()) {
                 case TerminalProjectToolsMenu.TOOL_SEARCH_OUTPUT:
                     showTerminalSearch();
+                    return true;
+                case TerminalProjectToolsMenu.TOOL_TOUCH_SCROLL_MODE:
+                    toggleTouchScrollMode();
                     return true;
                 case TerminalProjectToolsMenu.TOOL_CUSTOM_COMMANDS:
                     startActivity(new Intent(this, CustomCommandsActivity.class));
@@ -746,6 +750,18 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
             }
         });
         popup.show();
+    }
+
+    private void toggleTouchScrollMode() {
+        boolean tuiMode = TerminalView.TOUCH_SCROLL_MODE_TUI.equals(
+            mPreferences.getTerminalTouchScrollMode());
+        String nextMode = tuiMode ? TerminalView.TOUCH_SCROLL_MODE_SCROLLBACK :
+            TerminalView.TOUCH_SCROLL_MODE_TUI;
+        mPreferences.setTerminalTouchScrollMode(nextMode);
+        mTerminalView.setTouchScrollMode(nextMode);
+        showToast(getString(tuiMode ?
+            R.string.terminal_touch_scroll_scrollback_applied :
+            R.string.terminal_touch_scroll_tui_applied), false);
     }
 
     private void showTerminalSearch() {
