@@ -19,7 +19,11 @@ case "$*" in
   'install '*) printf 'Performing Streamed Install\nSuccess\n' ;;
   'install -r '*) printf 'Performing Streamed Install\nSuccess\n' ;;
   'shell cmd package list packages -U com.termux') echo 'package:com.termux uid:10123' ;;
-  'shell dumpsys package com.termux') printf 'versionCode=40001 minSdk=24\nversionName=0.4.0-rc.1\n' ;;
+  'shell dumpsys package com.termux')
+    if [[ "${FAKE_EMPTY_PACKAGE:-}" != "1" ]]; then
+      printf 'versionCode=40001 minSdk=24\nversionName=0.4.0-rc.1\n'
+    fi
+    ;;
   'shell monkey -p com.termux -c android.intent.category.LAUNCHER 1') echo 'Events injected: 1' ;;
   'shell pidof com.termux') echo 1234 ;;
   'shell getprop ro.product.manufacturer') echo Google ;;
@@ -81,5 +85,18 @@ if ADB="$temp_dir/missing-adb" AAPT="$temp_dir/fake-aapt" \
     exit 1
 fi
 grep -Fq 'ADB 设备未就绪' /tmp/termuxpro-release-no-device.log
+
+if FAKE_EMPTY_PACKAGE=1 ADB="$temp_dir/fake-adb" AAPT="$temp_dir/fake-aapt" \
+  "$project_dir/scripts/verify-release-apk-on-device.sh" \
+  "$temp_dir/stable.apk" "$temp_dir/candidate.apk" 0.4.0-rc.1 40001 \
+  "$temp_dir/empty-package" >/tmp/termuxpro-release-empty-package.log 2>&1; then
+    echo '设备 package 信息为空时不应通过。' >&2
+    exit 1
+fi
+grep -Fq '覆盖升级后设备上的 versionCode 不正确。' /tmp/termuxpro-release-empty-package.log
+if grep -Fq 'parameter null or not set' /tmp/termuxpro-release-empty-package.log; then
+    echo '空设备输出不应暴露 Bash 参数错误。' >&2
+    exit 1
+fi
 
 echo 'Release APK 设备冒烟脚本测试通过。'
