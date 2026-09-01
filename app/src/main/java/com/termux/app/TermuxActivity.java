@@ -764,7 +764,7 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                         "else printf 'No supported project check was detected.\\n'; fi");
                     return true;
                 case TerminalProjectToolsMenu.TOOL_TMUX_SESSIONS:
-                    confirmAndSendCommand("tmux list-sessions");
+                    openTaskSessions();
                     return true;
                 case TerminalProjectToolsMenu.TOOL_AI_CONFIRM:
                     confirmAiSelection();
@@ -798,6 +798,15 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
         Intent intent = GitWorkbenchNavigation.newIntentForActiveWorkspace(this, startInDiff);
         if (intent == null) {
             showToast(getString(R.string.terminal_git_workbench_invalid_workspace), true);
+            return;
+        }
+        startActivity(intent);
+    }
+
+    private void openTaskSessions() {
+        Intent intent = TaskSessionsNavigation.newIntentForActiveWorkspace(this);
+        if (intent == null) {
+            showToast(getString(R.string.terminal_task_sessions_invalid_workspace), true);
             return;
         }
         startActivity(intent);
