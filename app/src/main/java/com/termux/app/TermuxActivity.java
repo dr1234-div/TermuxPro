@@ -777,6 +777,9 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
                 case TerminalProjectToolsMenu.TOOL_TMUX_SESSIONS:
                     openTaskSessions();
                     return true;
+                case TerminalProjectToolsMenu.TOOL_AI_CENTER:
+                    startActivity(new Intent(this, AiCliSessionCenterActivity.class));
+                    return true;
                 case TerminalProjectToolsMenu.TOOL_AI_CLAUDE:
                     showAiLaunchDialog(AiCliLaunchCommand.Tool.CLAUDE);
                     return true;
