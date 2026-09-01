@@ -30,6 +30,7 @@ final class TerminalProjectToolsMenu {
     static final int TOOL_OPEN_WEB_PREVIEW = 18;
     static final int TOOL_AI_CLAUDE = 19;
     static final int TOOL_AI_CODEX = 20;
+    static final int TOOL_AI_CENTER = 21;
 
     private TerminalProjectToolsMenu() {}
 
@@ -60,6 +61,7 @@ final class TerminalProjectToolsMenu {
         menu.add(Menu.NONE, TOOL_SSH_KEYS, Menu.NONE, R.string.workspace_ssh_keys_action);
 
         addHeader(context, menu, R.string.terminal_tools_section_ai);
+        menu.add(Menu.NONE, TOOL_AI_CENTER, Menu.NONE, R.string.terminal_ai_cli_center_action);
         menu.add(Menu.NONE, TOOL_AI_CLAUDE, Menu.NONE, R.string.terminal_ai_launch_claude_action);
         menu.add(Menu.NONE, TOOL_AI_CODEX, Menu.NONE, R.string.terminal_ai_launch_codex_action);
         menu.add(Menu.NONE, TOOL_AI_CONFIRM, Menu.NONE, R.string.ai_action_confirm_selection);

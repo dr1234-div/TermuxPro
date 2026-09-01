@@ -41,7 +41,8 @@ public class CustomLayoutsSmokeTest {
             R.layout.activity_connection_diagnostic,
             R.layout.activity_ssh_keys,
             R.layout.activity_task_sessions,
-            R.layout.activity_custom_commands
+            R.layout.activity_custom_commands,
+            R.layout.activity_ai_cli_session_center
         };
         LayoutInflater inflater = LayoutInflater.from(context);
         for (int layout : layouts) {

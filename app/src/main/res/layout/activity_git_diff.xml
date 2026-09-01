@@ -220,6 +220,26 @@
                             android:textColor="#F5F8FA" />
 
                         <Button
+                            android:id="@+id/git_overview_stash_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="#24394A"
+                            android:minHeight="48dp"
+                            android:text="@string/git_workbench_stash_save"
+                            android:textColor="#F5F8FA" />
+
+                        <Button
+                            android:id="@+id/git_overview_stashes_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="#24394A"
+                            android:minHeight="48dp"
+                            android:text="@string/git_workbench_stashes"
+                            android:textColor="#F5F8FA" />
+
+                        <Button
                             android:id="@+id/git_overview_stage_all_button"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"

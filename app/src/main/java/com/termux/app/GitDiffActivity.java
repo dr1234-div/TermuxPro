@@ -84,6 +84,8 @@ public final class GitDiffActivity extends AppCompatActivity {
         findViewById(R.id.git_overview_push_button).setOnClickListener(view -> confirmPushUpstream());
         findViewById(R.id.git_overview_changes_button).setOnClickListener(view -> loadDiff());
         findViewById(R.id.git_overview_files_button).setOnClickListener(view -> showChangedFiles());
+        findViewById(R.id.git_overview_stash_button).setOnClickListener(view -> showCreateStashDialog());
+        findViewById(R.id.git_overview_stashes_button).setOnClickListener(view -> showStashes());
         findViewById(R.id.git_overview_stage_all_button).setOnClickListener(
             view -> confirmStageAll());
         findViewById(R.id.git_overview_unstage_all_button).setOnClickListener(
@@ -236,6 +238,12 @@ public final class GitDiffActivity extends AppCompatActivity {
         Button files = findViewById(R.id.git_overview_files_button);
         files.setEnabled(!overview.fileChanges.isEmpty());
         files.setAlpha(!overview.fileChanges.isEmpty() ? 1f : 0.48f);
+        Button stash = findViewById(R.id.git_overview_stash_button);
+        stash.setEnabled(overview.changedFiles > 0);
+        stash.setAlpha(overview.changedFiles > 0 ? 1f : 0.48f);
+        Button stashes = findViewById(R.id.git_overview_stashes_button);
+        stashes.setEnabled(!overview.stashes.isEmpty());
+        stashes.setAlpha(!overview.stashes.isEmpty() ? 1f : 0.48f);
         Button deleteBranch = findViewById(R.id.git_overview_delete_branch_button);
         boolean canDeleteBranch = !deletableLocalBranches(overview).isEmpty();
         deleteBranch.setEnabled(canDeleteBranch);
@@ -269,6 +277,11 @@ public final class GitDiffActivity extends AppCompatActivity {
         showOverview(overviewTarget(path), GitRepositoryOverview.parse(protocolOutput));
     }
 
+    @NonNull
+    GitRepositoryOverview mOverviewForTesting() {
+        return mOverview;
+    }
+
     private void showCommits() {
         if (mOverview == null) return;
         mMode = Mode.COMMITS;
@@ -296,6 +309,54 @@ public final class GitDiffActivity extends AppCompatActivity {
     private void showChangedFiles() {
         AlertDialog dialog = createChangedFilesDialog();
         if (dialog != null) showStyledDialog(dialog);
+    }
+
+    private void showStashes() {
+        AlertDialog dialog = createStashesDialog();
+        if (dialog != null) showStyledDialog(dialog);
+    }
+
+    @Nullable
+    AlertDialog createStashesDialog() {
+        if (mOverview == null) return null;
+        if (mOverview.stashes.isEmpty()) {
+            showStatus(getString(R.string.git_workbench_no_stashes), false);
+            return null;
+        }
+        String[] labels = new String[mOverview.stashes.size()];
+        for (int index = 0; index < mOverview.stashes.size(); index++) {
+            labels[index] = stashLabel(mOverview.stashes.get(index));
+        }
+        return new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_stashes)
+            .setAdapter(new ArrayAdapter<>(this, R.layout.item_termuxpro_list, labels),
+                (selectionDialog, which) -> showStashActions(mOverview.stashes.get(which)))
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+    }
+
+    @NonNull
+    private String stashLabel(@NonNull GitRepositoryOverview.StashEntry stash) {
+        return getString(R.string.git_workbench_stash_item, stash.ref, stash.relativeTime,
+            stash.subject);
+    }
+
+    private void showStashActions(@NonNull GitRepositoryOverview.StashEntry stash) {
+        String[] actions = {
+            getString(R.string.git_workbench_stash_apply),
+            getString(R.string.git_workbench_stash_drop)
+        };
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(stash.ref)
+            .setMessage(stash.subject)
+            .setAdapter(new ArrayAdapter<>(this, R.layout.item_termuxpro_list, actions),
+                (selectionDialog, which) -> {
+                    if (which == 0) confirmApplyStash(stash);
+                    else confirmDropStash(stash);
+                })
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        showStyledDialog(dialog);
     }
 
     @Nullable
@@ -451,6 +512,11 @@ public final class GitDiffActivity extends AppCompatActivity {
     }
 
     private void confirmTrackRemoteBranch(@NonNull String branch) {
+        if (mOverview != null && mOverview.changedFiles > 0) {
+            showStatus(getString(R.string.git_workbench_switch_dirty_blocked,
+                mOverview.changedFiles), false);
+            return;
+        }
         AlertDialog dialog = createTrackRemoteBranchDialog(branch);
         if (dialog != null) showStyledDialog(dialog);
     }
@@ -473,6 +539,11 @@ public final class GitDiffActivity extends AppCompatActivity {
 
     private void confirmSwitch(@NonNull String branch) {
         if (mOverview == null || branch.equals(mOverview.head)) return;
+        if (mOverview.changedFiles > 0) {
+            showStatus(getString(R.string.git_workbench_switch_dirty_blocked,
+                mOverview.changedFiles), false);
+            return;
+        }
         int message = mOverview.changedFiles > 0
             ? R.string.git_workbench_switch_dirty_message : R.string.git_workbench_switch_message;
         AlertDialog dialog = new AlertDialog.Builder(this)
@@ -520,6 +591,49 @@ public final class GitDiffActivity extends AppCompatActivity {
     private void showCommitDialog() {
         AlertDialog dialog = createCommitDialog();
         if (dialog != null) dialog.show();
+    }
+
+    private void showCreateStashDialog() {
+        AlertDialog dialog = createStashDialog();
+        if (dialog != null) dialog.show();
+    }
+
+    @Nullable
+    AlertDialog createStashDialog() {
+        if (mOverview == null) return null;
+        if (mOverview.changedFiles <= 0) {
+            showStatus(getString(R.string.git_workbench_no_stash_changes), false);
+            return null;
+        }
+        EditText input = new EditText(this);
+        input.setId(android.R.id.edit);
+        input.setSingleLine(true);
+        input.setHint(R.string.git_workbench_stash_hint);
+        input.setTextColor(ContextCompat.getColor(this, R.color.tp_text_primary));
+        input.setHintTextColor(ContextCompat.getColor(this, R.color.tp_text_secondary));
+        int padding = Math.round(20 * getResources().getDisplayMetrics().density);
+        input.setPadding(padding, padding / 2, padding, padding / 2);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_stash_save)
+            .setMessage(getString(R.string.git_workbench_stash_message,
+                mOverview.changedFiles, mOverview.stagedFiles, mOverview.unstagedFiles))
+            .setView(input)
+            .setPositiveButton(R.string.git_workbench_stash_save_action, null)
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        dialog.setOnShowListener(ignored -> {
+            TermuxProDialogStyle.apply(this, dialog);
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+                String message = input.getText().toString();
+                if (!WorkspaceCommandBuilder.isSafeGitCommitMessage(message)) {
+                    input.setError(getString(R.string.git_workbench_stash_invalid));
+                    return;
+                }
+                dialog.dismiss();
+                stashChanges(message.trim());
+            });
+        });
+        return dialog;
     }
 
     @Nullable
@@ -618,6 +732,8 @@ public final class GitDiffActivity extends AppCompatActivity {
             mMainHandler.post(() -> {
                 if (isFinishing() || isDestroyed()) return;
                 if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 77) showStatus(getString(
+                    R.string.git_workbench_switch_dirty_blocked_remote), false);
                 else showStatus(getString(R.string.git_workbench_switch_failed,
                     result.output.trim()), false);
             });
@@ -687,6 +803,8 @@ public final class GitDiffActivity extends AppCompatActivity {
                 if (result.exitCode == 0) loadOverview();
                 else if (result.exitCode == 74) showStatus(getString(
                     R.string.git_workbench_track_remote_conflict, branch), false);
+                else if (result.exitCode == 77) showStatus(getString(
+                    R.string.git_workbench_switch_dirty_blocked_remote), false);
                 else showStatus(getString(R.string.git_workbench_switch_failed,
                     result.output.trim()), false);
             });
@@ -763,6 +881,111 @@ public final class GitDiffActivity extends AppCompatActivity {
                 else if (result.exitCode == 75) showStatus(
                     getString(R.string.git_workbench_no_staged_changes), false);
                 else showStatus(getString(R.string.git_workbench_commit_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    void confirmApplyStash(@NonNull GitRepositoryOverview.StashEntry stash) {
+        if (mOverview == null || !mOverview.stashes.contains(stash)
+            || !WorkspaceCommandBuilder.isSafeGitStashRef(stash.ref)) {
+            return;
+        }
+        if (mOverview.changedFiles > 0) {
+            showStatus(getString(R.string.git_workbench_stash_apply_dirty_blocked,
+                mOverview.changedFiles), false);
+            return;
+        }
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_stash_apply)
+            .setMessage(getString(R.string.git_workbench_stash_apply_message,
+                stash.ref, stash.subject))
+            .setPositiveButton(R.string.git_workbench_stash_apply_action,
+                (selectionDialog, which) -> applyStash(stash.ref))
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        showStyledDialog(dialog);
+    }
+
+    void confirmDropStash(@NonNull GitRepositoryOverview.StashEntry stash) {
+        if (mOverview == null || !mOverview.stashes.contains(stash)
+            || !WorkspaceCommandBuilder.isSafeGitStashRef(stash.ref)) {
+            return;
+        }
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_stash_drop)
+            .setMessage(getString(R.string.git_workbench_stash_drop_message,
+                stash.ref, stash.subject))
+            .setPositiveButton(R.string.git_workbench_stash_drop_action,
+                (selectionDialog, which) -> dropStash(stash.ref))
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        showDangerDialog(dialog);
+    }
+
+    private void stashChanges(@NonNull String message) {
+        if (mOverview == null || mOverview.changedFiles <= 0
+            || !WorkspaceCommandBuilder.isSafeGitCommitMessage(message)) {
+            return;
+        }
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(R.string.git_workbench_stashing));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                WorkspaceCommandBuilder.buildGitStashPushRemoteCommand(target.path, message),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 75) showStatus(
+                    getString(R.string.git_workbench_no_stash_changes), false);
+                else showStatus(getString(R.string.git_workbench_stash_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    private void applyStash(@NonNull String stashRef) {
+        if (mOverview == null || mOverview.changedFiles > 0
+            || !WorkspaceCommandBuilder.isSafeGitStashRef(stashRef)) {
+            return;
+        }
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(R.string.git_workbench_stash_applying, stashRef));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                WorkspaceCommandBuilder.buildGitStashApplyRemoteCommand(target.path, stashRef),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 77) showStatus(getString(
+                    R.string.git_workbench_stash_apply_dirty_remote_blocked), false);
+                else if (result.exitCode == 81) showStatus(getString(
+                    R.string.git_workbench_stash_missing, stashRef), false);
+                else showStatus(getString(R.string.git_workbench_stash_apply_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    private void dropStash(@NonNull String stashRef) {
+        if (!WorkspaceCommandBuilder.isSafeGitStashRef(stashRef)) return;
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(R.string.git_workbench_stash_dropping, stashRef));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                WorkspaceCommandBuilder.buildGitStashDropRemoteCommand(target.path, stashRef),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 81) showStatus(getString(
+                    R.string.git_workbench_stash_missing, stashRef), false);
+                else showStatus(getString(R.string.git_workbench_stash_drop_failed,
                     result.output.trim()), false);
             });
         });

@@ -42,7 +42,7 @@ for file in "${changed_files[@]}"; do
             add_test "com.termux.app.ManifestProductIdentityTest"
             needs_android_compile=1
             ;;
-        app/src/main/java/com/termux/app/*Git*|app/src/main/java/com/termux/app/Git*.java)
+        app/src/main/java/com/termux/app/*Git*|app/src/main/java/com/termux/app/Git*.java|app/src/main/java/com/termux/app/WorkspaceCommandBuilder.java)
             add_test "com.termux.app.GitDiffActivityTest"
             add_test "com.termux.app.GitRepositoryOverviewTest"
             add_test "com.termux.app.WorkspaceCommandBuilderTest"
@@ -98,6 +98,7 @@ for file in "${changed_files[@]}"; do
             needs_android_compile=1
             ;;
         app/src/main/java/com/termux/app/*Command*|app/src/main/java/com/termux/app/Ai*|app/src/main/java/com/termux/app/Remote*)
+            add_test "com.termux.app.AiCliSessionCenterActivityTest"
             add_test "com.termux.app.AiCliLaunchCommandTest"
             add_test "com.termux.app.AiTerminalActionTest"
             add_test "com.termux.app.RemoteToolRecoveryTest"

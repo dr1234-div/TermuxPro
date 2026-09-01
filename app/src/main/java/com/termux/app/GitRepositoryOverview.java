@@ -14,6 +14,7 @@ final class GitRepositoryOverview {
     private static final String LOCAL_BRANCH = "TP_LOCAL\t";
     private static final String REMOTE_BRANCH = "TP_REMOTE\t";
     private static final String LOG = "TP_LOG\t";
+    private static final String STASH = "TP_STASH\t";
     private static final String STATUS_Z = "TP_STATUS_Z\000";
 
     @NonNull final String head;
@@ -27,6 +28,7 @@ final class GitRepositoryOverview {
     @NonNull final List<String> localBranches;
     @NonNull final List<String> remoteBranches;
     @NonNull final List<Commit> commits;
+    @NonNull final List<StashEntry> stashes;
     @NonNull final List<FileChange> fileChanges;
 
     private GitRepositoryOverview(@NonNull String head, boolean detached, int changedFiles,
@@ -36,6 +38,7 @@ final class GitRepositoryOverview {
                                   @NonNull List<String> localBranches,
                                   @NonNull List<String> remoteBranches,
                                   @NonNull List<Commit> commits,
+                                  @NonNull List<StashEntry> stashes,
                                   @NonNull List<FileChange> fileChanges) {
         this.head = head;
         this.detached = detached;
@@ -48,6 +51,7 @@ final class GitRepositoryOverview {
         this.localBranches = Collections.unmodifiableList(localBranches);
         this.remoteBranches = Collections.unmodifiableList(remoteBranches);
         this.commits = Collections.unmodifiableList(commits);
+        this.stashes = Collections.unmodifiableList(stashes);
         this.fileChanges = Collections.unmodifiableList(fileChanges);
     }
 
@@ -71,6 +75,7 @@ final class GitRepositoryOverview {
         List<String> local = new ArrayList<>();
         List<String> remote = new ArrayList<>();
         List<Commit> commits = new ArrayList<>();
+        List<StashEntry> stashes = new ArrayList<>();
 
         for (String line : overviewOutput.split("\n")) {
             if (line.startsWith(OVERVIEW)) {
@@ -110,12 +115,20 @@ final class GitRepositoryOverview {
                 String[] fields = line.split("\t", 4);
                 if (fields.length != 4) throw new IllegalArgumentException("Invalid Git log record");
                 commits.add(new Commit(requireValue(fields[1], "commit"), fields[2], fields[3]));
+            } else if (line.startsWith(STASH)) {
+                String[] fields = line.split("\t", 4);
+                if (fields.length != 4) throw new IllegalArgumentException("Invalid Git stash record");
+                String ref = requireValue(fields[1], "stash ref");
+                if (!WorkspaceCommandBuilder.isSafeGitStashRef(ref)) {
+                    throw new IllegalArgumentException("Invalid Git stash ref");
+                }
+                stashes.add(new StashEntry(ref, fields[2], fields[3]));
             }
         }
         if (head == null) throw new IllegalArgumentException("Missing Git overview record");
         return new GitRepositoryOverview(head, detached, changedFiles, stagedFiles, unstagedFiles,
             ahead, behind, upstream,
-            local, remote, commits, parseFileChanges(statusOutput));
+            local, remote, commits, stashes, parseFileChanges(statusOutput));
     }
 
     @NonNull
@@ -168,6 +181,18 @@ final class GitRepositoryOverview {
 
         Commit(@NonNull String shortHash, @NonNull String relativeTime, @NonNull String subject) {
             this.shortHash = shortHash;
+            this.relativeTime = relativeTime;
+            this.subject = subject;
+        }
+    }
+
+    static final class StashEntry {
+        @NonNull final String ref;
+        @NonNull final String relativeTime;
+        @NonNull final String subject;
+
+        StashEntry(@NonNull String ref, @NonNull String relativeTime, @NonNull String subject) {
+            this.ref = ref;
             this.relativeTime = relativeTime;
             this.subject = subject;
         }

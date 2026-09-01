@@ -165,8 +165,15 @@ public class WorkspaceCommandBuilderTest {
             "/srv/team's app", "src/user's file.txt");
         String unstageFile = WorkspaceCommandBuilder.buildGitUnstageFileRemoteCommand(
             "/srv/team's app", "src/user's file.txt");
+        String stashPush = WorkspaceCommandBuilder.buildGitStashPushRemoteCommand(
+            "/srv/team's app", "WIP user's task");
+        String stashApply = WorkspaceCommandBuilder.buildGitStashApplyRemoteCommand(
+            "/srv/team's app", "stash@{0}");
+        String stashDrop = WorkspaceCommandBuilder.buildGitStashDropRemoteCommand(
+            "/srv/team's app", "stash@{0}");
 
         assertTrue(overview.contains("TP_OVERVIEW\\t"));
+        assertTrue(overview.contains("TP_STASH"));
         assertTrue(overview.contains("TP_STATUS_Z\\000"));
         assertTrue(overview.contains("git status --porcelain=v1 -z"));
         assertTrue(overview.contains("upstream_name=$(git rev-parse"));
@@ -177,6 +184,7 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(overview.contains("grep -v '/HEAD$'"));
         assertTrue(overview.contains("git log -20"));
         assertTrue(branch.contains("'/srv/team'\\''s app'"));
+        assertTrue(branch.contains("then exit 77; fi"));
         assertTrue(branch.endsWith("'feature/user'\\''s-work'"));
         assertTrue(newBranch.contains("git check-ref-format --branch 'feature/local-ui'"));
         assertTrue(newBranch.contains("git switch -c 'feature/local-ui'"));
@@ -186,6 +194,7 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(deleteBranch.contains("exit 79"));
         assertTrue(deleteBranch.contains("exit 80"));
         assertTrue(remoteBranch.contains("git show-ref --verify --quiet refs/heads/'feature/user'\\''s-work'"));
+        assertTrue(remoteBranch.contains("then exit 77; fi"));
         assertTrue(remoteBranch.endsWith("git switch --track 'origin/feature/user'\\''s-work'"));
         assertTrue(fetch.contains("git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}'"));
         assertTrue(fetch.contains("if ! upstream=$(git rev-parse"));
@@ -205,6 +214,14 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(!stageFile.contains("git commit"));
         assertTrue(unstageFile.contains("git restore --staged -- 'src/user'\\''s file.txt'"));
         assertTrue(!unstageFile.contains("reset --hard"));
+        assertTrue(stashPush.contains("git stash push -u -m 'WIP user'\\''s task'"));
+        assertTrue(!stashPush.contains("git commit"));
+        assertTrue(!stashPush.contains("git push"));
+        assertTrue(stashApply.contains("git stash apply --index 'stash@{0}'"));
+        assertTrue(!stashApply.contains("git stash pop"));
+        assertTrue(stashApply.contains("then exit 77; fi"));
+        assertTrue(stashDrop.contains("git stash drop 'stash@{0}'"));
+        assertTrue(!stashDrop.contains("git stash clear"));
         String commit = WorkspaceCommandBuilder.buildGitCommitStagedRemoteCommand(
             "/srv/team's app", "fix: user's mobile flow");
         assertTrue(commit.contains("git diff --cached --name-only -z"));
@@ -229,6 +246,12 @@ public class WorkspaceCommandBuilderTest {
             () -> WorkspaceCommandBuilder.buildGitStageFileRemoteCommand("~/app", ""));
         assertThrows(IllegalArgumentException.class,
             () -> WorkspaceCommandBuilder.buildGitUnstageFileRemoteCommand("~/app", "bad\000file"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitStashPushRemoteCommand("~/app", "bad\nstash"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitStashApplyRemoteCommand("~/app", "stash@{bad}"));
+        assertThrows(IllegalArgumentException.class,
+            () -> WorkspaceCommandBuilder.buildGitStashDropRemoteCommand("~/app", "stash@{0};rm"));
     }
 
     @Test
@@ -261,6 +284,8 @@ public class WorkspaceCommandBuilderTest {
         assertTrue(overview.fileChanges.get(0).hasUnstagedChange());
         assertTrue(overview.localBranches.contains("feature"));
         assertEquals(1, overview.commits.size());
+        assertEquals(77, runShell(WorkspaceCommandBuilder.buildGitSwitchBranchRemoteCommand(
+            repository.toString(), "feature"), new HashMap<>()));
 
         assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitStageFileRemoteCommand(
             repository.toString(), "README.md"), new HashMap<>()));
@@ -282,6 +307,31 @@ public class WorkspaceCommandBuilderTest {
         assertEquals(1, singleUnstagedOverview.unstagedFiles);
         assertEquals(75, runShell(WorkspaceCommandBuilder.buildGitUnstageFileRemoteCommand(
             repository.toString(), "README.md"), new HashMap<>()));
+
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitStashPushRemoteCommand(
+            repository.toString(), "WIP mobile stash"), new HashMap<>()));
+        ShellOutput stashed = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        GitRepositoryOverview stashedOverview = GitRepositoryOverview.parse(stashed.output);
+        assertEquals(0, stashedOverview.changedFiles);
+        assertEquals(1, stashedOverview.stashes.size());
+        assertEquals("stash@{0}", stashedOverview.stashes.get(0).ref);
+        assertTrue(stashedOverview.stashes.get(0).subject.contains("WIP mobile stash"));
+        assertEquals(75, runShell(WorkspaceCommandBuilder.buildGitStashPushRemoteCommand(
+            repository.toString(), "nothing to stash"), new HashMap<>()));
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitStashApplyRemoteCommand(
+            repository.toString(), "stash@{0}"), new HashMap<>()));
+        ShellOutput appliedStash = runShellCapture(
+            WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(repository.toString()));
+        GitRepositoryOverview appliedStashOverview = GitRepositoryOverview.parse(appliedStash.output);
+        assertEquals(1, appliedStashOverview.changedFiles);
+        assertEquals(1, appliedStashOverview.stashes.size());
+        assertEquals(77, runShell(WorkspaceCommandBuilder.buildGitStashApplyRemoteCommand(
+            repository.toString(), "stash@{0}"), new HashMap<>()));
+        assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitStashDropRemoteCommand(
+            repository.toString(), "stash@{0}"), new HashMap<>()));
+        assertEquals(81, runShell(WorkspaceCommandBuilder.buildGitStashDropRemoteCommand(
+            repository.toString(), "stash@{0}"), new HashMap<>()));
 
         assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitStageAllRemoteCommand(
             repository.toString()), new HashMap<>()));
@@ -423,6 +473,13 @@ public class WorkspaceCommandBuilderTest {
             WorkspaceCommandBuilder.buildGitOverviewRemoteCommand(clone.toString()));
         GitRepositoryOverview pushedOverview = GitRepositoryOverview.parse(pushed.output);
         assertEquals(Integer.valueOf(0), pushedOverview.ahead);
+
+        assertEquals(0, runShell("cd -- " + WorkspaceCommandBuilder.shellQuote(clone.toString())
+            + " && printf dirty >> README.md", new HashMap<>()));
+        assertEquals(77, runShell(WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(
+            clone.toString(), "origin/feature/mobile"), new HashMap<>()));
+        assertEquals(0, runShell("cd -- " + WorkspaceCommandBuilder.shellQuote(clone.toString())
+            + " && git restore -- README.md", new HashMap<>()));
 
         assertEquals(0, runShell(WorkspaceCommandBuilder.buildGitTrackRemoteBranchCommand(
             clone.toString(), "origin/feature/mobile"), new HashMap<>()));
