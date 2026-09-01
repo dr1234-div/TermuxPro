@@ -130,7 +130,8 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
             // Only show toast for other sessions than the current one, since the user
             // probably consciously caused the title change to change in the current session
             // and don't want an annoying toast for that.
-            mActivity.showToast(toToastTitle(updatedSession), true);
+            String title = toToastTitle(updatedSession);
+            if (!TextUtils.isEmpty(title)) mActivity.showToast(title, true);
         }
 
         termuxSessionListNotifyUpdated();
@@ -162,8 +163,9 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
         if (mActivity.isVisible() && finishedSession != mActivity.getCurrentSession()) {
             // Show toast for non-current sessions that exit.
             // Verify that session was not removed before we got told about it finishing:
-            if (index >= 0)
-                mActivity.showToast(toToastTitle(finishedSession) + " - exited", true);
+            String title = toToastTitle(finishedSession);
+            if (index >= 0 && !TextUtils.isEmpty(title))
+                mActivity.showToast(mActivity.getString(R.string.terminal_session_exited, title), true);
         }
 
         if (mActivity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LEANBACK)) {
@@ -489,17 +491,25 @@ public class TermuxTerminalSessionActivityClient extends TermuxTerminalSessionCl
 
         final int indexOfSession = service.getIndexOfSession(session);
         if (indexOfSession < 0) return null;
-        StringBuilder toastTitle = new StringBuilder("[" + (indexOfSession + 1) + "]");
-        if (!TextUtils.isEmpty(session.mSessionName)) {
-            toastTitle.append(" ").append(session.mSessionName);
+        return formatToastTitle(indexOfSession, session.mSessionName, session.getTitle());
+    }
+
+    static String formatToastTitle(int sessionIndex, String sessionName, String title) {
+        if (sessionIndex < 0) return null;
+        StringBuilder toastTitle = new StringBuilder("[" + (sessionIndex + 1) + "]");
+        if (!isEmpty(sessionName)) {
+            toastTitle.append(" ").append(sessionName);
         }
-        String title = session.getTitle();
-        if (!TextUtils.isEmpty(title)) {
-            // Space to "[${NR}] or newline after session name:
-            toastTitle.append(session.mSessionName == null ? " " : "\n");
+        if (!isEmpty(title)) {
+            // Space to "[${NR}]" or newline after session name.
+            toastTitle.append(isEmpty(sessionName) ? " " : "\n");
             toastTitle.append(title);
         }
         return toastTitle.toString();
+    }
+
+    private static boolean isEmpty(String value) {
+        return value == null || value.length() == 0;
     }
 
 

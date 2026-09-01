@@ -541,6 +541,7 @@
     <string name="terminal_search_empty">No match was found in the available terminal history.</string>
     <string name="terminal_search_truncated">Results are bounded to the latest 1 MB and 100 matches.</string>
     <string name="terminal_session_switched">Switched to session: %1$s</string>
+    <string name="terminal_session_exited">Session exited: %1$s</string>
     <string name="task_sessions_title">tmux sessions</string>
     <string name="task_sessions_loading">Loading remote tmux sessions…</string>
     <string name="task_sessions_ready">Tap to enter. TermuxPro-owned sessions can also be renamed or stopped.</string>
