@@ -718,13 +718,13 @@ public final class TermuxActivity extends AppCompatActivity implements ServiceCo
 
     private void showAiLaunchDialog(AiCliLaunchCommand.Tool tool) {
         String[] actions = {
-            getString(R.string.ai_session_new_action),
-            getString(R.string.ai_session_pick_history_action)
+            AiCliLaunchMessage.actionLabel(this, tool, AiCliLaunchCommand.Mode.NEW_SESSION),
+            AiCliLaunchMessage.actionLabel(this, tool, AiCliLaunchCommand.Mode.PICK_HISTORY)
         };
         AlertDialog dialog = new AlertDialog.Builder(this)
             .setTitle(getString(R.string.ai_session_launch_title,
                 AiCliLaunchCommand.displayName(tool)))
-            .setMessage(AiCliLaunchMessage.forTarget(this, tool,
+            .setMessage(AiCliLaunchMessage.forTerminalTarget(this, tool,
                 WorkspaceTargetStore.readActive(this)))
             .setItems(actions, (selectionDialog, which) -> startAiCli(AiCliLaunchCommand.command(tool,
                 which == 0 ? AiCliLaunchCommand.Mode.NEW_SESSION :

@@ -168,8 +168,9 @@
     <string name="ai_session_codex_guidance">Codex CLI 通常按用户隔离，但仍不自动进入最近会话。确认当前项目正确后再选择新建或历史。</string>
     <string name="ai_session_target_message">当前目标\n%1$s:%2$d · %3$s\n\n%4$s</string>
     <string name="ai_session_target_incomplete">当前目标未完整配置。请先填写服务器、SSH 端口和远程项目路径，再启动 AI CLI。\n\n%1$s</string>
-    <string name="ai_session_new_action">新建会话（安全默认）\n在当前项目干净启动；共享 Claude 账号推荐使用。</string>
-    <string name="ai_session_pick_history_action">选择历史会话\n只打开 CLI 原生选择器，TermuxPro 不自动进入最近会话。</string>
+    <string name="ai_session_terminal_context_message">%1$s\n\n注意：从终端工具箱启动时，命令会发送到当前正在显示的终端会话；请先确认你已经在正确的 SSH、tmux 和项目目录中。</string>
+    <string name="ai_session_new_action">新建会话（安全默认）\n将执行：%1$s\n在当前项目干净启动；共享 Claude 账号推荐使用。</string>
+    <string name="ai_session_pick_history_action">选择历史会话\n将执行：%1$s\n只打开 CLI 原生选择器，TermuxPro 不自动进入最近会话。</string>
     <string name="workspace_open_local_terminal">打开本地终端</string>
     <string name="workspace_security_tip">首次连接需确认服务器指纹并输入密码或配置 SSH 密钥；TermuxPro 不会自动进入未指定的 tmux 或 AI 历史会话。</string>
     <string name="workspace_error_host">请输入有效的 SSH 别名、主机或“用户名@主机”。</string>

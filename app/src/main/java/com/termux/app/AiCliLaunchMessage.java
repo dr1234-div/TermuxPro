@@ -13,17 +13,19 @@ final class AiCliLaunchMessage {
     private AiCliLaunchMessage() {}
 
     @NonNull
-    static String forTarget(@NonNull Context context, @NonNull AiCliLaunchCommand.Tool tool,
-                            @Nullable WorkspaceTarget target) {
+    static String forWorkspaceTarget(@NonNull Context context,
+                                     @NonNull AiCliLaunchCommand.Tool tool,
+                                     @Nullable WorkspaceTarget target) {
         if (target == null) {
-            return forValues(context, tool, "", -1, "");
+            return forWorkspaceValues(context, tool, "", -1, "");
         }
-        return forValues(context, tool, target.host, target.port, target.path);
+        return forWorkspaceValues(context, tool, target.host, target.port, target.path);
     }
 
     @NonNull
-    static String forValues(@NonNull Context context, @NonNull AiCliLaunchCommand.Tool tool,
-                            @NonNull String host, int port, @NonNull String path) {
+    static String forWorkspaceValues(@NonNull Context context,
+                                     @NonNull AiCliLaunchCommand.Tool tool,
+                                     @NonNull String host, int port, @NonNull String path) {
         String guidance = context.getString(AiCliLaunchCommand.guidanceMessage(tool));
         String normalizedHost = host.trim();
         String normalizedPath = path.trim();
@@ -33,5 +35,22 @@ final class AiCliLaunchMessage {
         }
         return context.getString(R.string.ai_session_target_message, normalizedHost, port,
             normalizedPath, guidance);
+    }
+
+    @NonNull
+    static String forTerminalTarget(@NonNull Context context,
+                                    @NonNull AiCliLaunchCommand.Tool tool,
+                                    @Nullable WorkspaceTarget target) {
+        String base = forWorkspaceTarget(context, tool, target);
+        return context.getString(R.string.ai_session_terminal_context_message, base);
+    }
+
+    @NonNull
+    static String actionLabel(@NonNull Context context, @NonNull AiCliLaunchCommand.Tool tool,
+                              @NonNull AiCliLaunchCommand.Mode mode) {
+        int labelRes = mode == AiCliLaunchCommand.Mode.NEW_SESSION
+            ? R.string.ai_session_new_action
+            : R.string.ai_session_pick_history_action;
+        return context.getString(labelRes, AiCliLaunchCommand.command(tool, mode));
     }
 }
