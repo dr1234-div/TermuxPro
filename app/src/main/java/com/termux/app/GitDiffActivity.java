@@ -24,6 +24,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import com.termux.R;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -74,6 +76,8 @@ public final class GitDiffActivity extends AppCompatActivity {
         findViewById(R.id.git_overview_branches_button).setOnClickListener(view -> showBranches());
         findViewById(R.id.git_overview_create_branch_button).setOnClickListener(
             view -> showCreateBranchDialog());
+        findViewById(R.id.git_overview_delete_branch_button).setOnClickListener(
+            view -> showDeleteBranchDialog());
         findViewById(R.id.git_overview_fetch_button).setOnClickListener(view -> fetchUpstream());
         findViewById(R.id.git_overview_pull_button).setOnClickListener(view -> confirmPullFastForward());
         findViewById(R.id.git_overview_push_button).setOnClickListener(view -> confirmPushUpstream());
@@ -224,6 +228,10 @@ public final class GitDiffActivity extends AppCompatActivity {
         Button commit = findViewById(R.id.git_overview_commit_button);
         commit.setEnabled(overview.stagedFiles > 0);
         commit.setAlpha(overview.stagedFiles > 0 ? 1f : 0.48f);
+        Button deleteBranch = findViewById(R.id.git_overview_delete_branch_button);
+        boolean canDeleteBranch = !deletableLocalBranches(overview).isEmpty();
+        deleteBranch.setEnabled(canDeleteBranch);
+        deleteBranch.setAlpha(canDeleteBranch ? 1f : 0.48f);
         TextView sync = findViewById(R.id.git_overview_sync);
         if (overview.ahead == null || overview.behind == null) {
             sync.setText(R.string.git_workbench_no_upstream);
@@ -306,6 +314,70 @@ public final class GitDiffActivity extends AppCompatActivity {
             .setNegativeButton(android.R.string.cancel, null)
             .create();
         return dialog;
+    }
+
+    private void showDeleteBranchDialog() {
+        AlertDialog dialog = createDeleteBranchDialog();
+        if (dialog != null) showStyledDialog(dialog);
+    }
+
+    @Nullable
+    AlertDialog createDeleteBranchDialog() {
+        if (mOverview == null) return null;
+        List<String> branches = deletableLocalBranches(mOverview);
+        if (branches.isEmpty()) {
+            showStatus(getString(R.string.git_workbench_no_deletable_local_branches), false);
+            return null;
+        }
+        String[] labels = new String[branches.size()];
+        for (int index = 0; index < branches.size(); index++) {
+            labels[index] = getString(R.string.git_workbench_local_branch, branches.get(index));
+        }
+        return new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_delete_branch)
+            .setAdapter(new ArrayAdapter<>(this, R.layout.item_termuxpro_list, labels),
+                (selectionDialog, which) -> confirmDeleteLocalBranch(branches.get(which)))
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+    }
+
+    @NonNull
+    private static List<String> deletableLocalBranches(@NonNull GitRepositoryOverview overview) {
+        List<String> branches = new ArrayList<>();
+        for (String branch : overview.localBranches) {
+            if (!overview.detached && branch.equals(overview.head)) continue;
+            if (!WorkspaceCommandBuilder.isSafeGitBranchName(branch)) continue;
+            branches.add(branch);
+        }
+        return branches;
+    }
+
+    void confirmDeleteLocalBranch(@NonNull String branch) {
+        if (mOverview == null || !mOverview.localBranches.contains(branch)
+            || (!mOverview.detached && branch.equals(mOverview.head))
+            || !WorkspaceCommandBuilder.isSafeGitBranchName(branch)) {
+            showStatus(getString(R.string.git_workbench_delete_branch_current_blocked), false);
+            return;
+        }
+        AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(R.string.git_workbench_delete_branch)
+            .setMessage(getString(R.string.git_workbench_delete_branch_message, branch))
+            .setPositiveButton(R.string.git_workbench_delete_branch_action,
+                (selectionDialog, which) -> deleteLocalBranch(branch))
+            .setNegativeButton(android.R.string.cancel, null)
+            .create();
+        showDangerDialog(dialog);
+    }
+
+    private void showDangerDialog(@NonNull AlertDialog dialog) {
+        dialog.setOnShowListener(ignored -> {
+            TermuxProDialogStyle.apply(this, dialog);
+            if (dialog.getButton(AlertDialog.BUTTON_POSITIVE) != null) {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(
+                    ContextCompat.getColor(this, R.color.tp_danger));
+            }
+        });
+        dialog.show();
     }
 
     private void confirmTrackRemoteBranch(@NonNull String branch) {
@@ -497,6 +569,32 @@ public final class GitDiffActivity extends AppCompatActivity {
                 else if (result.exitCode == 74) showStatus(getString(
                     R.string.git_workbench_create_branch_conflict, branch), false);
                 else showStatus(getString(R.string.git_workbench_create_branch_failed,
+                    result.output.trim()), false);
+            });
+        });
+    }
+
+    private void deleteLocalBranch(@NonNull String branch) {
+        if (mOverview == null || !mOverview.localBranches.contains(branch)
+            || (!mOverview.detached && branch.equals(mOverview.head))
+            || !WorkspaceCommandBuilder.isSafeGitBranchName(branch)) {
+            return;
+        }
+        ConnectionTarget target = readTarget();
+        if (target == null) return;
+        beginLoading(getString(R.string.git_workbench_deleting_branch, branch));
+        mExecutor.execute(() -> {
+            RemoteCommandRunner.Result result = mRunner.run(target.host, target.port,
+                WorkspaceCommandBuilder.buildGitDeleteLocalBranchRemoteCommand(target.path, branch),
+                MAX_OUTPUT_BYTES);
+            mMainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (result.exitCode == 0) loadOverview();
+                else if (result.exitCode == 79) showStatus(
+                    getString(R.string.git_workbench_delete_branch_current_blocked), false);
+                else if (result.exitCode == 80) showStatus(getString(
+                    R.string.git_workbench_delete_branch_missing, branch), false);
+                else showStatus(getString(R.string.git_workbench_delete_branch_failed,
                     result.output.trim()), false);
             });
         });

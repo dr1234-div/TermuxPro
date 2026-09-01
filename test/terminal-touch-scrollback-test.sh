@@ -35,6 +35,18 @@ require(
 )
 
 require(
+    r'void doScroll\(MotionEvent event, int rowsDown\) \{\s*'
+    r'doScroll\(event, rowsDown, shouldForceScrollbackForScrollEvent\(event\)\);',
+    "默认 doScroll 必须按输入来源判断，非鼠标触摸不能落入 alternate screen 方向键路径。",
+)
+
+require(
+    r'public static boolean shouldForceScrollbackForScrollEvent\(@Nullable MotionEvent event\) \{\s*'
+    r'return event != null && !event\.isFromSource\(InputDevice\.SOURCE_MOUSE\);',
+    "触摸/非鼠标滚动必须强制 scrollback，只有外接鼠标保留程序内滚动兼容。",
+)
+
+require(
     r'if \(!forceScrollback && mEmulator\.isMouseTrackingActive\(\)\).*?'
     r'else if \(!forceScrollback && mEmulator\.isAlternateBufferActive\(\)\).*?'
     r'handleKeyCode\(up \? KeyEvent\.KEYCODE_DPAD_UP : KeyEvent\.KEYCODE_DPAD_DOWN, 0\);',
@@ -54,6 +66,11 @@ fi
 
 if ! grep -Fq 'void doScroll(MotionEvent event, int rowsDown, boolean forceScrollback)' "$source_file"; then
     echo "doScroll 必须显式区分触摸 scrollback 与鼠标/程序内滚动。" >&2
+    exit 1
+fi
+
+if ! grep -Fq 'doScroll(event, rowsDown, shouldForceScrollbackForScrollEvent(event));' "$source_file"; then
+    echo "默认 doScroll 必须自动识别触摸来源并强制滚动 scrollback。" >&2
     exit 1
 fi
 

@@ -175,6 +175,8 @@
     <string name="workspace_setup_action">安装 SSH 连接组件</string>
     <string name="workspace_setup_ready">SSH 连接组件已就绪</string>
     <string name="workspace_selector_description">已保存的工作区</string>
+    <string name="workspace_selector_unconfigured">%1$s\n未配置服务器</string>
+    <string name="workspace_selector_target">%1$s\n%2$s · %3$s · %4$s</string>
     <string name="workspace_new_action">新建工作区</string>
     <string name="workspace_manage_action">服务器与项目</string>
     <string name="workspace_edit_action">编辑连接</string>
@@ -182,8 +184,12 @@
     <string name="workspace_advanced_hide_action">收起高级设置</string>
     <string name="workspace_summary_details">%1$s · %2$s · %3$s</string>
     <string name="workspace_status_unverified">尚未验证</string>
+    <string name="workspace_status_recently_opened">最近打开</string>
     <string name="workspace_status_recently_verified">最近验证</string>
     <string name="workspace_status_verification_expired">验证已过期</string>
+    <string name="workspace_status_action_required">需处理</string>
+    <string name="workspace_status_check_failed">检查失败</string>
+    <string name="workspace_status_unknown">状态未知</string>
     <string name="workspace_save_action">保存</string>
     <string name="workspace_copy_action">复制</string>
     <string name="workspace_delete_action">删除</string>
@@ -294,6 +300,14 @@
     <string name="git_workbench_creating_branch">正在创建并切换到 %1$s…</string>
     <string name="git_workbench_create_branch_conflict">未创建分支：本地分支 %1$s 已存在。请刷新后从本地分支列表切换。</string>
     <string name="git_workbench_create_branch_failed">Git 未创建分支，当前工作树已保留。\n\n%1$s</string>
+    <string name="git_workbench_delete_branch">删除本地分支</string>
+    <string name="git_workbench_delete_branch_message">删除本地分支 %1$s？这里只执行安全删除：不会删除当前分支、不会删除远端分支，也不会 force；如果 Git 判断该分支尚未合并，会自动拒绝。</string>
+    <string name="git_workbench_delete_branch_action">确认删除</string>
+    <string name="git_workbench_deleting_branch">正在安全删除本地分支 %1$s…</string>
+    <string name="git_workbench_no_deletable_local_branches">当前没有可安全删除的本地分支。当前分支不能删除，远端分支不会在这里删除。</string>
+    <string name="git_workbench_delete_branch_current_blocked">当前分支不能删除。请先切换到其他分支，再删除目标本地分支。</string>
+    <string name="git_workbench_delete_branch_missing">本地分支 %1$s 不存在，请刷新后重试。</string>
+    <string name="git_workbench_delete_branch_failed">Git 未删除该本地分支，工作树和远端分支都已保留。\n\n%1$s</string>
     <string name="git_workbench_current_branch">%1$s  ·  当前</string>
     <string name="git_workbench_local_branch">本地  ·  %1$s</string>
     <string name="git_workbench_remote_branch">远端  ·  %1$s</string>

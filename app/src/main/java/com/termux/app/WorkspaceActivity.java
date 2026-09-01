@@ -11,8 +11,9 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.view.View;
 import android.view.Menu;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -195,10 +196,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
     /** 重建轻量选择器适配器，避免 Spinner 在选择回调返回后覆盖恢复位置。 */
     private void restoreWorkspaceSelection(int position) {
         mUpdatingSelector = true;
-        ArrayAdapter<WorkspaceProfile> adapter = new ArrayAdapter<>(this,
-            R.layout.item_workspace_spinner, mProfiles);
-        adapter.setDropDownViewResource(R.layout.item_workspace_spinner_dropdown);
-        mWorkspaceSelector.setAdapter(adapter);
+        mWorkspaceSelector.setAdapter(createWorkspaceAdapter());
         mWorkspaceSelector.setSelection(position, false);
         mUpdatingSelector = false;
     }
@@ -315,14 +313,67 @@ public final class WorkspaceActivity extends AppCompatActivity {
 
     private void refreshWorkspaceSelector() {
         mUpdatingSelector = true;
-        ArrayAdapter<WorkspaceProfile> adapter = new ArrayAdapter<>(this,
-            R.layout.item_workspace_spinner, mProfiles);
-        adapter.setDropDownViewResource(R.layout.item_workspace_spinner_dropdown);
-        mWorkspaceSelector.setAdapter(adapter);
+        mWorkspaceSelector.setAdapter(createWorkspaceAdapter());
         int selected = findActiveProfileIndex();
         mWorkspaceSelector.setSelection(selected, false);
         bindProfile(mProfiles.get(selected));
         mUpdatingSelector = false;
+    }
+
+    private ArrayAdapter<WorkspaceProfile> createWorkspaceAdapter() {
+        ArrayAdapter<WorkspaceProfile> adapter = new ArrayAdapter<WorkspaceProfile>(this,
+            R.layout.item_workspace_spinner, mProfiles) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                return bindWorkspaceOption(super.getView(position, convertView, parent), position);
+            }
+
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                return bindWorkspaceOption(super.getDropDownView(position, convertView, parent),
+                    position);
+            }
+        };
+        adapter.setDropDownViewResource(R.layout.item_workspace_spinner_dropdown);
+        return adapter;
+    }
+
+    private View bindWorkspaceOption(View view, int position) {
+        if (view instanceof TextView && position >= 0 && position < mProfiles.size()) {
+            TextView textView = (TextView) view;
+            WorkspaceProfile profile = mProfiles.get(position);
+            String label = workspaceSelectorLabel(profile);
+            textView.setText(label);
+            textView.setContentDescription(label);
+        }
+        return view;
+    }
+
+    private String workspaceSelectorLabel(WorkspaceProfile profile) {
+        if (TextUtils.isEmpty(profile.host)) {
+            return getString(R.string.workspace_selector_unconfigured, profile.name);
+        }
+        return getString(R.string.workspace_selector_target, profile.name, profile.host,
+            profile.path, workspaceSelectorStatus(profile.id));
+    }
+
+    private String workspaceSelectorStatus(String profileId) {
+        WorkspaceConnectionState state = mConnectionStateStore.read(profileId);
+        if (state == null) return getString(R.string.workspace_status_unverified);
+        switch (state.status) {
+            case TERMINAL_OPENED:
+                return getString(R.string.workspace_status_recently_opened);
+            case VERIFIED:
+                return state.isVerificationFresh(System.currentTimeMillis())
+                    ? getString(R.string.workspace_status_recently_verified)
+                    : getString(R.string.workspace_status_verification_expired);
+            case ACTION_REQUIRED:
+                return getString(R.string.workspace_status_action_required);
+            case FAILED:
+                return getString(R.string.workspace_status_check_failed);
+            default:
+                return getString(R.string.workspace_status_unknown);
+        }
     }
 
     private int findActiveProfileIndex() {
@@ -964,6 +1015,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
         public String toString() {
             return name;
         }
+
     }
 
 }
