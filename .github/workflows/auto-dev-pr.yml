@@ -58,6 +58,42 @@ jobs:
             pr_number="${pr_url##*/}"
           fi
 
+          is_static_only_file() {
+            case "$1" in
+              README.md|AGENTS.md|docs/**|test/reports/**|.agents/skills/**/*.md|.claude/skills/**/*.md)
+                return 0
+                ;;
+              *)
+                return 1
+                ;;
+            esac
+          }
+
+          is_emulator_ui_file() {
+            case "$1" in
+              app/src/main/**|app/src/androidTest/**|app/build.gradle|terminal-view/src/main/**|.github/workflows/ui-emulator.yml|scripts/verify-ui-screenshots.sh|test/plans/ui-screenshot-manifest.txt)
+                return 0
+                ;;
+              *)
+                return 1
+                ;;
+            esac
+          }
+
+          requires_android_ci=false
+          requires_emulator_ui=false
+          mapfile -t pr_files < <(gh_retry pr view "$pr_number" --repo "$REPOSITORY" \
+            --json files --jq '.files[].path')
+          for file in "${pr_files[@]}"; do
+            if ! is_static_only_file "$file"; then
+              requires_android_ci=true
+            fi
+            if is_emulator_ui_file "$file"; then
+              requires_emulator_ui=true
+            fi
+          done
+          echo "Android 运行时门禁：$requires_android_ci；模拟器 UI 门禁：$requires_emulator_ui。"
+
           wait_for_workflow() {
             workflow="$1"
             label="$2"
@@ -92,9 +128,13 @@ jobs:
             echo "预合并完整 CI 未通过；PR #$pr_number 已保留等待后续提交修复，自动 PR 工作流不再重复上报失败。"
             exit 0
           fi
-          if ! wait_for_workflow '.github/workflows/ui-emulator.yml' '模拟器 UI'; then
-            echo "预合并模拟器 UI 未通过；PR #$pr_number 已保留等待后续提交修复，自动 PR 工作流不再重复上报失败。"
-            exit 0
+          if [[ "$requires_emulator_ui" == true ]]; then
+            if ! wait_for_workflow '.github/workflows/ui-emulator.yml' '模拟器 UI'; then
+              echo "预合并模拟器 UI 未通过；PR #$pr_number 已保留等待后续提交修复，自动 PR 工作流不再重复上报失败。"
+              exit 0
+            fi
+          else
+            echo "未检测到 UI 运行时变更，跳过预合并模拟器 UI 等待。"
           fi
 
           is_candidate_release_branch() {
@@ -121,7 +161,12 @@ jobs:
             --body "$title"
           merge_sha="$(gh_retry pr view "$pr_number" --repo "$REPOSITORY" --json mergeCommit \
             --jq '.mergeCommit.oid')"
-          gh_retry workflow run '.github/workflows/ci.yml' --repo "$REPOSITORY" --ref dev
+          if [[ "$requires_android_ci" == true ]]; then
+            gh_retry workflow run '.github/workflows/ci.yml' --repo "$REPOSITORY" --ref dev
+          else
+            gh_retry workflow run '.github/workflows/ci.yml' --repo "$REPOSITORY" --ref dev \
+              -f androidRuntime=false
+          fi
           wait_for_workflow '.github/workflows/ci.yml' 'dev 合并后 CI' "$merge_sha"
 
           if [[ "$should_publish_candidate" == true ]]; then

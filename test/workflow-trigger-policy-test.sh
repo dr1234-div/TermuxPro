@@ -29,6 +29,18 @@ if ! grep -Fq "branches: ['dev_*', 'hotfix_*']" "$project_dir/.github/workflows/
     echo "UI push 门禁必须覆盖 dev_* 和 hotfix_*。" >&2
     exit 1
 fi
+if ! grep -Fq "androidRuntime" "$project_dir/.github/workflows/ci.yml"; then
+    echo "CI workflow_dispatch 必须支持关闭 Android 运行时门禁，用于文档/证据类收尾 CI。" >&2
+    exit 1
+fi
+if ! grep -Fq "is_static_only_file" "$project_dir/.github/workflows/ci.yml"; then
+    echo "CI 必须识别文档/规则/验收证据变更，避免无意义全量 Android 构建。" >&2
+    exit 1
+fi
+if ! grep -Fq "if: steps.changes.outputs.android_runtime == 'true'" "$project_dir/.github/workflows/ci.yml"; then
+    echo "CI Android 重步骤必须受变更类型门禁控制。" >&2
+    exit 1
+fi
 if ! grep -Fq "'terminal-view/src/main/**'" "$project_dir/.github/workflows/ui-emulator.yml"; then
     echo "UI pull_request 门禁必须覆盖 terminal-view 触摸、渲染和输入层变更。" >&2
     exit 1
@@ -105,6 +117,14 @@ if ! grep -Fq 'gh_retry()' "$auto_dev_pr_file"; then
 fi
 if ! grep -Fq '查询 GitHub Actions 超时或失败' "$auto_dev_pr_file"; then
     echo "自动研发 PR 工作流等待 CI 时必须容忍短暂查询失败，不能把 GitHub API 抖动误判成项目失败。" >&2
+    exit 1
+fi
+if ! grep -Fq 'requires_emulator_ui' "$auto_dev_pr_file"; then
+    echo "自动研发 PR 必须按变更路径判断是否等待模拟器 UI，文档分支不能卡在不存在的 UI run。" >&2
+    exit 1
+fi
+if ! grep -Fq 'androidRuntime=false' "$auto_dev_pr_file"; then
+    echo "自动研发 PR 的文档/证据类 dev 收尾 CI 必须显式关闭 Android 运行时门禁。" >&2
     exit 1
 fi
 
