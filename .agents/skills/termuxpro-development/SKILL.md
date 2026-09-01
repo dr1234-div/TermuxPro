@@ -59,8 +59,9 @@ GitHub API 操作统一使用 `scripts/github-cli.sh`，由它解析系统或项
 - 不向 `upstream` 推送。日常开发合入 `dev`；只有完整发布门禁通过后才能合入 `master`。
 - 分支业务名必须使用有意义的英语小驼峰：`dev_<englishCamelCase>_<YYYYMMDD>`；缺陷修复使用
   `hotfix_<englishCamelCase>_<YYYYMMDD>` 或关联 bug ID。禁止中文、空格和无意义编号。
-- `dev_release*` 分支名只保留给候选版发布列车，且版本源必须是 `x.y.z-rc.n`；稳定版证据补录、
-  发布文档或普通维护不得使用 `dev_release*` 前缀，避免误触发候选 Release 自动化。
+- `dev_release数字Rc数字_YYYYMMDD` 分支名只保留给候选版发布列车，且版本源必须是 `x.y.z-rc.n`；
+  稳定版证据补录、发布文档、流程修复或普通维护不得使用 `dev_release*` 前缀，避免误触发候选
+  Release 自动化。
 - 保留 GPLv3、上游版权和衍生项目声明。
 
 ## 主动迭代
@@ -173,8 +174,9 @@ UI/UX 与功能、安全和稳定性是同等级主线，不得把体验工作�
    均成功后自动合并；任一门禁失败必须保留 PR，不依赖本机会话中的 GitHub CLI 登录。
    合并完成后由同一流水线对实际 merge commit 触发并等待一次 `dev` CI；收尾 CI 失败时先修复，不能
    把功能分支的绿色检查冒充合并后的回归证据。
-   `dev_release*` 分支只有在收尾 CI 成功后才从唯一版本源创建不可覆盖的候选标签，并显式调度、等待
-   Release 流水线；标签冲突或 Release 失败必须停止并保留证据。
+   只有符合 `dev_release数字Rc数字_YYYYMMDD` 格式的候选发布分支，才允许在收尾 CI 成功后从唯一
+   版本源创建不可覆盖的候选标签，并显式调度、等待 Release 流水线；标签冲突或 Release 失败必须
+   停止并保留证据。
 3. PR CI 全绿后合入 `dev`；冻结版本并优先发布 `vX.Y.Z-rc.1`，需要设备能力时完成相应真机回归。
 4. 将真机结论、已知限制和候选 APK SHA-256 写入版本说明及 `test/reports/`，不得补造证据。
 5. 创建 `dev → master` 发布 PR；发布门禁和 CI 全绿后才能合并。

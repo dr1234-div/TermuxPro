@@ -63,6 +63,18 @@ if ! grep -Fq 'candidate_version_name' "$auto_dev_pr_file"; then
     echo "自动研发 PR 工作流必须基于版本源识别候选版本号，不能只依赖分支名。" >&2
     exit 1
 fi
+if ! grep -Fq 'is_candidate_release_branch' "$auto_dev_pr_file"; then
+    echo "自动研发 PR 工作流必须使用候选发布分支格式函数，不能用宽泛 dev_release* 触发候选发布。" >&2
+    exit 1
+fi
+if ! grep -Fq 'dev_release[0-9]+Rc[1-9][0-9]*_[0-9]{8}' "$auto_dev_pr_file"; then
+    echo "候选发布分支必须精确匹配 dev_release数字Rc数字_YYYYMMDD，避免证据/文档分支误重发候选 Release。" >&2
+    exit 1
+fi
+if ! grep -Fq '不是候选发布分支格式；按普通研发 PR 合并，不创建候选 Release' "$auto_dev_pr_file"; then
+    echo "dev_release* 的非候选分支必须明确降级为普通研发 PR。" >&2
+    exit 1
+fi
 if ! grep -Fq '不是候选版本；按普通研发 PR 合并，不创建候选 Release' "$auto_dev_pr_file"; then
     echo "dev_release* 分支命中稳定版本号时必须降级为普通 PR 合并并给出明确日志，不能在合并后失败。" >&2
     exit 1
