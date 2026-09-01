@@ -24,3 +24,13 @@
 - Claude 共享账号继续默认推荐新建会话。
 - 历史会话入口不得自动恢复最近会话。
 - 本轮不修改原始 Termux 终端输入、PTY 或基础会话语义。
+
+## 验收证据
+
+- `scripts/pre-push-smoke.sh origin/dev`：通过；Gradle 编译与相关 Robolectric 单测成功，
+  `BUILD SUCCESSFUL in 39s`。
+- PR #176：`https://github.com/heydarey/TermuxPro/pull/176`，已合入 `dev`，merge commit
+  `94096dedfe2b925d8f319e1131dd413c6cd4d63a`。
+- 分支 CI：`33549452361`，成功。
+- Emulator UI：`33549452886`，成功。
+- dev 合并后 CI：`33550115842`，成功。
