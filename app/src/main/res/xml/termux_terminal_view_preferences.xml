@@ -10,6 +10,15 @@
             app:summaryOn="@string/termux_terminal_view_terminal_margin_adjustment_on"
             app:title="@string/termux_terminal_view_terminal_margin_adjustment_title" />
 
+        <ListPreference
+            app:defaultValue="scrollback"
+            app:entries="@array/termux_terminal_touch_scroll_mode_labels"
+            app:entryValues="@array/termux_terminal_touch_scroll_mode_values"
+            app:key="terminal_touch_scroll_mode"
+            app:summary="@string/termux_terminal_view_touch_scroll_mode_summary"
+            app:title="@string/termux_terminal_view_touch_scroll_mode_title"
+            app:useSimpleSummaryProvider="true" />
+
     </PreferenceCategory>
 
 </PreferenceScreen>

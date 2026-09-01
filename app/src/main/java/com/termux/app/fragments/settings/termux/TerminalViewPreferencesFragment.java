@@ -63,6 +63,32 @@ class TerminalViewPreferencesDataStore extends PreferenceDataStore {
     }
 
     @Override
+    public void putString(String key, String value) {
+        if (mPreferences == null) return;
+        if (key == null) return;
+
+        switch (key) {
+            case "terminal_touch_scroll_mode":
+                mPreferences.setTerminalTouchScrollMode(value);
+                break;
+            default:
+                break;
+        }
+    }
+
+    @Override
+    public String getString(String key, String defValue) {
+        if (mPreferences == null) return defValue;
+
+        switch (key) {
+            case "terminal_touch_scroll_mode":
+                return mPreferences.getTerminalTouchScrollMode();
+            default:
+                return defValue;
+        }
+    }
+
+    @Override
     public boolean getBoolean(String key, boolean defValue) {
         if (mPreferences == null) return false;
 

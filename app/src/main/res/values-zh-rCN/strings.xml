@@ -107,6 +107,16 @@
     <string name="termux_terminal_view_terminal_margin_adjustment_title">终端边距适配</string>
     <string name="termux_terminal_view_terminal_margin_adjustment_off">关闭终端边距适配。</string>
     <string name="termux_terminal_view_terminal_margin_adjustment_on">启用终端边距适配。它可以尝试修复软键盘遮挡快捷键栏或终端的问题；如果导致屏幕闪烁，请关闭此选项。（默认）</string>
+    <string name="termux_terminal_view_touch_scroll_mode_title">触摸滚动模式</string>
+    <string name="termux_terminal_view_touch_scroll_mode_summary">选择手指上下滑动是阅读终端历史，还是滚动支持鼠标滚轮事件的 AI/TUI 面板。</string>
+    <string-array name="termux_terminal_touch_scroll_mode_labels">
+        <item>滚动终端历史（推荐）</item>
+        <item>滚动 AI/TUI 面板</item>
+    </string-array>
+    <string-array name="termux_terminal_touch_scroll_mode_values">
+        <item>scrollback</item>
+        <item>tui</item>
+    </string-array>
 
     <string name="termux_api_preferences_title">&TERMUX_API_APP_NAME;</string>
     <string name="termux_api_preferences_summary">&TERMUX_API_APP_NAME; 应用设置</string>
