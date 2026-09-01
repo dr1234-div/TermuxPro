@@ -25,4 +25,12 @@ public class AiCliLaunchCommandTest {
         assertEquals("codex resume", AiCliLaunchCommand.command(
             AiCliLaunchCommand.Tool.CODEX, AiCliLaunchCommand.Mode.PICK_HISTORY));
     }
+
+    @Test
+    public void guidanceSeparatesSharedClaudeFromUserScopedCodex() {
+        assertEquals(com.termux.R.string.ai_session_claude_guidance,
+            AiCliLaunchCommand.guidanceMessage(AiCliLaunchCommand.Tool.CLAUDE));
+        assertEquals(com.termux.R.string.ai_session_codex_guidance,
+            AiCliLaunchCommand.guidanceMessage(AiCliLaunchCommand.Tool.CODEX));
+    }
 }

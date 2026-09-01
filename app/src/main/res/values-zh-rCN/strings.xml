@@ -164,6 +164,8 @@
     <string name="workspace_start_claude">Claude Code</string>
     <string name="workspace_start_codex">Codex CLI</string>
     <string name="ai_session_launch_title">启动 %1$s</string>
+    <string name="ai_session_claude_guidance">Claude Code 常见于共享远程账号。默认新建最安全；如果要恢复历史，请只从 Claude 原生选择器里手动选择目标会话。</string>
+    <string name="ai_session_codex_guidance">Codex CLI 通常按用户隔离，但仍不自动进入最近会话。确认当前项目正确后再选择新建或历史。</string>
     <string name="ai_session_new_action">新建会话（安全默认）\n在当前项目干净启动；共享 Claude 账号推荐使用。</string>
     <string name="ai_session_pick_history_action">选择历史会话\n只打开 CLI 原生选择器，TermuxPro 不自动进入最近会话。</string>
     <string name="workspace_open_local_terminal">打开本地终端</string>

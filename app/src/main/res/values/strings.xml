@@ -284,6 +284,8 @@
     <string name="workspace_start_claude">Claude Code</string>
     <string name="workspace_start_codex">Codex CLI</string>
     <string name="ai_session_launch_title">Start %1$s</string>
+    <string name="ai_session_claude_guidance">Claude Code is often used from a shared remote account. New session is the safe default. To resume history, choose the exact session from Claude’s own picker.</string>
+    <string name="ai_session_codex_guidance">Codex CLI is usually user-scoped, but TermuxPro still never auto-enters the latest session. Confirm the current project before starting or resuming.</string>
     <string name="ai_session_new_action">New session (safe default)\nStart clean in this project. Recommended for shared Claude accounts.</string>
     <string name="ai_session_pick_history_action">Choose previous session\nOpen the CLI picker yourself; TermuxPro will not auto-enter the latest session.</string>
     <string name="workspace_open_local_terminal">Open local terminal</string>
