@@ -27,4 +27,8 @@ TermuxPro 不应把 Termux 已有基础命令当作主要增值点重复展示�
 - `TERMUXPRO_USE_CHINA_MIRROR=1 ./gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest --tests com.termux.app.TaskSessionsNavigationTest --tests com.termux.app.TaskSessionsActivityTest --tests com.termux.app.WorkspaceOwnershipStoreTest --tests com.termux.app.TerminalProjectToolsMenuTest --tests com.termux.app.CustomLayoutsSmokeTest` 通过。
 - `./scripts/pre-push-smoke.sh origin/dev` 通过；包含 Skill 校验、版本元数据、workflow 触发策略、GitHub
   CLI 封装校验、check suite 诊断脚本测试、资源守卫和相关 Gradle 单元测试。
-- 远端 CI 和 PR 编号待补。
+- PR #128 已合入 `dev`，merge commit `2da5b4406ec4bfcbe0ab819506ec9bab1179ca79`。
+- 分支 CI run `33485387469` 通过：全模块测试、Lint、Debug APK、隔离 SSH/tmux fixture。
+- 模拟器 UI run `33485387504` 通过：360dp 深色默认字体与 200% 字体截图完成。
+- `dev` 合并后收尾 CI run `33485908470` 通过。
+- 自动 PR 工作流 run `33485387476` 成功结束。
