@@ -86,8 +86,11 @@ public class CustomCommandsActivityTest {
         assertEquals(activity.getString(R.string.custom_commands_template_title),
             shadowOf(templateDialog).getTitle());
         ListView listView = templateDialog.getListView();
-        assertTrue(listView.getAdapter().getCount() >= 6);
+        assertTrue(listView.getAdapter().getCount() >= 7);
         assertTrue(listView.getAdapter().getItem(0).toString().contains("codex resume"));
+        assertTrue(listView.getAdapter().getItem(1).toString().contains("claude"));
+        assertFalse(listView.getAdapter().getItem(1).toString().contains("--continue"));
+        assertTrue(listView.getAdapter().getItem(2).toString().contains("claude --resume"));
         assertEquals(0, new CustomCommandStore(RuntimeEnvironment.getApplication())
             .list("workspace-a").size());
         assertEquals(null, shadowOf(activity).getNextStartedActivity());

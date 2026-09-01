@@ -550,7 +550,8 @@
     <string name="custom_commands_template_title">选择快捷指令模板</string>
     <string name="custom_commands_template_message">模板只会填入编辑器，保存前不会落盘，运行前仍遵守确认和危险命令拦截。</string>
     <string name="custom_commands_template_codex">Codex：打开历史会话</string>
-    <string name="custom_commands_template_claude">Claude：继续最近工作</string>
+    <string name="custom_commands_template_claude_new">Claude：新建独立会话</string>
+    <string name="custom_commands_template_claude_history">Claude：选择历史会话</string>
     <string name="custom_commands_template_git_status">Git：查看当前状态</string>
     <string name="custom_commands_template_git_log">Git：最近提交</string>
     <string name="custom_commands_template_tmux_list">tmux：查看会话列表</string>
