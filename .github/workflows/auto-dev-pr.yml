@@ -129,6 +129,52 @@ jobs:
             return 1
           }
 
+          wait_for_candidate_release() {
+            tag="$1"
+            version_name="$2"
+            target_sha="$3"
+            apk_name="termuxpro-$version_name-arm64-v8a.apk"
+            for attempt in $(seq 1 180); do
+              args=(run list --repo "$REPOSITORY" --workflow '.github/workflows/release.yml' \
+                --limit 20 --json status,conclusion,databaseId,event,headSha,headBranch)
+              if record="$(gh_safe "${args[@]}" \
+                --jq "map(select((.event == \"push\" or .event == \"workflow_dispatch\") and .headSha == \"$target_sha\"))[0] // empty")"; then
+                if [[ -n "$record" ]]; then
+                  status="$(jq -r '.status' <<<"$record")"
+                  conclusion="$(jq -r '.conclusion // ""' <<<"$record")"
+                  echo "候选 Release run：$status ${conclusion:-等待结论}"
+                  if [[ "$status" == 'completed' && "$conclusion" != 'success' ]]; then
+                    echo "候选 Release 未通过，保留证据。" >&2
+                    return 1
+                  fi
+                  if [[ "$status" == 'completed' && "$conclusion" == 'success' ]]; then
+                    return 0
+                  fi
+                else
+                  echo "候选 Release run 尚未创建，等待触发。"
+                fi
+              else
+                echo "候选 Release run 查询超时或失败，第 $attempt 次后继续等待。"
+              fi
+
+              if release_json="$(gh_safe release view "$tag" --repo "$REPOSITORY" \
+                --json isDraft,isPrerelease,assets 2>/dev/null)"; then
+                if jq -e --arg apk "$apk_name" '
+                  .isDraft == false and .isPrerelease == true
+                  and ([.assets[].name] | index($apk) != null)
+                  and ([.assets[].name] | index("SHA256SUMS") != null)
+                  and ([.assets[].name] | index("APK_SIGNATURE.txt") != null)
+                ' <<<"$release_json" >/dev/null; then
+                  echo "候选 Release 已发布且附件齐全：$tag。"
+                  return 0
+                fi
+              fi
+              sleep 20
+            done
+            echo "候选 Release 等待超时，保留 PR #$pr_number 与标签 $tag。" >&2
+            return 1
+          }
+
           if ! wait_for_workflow '.github/workflows/ci.yml' '完整 CI'; then
             echo "预合并完整 CI 未通过；PR #$pr_number 已保留等待后续提交修复，自动 PR 工作流不再重复上报失败。"
             exit 0
@@ -187,5 +233,5 @@ jobs:
                 -f "ref=refs/tags/$tag" -f "sha=$merge_sha" >/dev/null
             fi
             gh_retry workflow run '.github/workflows/release.yml' --repo "$REPOSITORY" --ref "$tag"
-            wait_for_workflow '.github/workflows/release.yml' '候选 Release' "$merge_sha" ''
+            wait_for_candidate_release "$tag" "$version_name" "$merge_sha"
           fi
