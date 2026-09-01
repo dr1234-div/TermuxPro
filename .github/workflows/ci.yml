@@ -125,7 +125,9 @@ jobs:
           exit 1
       - name: Lint 与 Debug APK
         if: steps.changes.outputs.android_runtime == 'true'
-        run: ./gradlew --no-daemon --max-workers=2 --stacktrace lint :app:assembleDebug
+        run: |
+          ./gradlew --no-daemon --max-workers=2 --stacktrace lint
+          ./gradlew --no-daemon --max-workers=1 --stacktrace -Dorg.gradle.jvmargs="-Xmx4096M -Dfile.encoding=UTF-8" :app:assembleDebug
       - name: 上传测试报告
         if: always()
         uses: actions/upload-artifact@v7
