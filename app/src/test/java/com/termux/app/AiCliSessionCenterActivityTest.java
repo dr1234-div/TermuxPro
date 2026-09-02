@@ -68,6 +68,11 @@ public class AiCliSessionCenterActivityTest {
 
         activity.findViewById(R.id.ai_cli_center_open_tmux).performClick();
         assertNextActivity(activity, TaskSessionsActivity.class);
+
+        activity.findViewById(R.id.ai_cli_center_open_git).performClick();
+        Intent gitIntent = shadowOf(activity).getNextStartedActivity();
+        assertEquals(GitDiffActivity.class.getName(), gitIntent.getComponent().getClassName());
+        assertTrue(!gitIntent.getBooleanExtra(GitDiffActivity.EXTRA_START_IN_DIFF, true));
     }
 
     @Test
@@ -102,6 +107,16 @@ public class AiCliSessionCenterActivityTest {
             AiCliSessionCenterActivity.class).setup().get();
 
         activity.findViewById(R.id.ai_cli_center_open_tmux).performClick();
+
+        assertNextActivity(activity, WorkspaceActivity.class);
+    }
+
+    @Test
+    public void gitActionFallsBackToWorkbenchWhenWorkspaceIsIncomplete() {
+        AiCliSessionCenterActivity activity = Robolectric.buildActivity(
+            AiCliSessionCenterActivity.class).setup().get();
+
+        activity.findViewById(R.id.ai_cli_center_open_git).performClick();
 
         assertNextActivity(activity, WorkspaceActivity.class);
     }

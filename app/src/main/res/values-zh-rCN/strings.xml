@@ -187,6 +187,7 @@
     <string name="ai_cli_center_open_workspace">回到工作台启动</string>
     <string name="ai_cli_center_open_templates">管理快捷指令模板</string>
     <string name="ai_cli_center_open_tmux">查看 tmux 会话</string>
+    <string name="ai_cli_center_open_git">查看 Git 改动</string>
     <string name="workspace_open_local_terminal">打开本地终端</string>
     <string name="workspace_security_tip">首次连接需确认服务器指纹并输入密码或配置 SSH 密钥；TermuxPro 不会自动进入未指定的 tmux 或 AI 历史会话。</string>
     <string name="workspace_error_host">请输入有效的 SSH 别名、主机、“用户名@主机”、“用户名@主机:端口”或“ssh -p 端口 用户名@主机”。</string>
