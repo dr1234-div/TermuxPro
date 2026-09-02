@@ -16,6 +16,7 @@ final class SshTargetValidator {
         for (int index = 0; index < value.length(); index++) {
             char character = value.charAt(index);
             if (Character.isWhitespace(character) || Character.isISOControl(character)) return false;
+            if (!isAllowedTargetCharacter(character)) return false;
             if (character == '@') {
                 atCount++;
                 atIndex = index;
@@ -23,5 +24,15 @@ final class SshTargetValidator {
         }
         if (atCount > 1) return false;
         return atCount == 0 || (atIndex > 0 && atIndex < value.length() - 1);
+    }
+
+    private static boolean isAllowedTargetCharacter(char character) {
+        return Character.isLetterOrDigit(character)
+            || character == '@'
+            || character == '.'
+            || character == '-'
+            || character == '_'
+            || character == ':'
+            || character == '%';
     }
 }
