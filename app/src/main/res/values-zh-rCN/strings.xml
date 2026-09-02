@@ -138,7 +138,7 @@
     <string name="workspace_remote_card_title">服务器与项目</string>
     <string name="workspace_remote_card_description">配置 SSH 地址、项目目录和连接后策略。密码、私钥与 known_hosts 仍由 OpenSSH 管理。</string>
     <string name="workspace_name_hint">工作区名称</string>
-    <string name="workspace_host_hint">SSH 地址，例如 hdr@192.168.1.153</string>
+    <string name="workspace_host_hint">SSH 地址或粘贴的 ssh 命令，例如 hdr@192.168.1.153</string>
     <string name="workspace_port_hint">SSH 端口（默认 22）</string>
     <string name="workspace_path_hint">远程项目路径</string>
     <string name="workspace_connection_policy_description">连接与 tmux 策略</string>
@@ -185,7 +185,7 @@
     <string name="ai_cli_center_open_tmux">查看 tmux 会话</string>
     <string name="workspace_open_local_terminal">打开本地终端</string>
     <string name="workspace_security_tip">首次连接需确认服务器指纹并输入密码或配置 SSH 密钥；TermuxPro 不会自动进入未指定的 tmux 或 AI 历史会话。</string>
-    <string name="workspace_error_host">请输入有效的 SSH 别名、主机或“用户名@主机”。</string>
+    <string name="workspace_error_host">请输入有效的 SSH 别名、主机、“用户名@主机”、“用户名@主机:端口”或“ssh -p 端口 用户名@主机”。</string>
     <string name="workspace_error_port">SSH 端口必须在 1 到 65535 之间。</string>
     <string name="workspace_error_path">请输入远程项目路径。</string>
     <string name="workspace_open_sessions">打开终端会话列表</string>

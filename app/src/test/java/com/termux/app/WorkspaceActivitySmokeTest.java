@@ -112,6 +112,24 @@ public class WorkspaceActivitySmokeTest {
     }
 
     @Test
+    public void pastedSshCommandIsNormalizedBeforeSavingWorkspace() {
+        WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
+        ((EditText) activity.findViewById(R.id.workspace_host_input))
+            .setText("ssh -p 22022 hdr@192.168.1.153");
+        ((EditText) activity.findViewById(R.id.workspace_port_input)).setText("22");
+
+        activity.findViewById(R.id.workspace_save_button).performClick();
+
+        assertEquals("hdr@192.168.1.153",
+            ((EditText) activity.findViewById(R.id.workspace_host_input)).getText().toString());
+        assertEquals("22022",
+            ((EditText) activity.findViewById(R.id.workspace_port_input)).getText().toString());
+        assertTrue(((TextView) activity.findViewById(R.id.workspace_summary_details))
+            .getText().toString().contains("hdr@192.168.1.153"));
+        activity.finish();
+    }
+
+    @Test
     public void firstConfigurationKeepsTmuxOptionsBehindAdvancedSettings() {
         WorkspaceActivity activity = Robolectric.buildActivity(WorkspaceActivity.class).setup().get();
 

@@ -258,7 +258,7 @@
     <string name="workspace_remote_card_title">Server and project</string>
     <string name="workspace_remote_card_description">Configure the SSH target, project path and connection policy. Passwords, private keys and known_hosts stay with OpenSSH.</string>
     <string name="workspace_name_hint">Workspace name</string>
-    <string name="workspace_host_hint">SSH target, for example user@192.168.1.153</string>
+    <string name="workspace_host_hint">SSH target or pasted command, e.g. user@192.168.1.153</string>
     <string name="workspace_port_hint">SSH port (default 22)</string>
     <string name="workspace_path_hint">Remote project path</string>
     <string name="workspace_connection_policy_description">Connection and tmux policy</string>
@@ -305,7 +305,7 @@
     <string name="ai_cli_center_open_tmux">Open tmux sessions</string>
     <string name="workspace_open_local_terminal">Open local terminal</string>
     <string name="workspace_security_tip">The first SSH connection still requires explicit host fingerprint confirmation.</string>
-    <string name="workspace_error_host">Enter a valid SSH alias, host, or user@host.</string>
+    <string name="workspace_error_host">Enter a valid SSH alias, host, user@host, user@host:port, or ssh -p port user@host.</string>
     <string name="workspace_error_port">SSH port must be between 1 and 65535.</string>
     <string name="workspace_error_path">Enter a remote project path.</string>
     <string name="workspace_open_sessions">Open terminal sessions</string>
