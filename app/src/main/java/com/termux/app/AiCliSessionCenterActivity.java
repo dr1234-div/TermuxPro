@@ -29,6 +29,14 @@ public final class AiCliSessionCenterActivity extends AppCompatActivity {
         findViewById(R.id.ai_cli_center_open_templates).setOnClickListener(view ->
             startActivity(new Intent(this, CustomCommandsActivity.class)));
         findViewById(R.id.ai_cli_center_open_tmux).setOnClickListener(view -> openTmuxSessions());
+        findViewById(R.id.ai_cli_center_claude_new).setOnClickListener(view ->
+            launchAiCli(AiCliLaunchCommand.Tool.CLAUDE, AiCliLaunchCommand.Mode.NEW_SESSION));
+        findViewById(R.id.ai_cli_center_claude_history).setOnClickListener(view ->
+            launchAiCli(AiCliLaunchCommand.Tool.CLAUDE, AiCliLaunchCommand.Mode.PICK_HISTORY));
+        findViewById(R.id.ai_cli_center_codex_new).setOnClickListener(view ->
+            launchAiCli(AiCliLaunchCommand.Tool.CODEX, AiCliLaunchCommand.Mode.NEW_SESSION));
+        findViewById(R.id.ai_cli_center_codex_history).setOnClickListener(view ->
+            launchAiCli(AiCliLaunchCommand.Tool.CODEX, AiCliLaunchCommand.Mode.PICK_HISTORY));
 
         bindTarget();
         bindCommands();
@@ -71,5 +79,22 @@ public final class AiCliSessionCenterActivity extends AppCompatActivity {
             return;
         }
         startActivity(intent);
+    }
+
+    private void launchAiCli(AiCliLaunchCommand.Tool tool, AiCliLaunchCommand.Mode mode) {
+        WorkspaceTarget workspace = WorkspaceTargetStore.readActive(this);
+        if (workspace == null || !SshTargetValidator.isValid(workspace.host)
+            || workspace.port < 1 || workspace.port > 65535
+            || workspace.path == null || workspace.path.trim().isEmpty()) {
+            startActivity(new Intent(this, WorkspaceActivity.class));
+            return;
+        }
+        String command = WorkspaceCommandBuilder.buildSshCommand(
+            workspace.host, workspace.port, workspace.path,
+            AiCliLaunchCommand.command(tool, mode),
+            WorkspaceCommandBuilder.POLICY_SSH_ONLY, "");
+        startActivity(new Intent(this, TermuxActivity.class)
+            .putExtra(TermuxActivity.EXTRA_STARTUP_COMMAND, command)
+            .putExtra(TermuxActivity.EXTRA_NEW_SESSION, true));
     }
 }
