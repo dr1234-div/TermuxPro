@@ -124,6 +124,37 @@
                 android:textColor="#68E0B7"
                 android:textIsSelectable="true"
                 android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/ai_cli_center_claude_new"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:minHeight="52dp"
+                    android:text="@string/ai_cli_center_claude_new"
+                    android:textAllCaps="false"
+                    android:textColor="#062118"
+                    android:backgroundTint="#68E0B7" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/ai_cli_center_claude_history"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:minHeight="52dp"
+                    android:text="@string/ai_cli_center_claude_history"
+                    android:textAllCaps="false"
+                    android:textColor="#F5F8FA"
+                    android:backgroundTint="#25384A" />
+            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
@@ -158,6 +189,37 @@
                 android:textColor="#68E0B7"
                 android:textIsSelectable="true"
                 android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/ai_cli_center_codex_new"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:minHeight="52dp"
+                    android:text="@string/ai_cli_center_codex_new"
+                    android:textAllCaps="false"
+                    android:textColor="#062118"
+                    android:backgroundTint="#68E0B7" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/ai_cli_center_codex_history"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:minHeight="52dp"
+                    android:text="@string/ai_cli_center_codex_history"
+                    android:textAllCaps="false"
+                    android:textColor="#F5F8FA"
+                    android:backgroundTint="#25384A" />
+            </LinearLayout>
         </LinearLayout>
 
         <TextView
@@ -199,6 +261,17 @@
             android:layout_marginTop="10dp"
             android:minHeight="52dp"
             android:text="@string/ai_cli_center_open_tmux"
+            android:textAllCaps="false"
+            android:textColor="#F5F8FA"
+            android:backgroundTint="#25384A" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/ai_cli_center_open_git"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:minHeight="52dp"
+            android:text="@string/ai_cli_center_open_git"
             android:textAllCaps="false"
             android:textColor="#F5F8FA"
             android:backgroundTint="#25384A" />

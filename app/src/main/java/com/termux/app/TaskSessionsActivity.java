@@ -244,12 +244,10 @@ public final class TaskSessionsActivity extends AppCompatActivity {
         }
         builder.setNegativeButton(android.R.string.cancel, null);
         AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(ignored -> {
-            TermuxProDialogStyle.apply(this, dialog);
-            if (session.managedByTermuxPro) dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
+        TermuxProDialogStyle.show(this, dialog, shownDialog -> {
+            if (session.managedByTermuxPro) shownDialog.getButton(AlertDialog.BUTTON_NEUTRAL)
                 .setTextColor(ContextCompat.getColor(this, R.color.tp_danger));
         });
-        dialog.show();
     }
 
     private String nonOwnedSessionWarning(TmuxSessionInfo session) {
@@ -276,19 +274,18 @@ public final class TaskSessionsActivity extends AppCompatActivity {
             .setTitle(title).setView(content)
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(action, null).create();
-        dialog.setOnShowListener(ignored -> {
-            TermuxProDialogStyle.apply(this, dialog);
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+        TermuxProDialogStyle.show(this, dialog, shownDialog -> {
+            shownDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
                 String name = input.getText().toString();
                 if (!TmuxSessionNameValidator.isValid(name)) {
                     input.setError(getString(R.string.workspace_error_session_name));
                     return;
                 }
                 if (session != null && session.name.equals(name)) {
-                    dialog.dismiss();
+                    shownDialog.dismiss();
                     return;
                 }
-                dialog.dismiss();
+                shownDialog.dismiss();
                 mutateSession(session == null
                     ? WorkspaceCommandBuilder.buildCreateTaskSessionRemoteCommand(
                     name, mOwnerToken, mHost, mPort, mProjectPath)
@@ -301,11 +298,10 @@ public final class TaskSessionsActivity extends AppCompatActivity {
             });
             input.setOnEditorActionListener((view, actionId, event) -> {
                 if (actionId != android.view.inputmethod.EditorInfo.IME_ACTION_DONE) return false;
-                dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+                shownDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
                 return true;
             });
         });
-        dialog.show();
     }
 
     private void mutateSession(String command, int failureMessage, String progressMessage) {
@@ -342,12 +338,10 @@ public final class TaskSessionsActivity extends AppCompatActivity {
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.task_sessions_stop, (ignoredDialog, which) -> stop(session))
             .create();
-        dialog.setOnShowListener(ignored -> {
-            TermuxProDialogStyle.apply(this, dialog);
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        TermuxProDialogStyle.show(this, dialog, shownDialog -> {
+            shownDialog.getButton(AlertDialog.BUTTON_POSITIVE)
                 .setTextColor(ContextCompat.getColor(this, R.color.tp_danger));
         });
-        dialog.show();
     }
 
     private void stop(TmuxSessionInfo session) {

@@ -14,6 +14,18 @@ import sys
 
 root = pathlib.Path(sys.argv[1])
 violations = []
+product_dialog_files = {
+    "AiCliSessionCenterActivity.java",
+    "ConnectionDiagnosticActivity.java",
+    "CustomCommandsActivity.java",
+    "GitDiffActivity.java",
+    "ProjectTasksActivity.java",
+    "RemoteFilesActivity.java",
+    "RemoteFilePreviewActivity.java",
+    "SshKeysActivity.java",
+    "TaskSessionsActivity.java",
+    "WorkspaceActivity.java",
+}
 
 for source_path in root.rglob("*.java"):
     if "src/test" in source_path.parts:
@@ -39,6 +51,33 @@ for source_path in root.rglob("*.java"):
     for match in direct_fluent_show:
         line = text.count("\n", 0, match.start()) + 1
         violations.append(f"{source_path}:{line}: AlertDialog 链式按钮后不能直接 show，必须先 create 并套用产品样式")
+
+    if source_path.name in product_dialog_files:
+        manual_on_show = re.finditer(r"\.setOnShowListener\s*\(", text)
+        for match in manual_on_show:
+            line = text.count("\n", 0, match.start()) + 1
+            violations.append(f"{source_path}:{line}: TermuxPro 增值页禁止手写 setOnShowListener，必须使用 TermuxProDialogStyle.show/prepare")
+
+        if source_path.name != "GitDiffActivity.java":
+            direct_dialog_show = re.finditer(r"\bdialog\s*\.show\s*\(\s*\)\s*;", text)
+            for match in direct_dialog_show:
+                line = text.count("\n", 0, match.start()) + 1
+                violations.append(f"{source_path}:{line}: TermuxPro 增值页禁止直接 dialog.show，必须使用 TermuxProDialogStyle.show")
+        else:
+            for match in re.finditer(r"\bdialog\s*\.show\s*\(\s*\)\s*;", text):
+                line = text.count("\n", 0, match.start()) + 1
+                before = text[:match.start()]
+                method_match = re.search(
+                    r"private\s+void\s+showPreparedDialog\s*\([^)]*\)\s*\{[^{}]*$",
+                    before,
+                    flags=re.S,
+                )
+                if not method_match:
+                    violations.append(f"{source_path}:{line}: Git 工作台只允许 showPreparedDialog 展示已 prepare 的 Dialog")
+
+        if "new AlertDialog.Builder" in text and "TermuxProDialogStyle.show" not in text \
+                and "TermuxProDialogStyle.prepare" not in text and "AiSessionDialog.show" not in text:
+            violations.append(f"{source_path}: TermuxPro 增值页创建 AlertDialog 后必须通过统一产品样式入口展示")
 
 if violations:
     print("\n".join(violations), file=sys.stderr)

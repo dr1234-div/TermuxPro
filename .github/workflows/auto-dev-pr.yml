@@ -210,11 +210,13 @@ jobs:
             echo "分支 $HEAD_BRANCH 不是候选发布分支格式；按普通研发 PR 合并，不创建候选 Release。"
           fi
 
-          gh_retry pr merge "$pr_number" --repo "$REPOSITORY" --merge \
-            --subject "Merge pull request #$pr_number from ${{ github.repository_owner }}/$HEAD_BRANCH" \
-            --body "$title"
-          merge_sha="$(gh_retry pr view "$pr_number" --repo "$REPOSITORY" --json mergeCommit \
-            --jq '.mergeCommit.oid')"
+          # gh pr merge 会把本 job 自己也纳入 PR checks 等待，容易形成“自动合并等待自身完成”的死锁。
+          # 这里在完整 CI/模拟器 UI 明确通过后直接调用 Pulls merge API，避免普通研发 PR 反复卡住或超时发失败邮件。
+          merge_sha="$(gh_retry api --method PUT "repos/$REPOSITORY/pulls/$pr_number/merge" \
+            -f commit_title="Merge pull request #$pr_number from ${{ github.repository_owner }}/$HEAD_BRANCH" \
+            -f commit_message="$title" \
+            -f merge_method=merge \
+            --jq '.sha')"
           if [[ "$requires_android_ci" == true ]]; then
             gh_retry workflow run '.github/workflows/ci.yml' --repo "$REPOSITORY" --ref dev
           else

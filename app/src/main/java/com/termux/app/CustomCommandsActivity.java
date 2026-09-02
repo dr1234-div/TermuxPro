@@ -190,9 +190,8 @@ public final class CustomCommandsActivity extends AppCompatActivity {
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.custom_commands_save, null)
             .create();
-        dialog.setOnShowListener(ignored -> {
-            TermuxProDialogStyle.apply(this, dialog);
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+        TermuxProDialogStyle.show(this, dialog, shownDialog -> {
+            shownDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
                 CustomCommand candidate = new CustomCommand(existing == null
                     ? CustomCommand.create("temp", "true", "", "",
                         CustomCommand.Confirmation.ALWAYS).id : existing.id,
@@ -215,12 +214,11 @@ public final class CustomCommandsActivity extends AppCompatActivity {
                     value.setError(getString(R.string.custom_commands_invalid));
                 } else {
                     mStore.save(mTarget.id, candidate);
-                    dialog.dismiss();
+                    shownDialog.dismiss();
                     renderCommands();
                 }
             });
         });
-        dialog.show();
     }
 
     private void showTemplates() {
@@ -235,8 +233,7 @@ public final class CustomCommandsActivity extends AppCompatActivity {
             .setItems(labels, (selectionDialog, which) -> showEditor(null, templates[which]))
             .setNegativeButton(android.R.string.cancel, null)
             .create();
-        dialog.setOnShowListener(ignored -> TermuxProDialogStyle.apply(this, dialog));
-        dialog.show();
+        TermuxProDialogStyle.show(this, dialog);
     }
 
     private void preview(CustomCommand command) {
@@ -257,8 +254,7 @@ public final class CustomCommandsActivity extends AppCompatActivity {
             .setPositiveButton(R.string.custom_commands_execute,
                 (selectionDialog, which) -> execute(command))
             .create();
-        dialog.setOnShowListener(ignored -> TermuxProDialogStyle.apply(this, dialog));
-        dialog.show();
+        TermuxProDialogStyle.show(this, dialog);
     }
 
     private void execute(CustomCommand command) {
@@ -280,8 +276,7 @@ public final class CustomCommandsActivity extends AppCompatActivity {
                 renderCommands();
             })
             .create();
-        dialog.setOnShowListener(ignored -> TermuxProDialogStyle.apply(this, dialog));
-        dialog.show();
+        TermuxProDialogStyle.show(this, dialog);
     }
 
     private static final class CustomCommandTemplate {

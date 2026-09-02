@@ -494,10 +494,15 @@ public final class WorkspaceActivity extends AppCompatActivity {
         mNameInput.selectAll();
     }
 
-    private void saveCurrentWorkspace() {
+    private boolean saveCurrentWorkspace() {
         WorkspaceProfile profile = mProfiles.get(findActiveProfileIndex());
-        String nextHost = mHostInput.getText().toString().trim();
-        String nextPort = mPortInput.getText().toString().trim();
+        SshTargetParser.ParsedTarget parsedTarget = normalizeSshTarget(false);
+        if (parsedTarget == null && !TextUtils.isEmpty(mHostInput.getText().toString().trim())) {
+            return false;
+        }
+        String nextHost = parsedTarget == null ? "" : parsedTarget.host;
+        String nextPort = parsedTarget == null ? mPortInput.getText().toString().trim()
+            : String.valueOf(parsedTarget.port);
         String nextPath = mPathInput.getText().toString().trim();
         String nextPolicy = indexToPolicy(mConnectionPolicySelector.getSelectedItemPosition());
         String nextSessionName = mSessionNameInput.getText().toString().trim();
@@ -519,6 +524,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
         refreshWorkspaceSelector();
         mEditingProfile = TextUtils.isEmpty(profile.host);
         refreshHomeState();
+        return true;
     }
 
     private String normalizedWorkspaceName() {
@@ -578,27 +584,13 @@ public final class WorkspaceActivity extends AppCompatActivity {
             installSshClient();
             return;
         }
-        String host = mHostInput.getText().toString().trim();
-        String portText = mPortInput.getText().toString().trim();
+        SshTargetParser.ParsedTarget target = normalizeSshTarget(true);
+        if (target == null) return;
+        String host = target.host;
         String path = mPathInput.getText().toString().trim();
         String policy = indexToPolicy(mConnectionPolicySelector.getSelectedItemPosition());
         String sessionName = mSessionNameInput.getText().toString().trim();
-
-        if (!SshTargetValidator.isValid(host)) {
-            mHostInput.setError(getString(R.string.workspace_error_host));
-            return;
-        }
-
-        int port;
-        try {
-            port = TextUtils.isEmpty(portText) ? 22 : Integer.parseInt(portText);
-        } catch (NumberFormatException exception) {
-            port = -1;
-        }
-        if (port < 1 || port > 65535) {
-            mPortInput.setError(getString(R.string.workspace_error_port));
-            return;
-        }
+        int port = target.port;
         if (TextUtils.isEmpty(path)) {
             mPathInput.setError(getString(R.string.workspace_error_path));
             return;
@@ -610,7 +602,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
 
         mNameInput.setText(normalizedWorkspaceName());
         mPortInput.setText(String.valueOf(port));
-        saveCurrentWorkspace();
+        if (!saveCurrentWorkspace()) return;
 
         WorkspaceConnectionState state = WorkspaceConnectionState.terminalOpened(
             System.currentTimeMillis());
@@ -639,13 +631,14 @@ public final class WorkspaceActivity extends AppCompatActivity {
                     AiCliLaunchCommand.Mode.PICK_HISTORY)))
             .setNegativeButton(android.R.string.cancel, null)
             .create();
-        dialog.setOnShowListener(ignored -> AiSessionDialog.applyReadableStyle(this, dialog));
-        dialog.show();
+        AiSessionDialog.show(this, dialog);
     }
 
     private String aiLaunchMessage(AiCliLaunchCommand.Tool tool) {
-        String host = mHostInput.getText().toString().trim();
-        int port = parsePort(mPortInput.getText().toString(), 22);
+        SshTargetParser.ParsedTarget target = SshTargetParser.parse(
+            mHostInput.getText().toString(), mPortInput.getText().toString(), 22);
+        String host = target == null ? mHostInput.getText().toString().trim() : target.host;
+        int port = target == null ? parsePort(mPortInput.getText().toString(), 22) : target.port;
         String path = mPathInput.getText().toString().trim();
         return AiCliLaunchMessage.forWorkspaceValues(this, tool, host, port, path);
     }
@@ -797,18 +790,12 @@ public final class WorkspaceActivity extends AppCompatActivity {
             installSshClient();
             return;
         }
-        String host = mHostInput.getText().toString().trim();
-        if (!SshTargetValidator.isValid(host)) {
-            mHostInput.setError(getString(R.string.workspace_error_host));
-            return;
-        }
-        int sshPort = parsePort(mPortInput.getText().toString(), 22);
+        SshTargetParser.ParsedTarget target = normalizeSshTarget(true);
+        if (target == null) return;
+        String host = target.host;
+        int sshPort = target.port;
         int remotePort = parsePort(mRemotePortInput.getText().toString(), -1);
         int localPort = parsePort(mLocalPortInput.getText().toString(), -1);
-        if (sshPort < 1) {
-            mPortInput.setError(getString(R.string.workspace_error_port));
-            return;
-        }
         if (remotePort < 1) {
             mRemotePortInput.setError(getString(R.string.workspace_error_preview_port));
             return;
@@ -817,7 +804,7 @@ public final class WorkspaceActivity extends AppCompatActivity {
             mLocalPortInput.setError(getString(R.string.workspace_error_preview_port));
             return;
         }
-        saveCurrentWorkspace();
+        if (!saveCurrentWorkspace()) return;
         openTerminal(WorkspaceCommandBuilder.buildPortForwardCommand(host, sshPort, localPort, remotePort), true);
     }
 
@@ -826,22 +813,16 @@ public final class WorkspaceActivity extends AppCompatActivity {
             installSshClient();
             return;
         }
-        String host = mHostInput.getText().toString().trim();
+        SshTargetParser.ParsedTarget target = normalizeSshTarget(true);
+        if (target == null) return;
+        String host = target.host;
         String path = mPathInput.getText().toString().trim();
-        int sshPort = parsePort(mPortInput.getText().toString(), 22);
-        if (!SshTargetValidator.isValid(host)) {
-            mHostInput.setError(getString(R.string.workspace_error_host));
-            return;
-        }
+        int sshPort = target.port;
         if (TextUtils.isEmpty(path)) {
             mPathInput.setError(getString(R.string.workspace_error_path));
             return;
         }
-        if (sshPort < 1) {
-            mPortInput.setError(getString(R.string.workspace_error_port));
-            return;
-        }
-        saveCurrentWorkspace();
+        if (!saveCurrentWorkspace()) return;
         startActivity(GitDiffActivity.newIntent(this, host, sshPort, path));
     }
 
@@ -850,22 +831,16 @@ public final class WorkspaceActivity extends AppCompatActivity {
             installSshClient();
             return;
         }
-        String host = mHostInput.getText().toString().trim();
+        SshTargetParser.ParsedTarget target = normalizeSshTarget(true);
+        if (target == null) return;
+        String host = target.host;
         String path = mPathInput.getText().toString().trim();
-        int sshPort = parsePort(mPortInput.getText().toString(), 22);
-        if (!SshTargetValidator.isValid(host)) {
-            mHostInput.setError(getString(R.string.workspace_error_host));
-            return;
-        }
+        int sshPort = target.port;
         if (TextUtils.isEmpty(path)) {
             mPathInput.setError(getString(R.string.workspace_error_path));
             return;
         }
-        if (sshPort < 1) {
-            mPortInput.setError(getString(R.string.workspace_error_port));
-            return;
-        }
-        saveCurrentWorkspace();
+        if (!saveCurrentWorkspace()) return;
         startActivity(RemoteFilesActivity.newIntent(this, host, sshPort, path));
     }
 
@@ -874,22 +849,16 @@ public final class WorkspaceActivity extends AppCompatActivity {
             installSshClient();
             return;
         }
-        String host = mHostInput.getText().toString().trim();
+        SshTargetParser.ParsedTarget target = normalizeSshTarget(true);
+        if (target == null) return;
+        String host = target.host;
         String path = mPathInput.getText().toString().trim();
-        int sshPort = parsePort(mPortInput.getText().toString(), 22);
-        if (!SshTargetValidator.isValid(host)) {
-            mHostInput.setError(getString(R.string.workspace_error_host));
-            return;
-        }
+        int sshPort = target.port;
         if (TextUtils.isEmpty(path)) {
             mPathInput.setError(getString(R.string.workspace_error_path));
             return;
         }
-        if (sshPort < 1) {
-            mPortInput.setError(getString(R.string.workspace_error_port));
-            return;
-        }
-        saveCurrentWorkspace();
+        if (!saveCurrentWorkspace()) return;
         WorkspaceProfile profile = mProfiles.get(findActiveProfileIndex());
         startActivity(ProjectTasksActivity.newIntent(this, host, sshPort, path,
             mOwnershipStore.getOrCreate(profile.id)));
@@ -900,22 +869,16 @@ public final class WorkspaceActivity extends AppCompatActivity {
             installSshClient();
             return;
         }
-        String host = mHostInput.getText().toString().trim();
+        SshTargetParser.ParsedTarget target = normalizeSshTarget(true);
+        if (target == null) return;
+        String host = target.host;
         String path = mPathInput.getText().toString().trim();
-        int sshPort = parsePort(mPortInput.getText().toString(), 22);
-        if (!SshTargetValidator.isValid(host)) {
-            mHostInput.setError(getString(R.string.workspace_error_host));
-            return;
-        }
+        int sshPort = target.port;
         if (TextUtils.isEmpty(path)) {
             mPathInput.setError(getString(R.string.workspace_error_path));
             return;
         }
-        if (sshPort < 1) {
-            mPortInput.setError(getString(R.string.workspace_error_port));
-            return;
-        }
-        saveCurrentWorkspace();
+        if (!saveCurrentWorkspace()) return;
         startActivity(ConnectionDiagnosticActivity.newIntent(this, host, sshPort, path,
             mActiveProfileId));
     }
@@ -925,19 +888,10 @@ public final class WorkspaceActivity extends AppCompatActivity {
             installSshClient();
             return;
         }
-        String host = mHostInput.getText().toString().trim();
-        String path = mPathInput.getText().toString().trim();
-        int sshPort = parsePort(mPortInput.getText().toString(), 22);
-        if (!SshTargetValidator.isValid(host)) {
-            mHostInput.setError(getString(R.string.workspace_error_host));
-            return;
-        }
-        if (sshPort < 1) {
-            mPortInput.setError(getString(R.string.workspace_error_port));
-            return;
-        }
-        saveCurrentWorkspace();
-        startActivity(SshKeysActivity.newIntent(this, host, sshPort));
+        SshTargetParser.ParsedTarget target = normalizeSshTarget(true);
+        if (target == null) return;
+        if (!saveCurrentWorkspace()) return;
+        startActivity(SshKeysActivity.newIntent(this, target.host, target.port));
     }
 
     private void openTaskSessions() {
@@ -945,24 +899,34 @@ public final class WorkspaceActivity extends AppCompatActivity {
             installSshClient();
             return;
         }
-        String host = mHostInput.getText().toString().trim();
+        SshTargetParser.ParsedTarget target = normalizeSshTarget(true);
+        if (target == null) return;
+        String host = target.host;
         String path = mPathInput.getText().toString().trim();
-        int sshPort = parsePort(mPortInput.getText().toString(), 22);
-        if (!SshTargetValidator.isValid(host)) {
-            mHostInput.setError(getString(R.string.workspace_error_host));
-            return;
-        }
-        if (sshPort < 1) {
-            mPortInput.setError(getString(R.string.workspace_error_port));
-            return;
-        }
+        int sshPort = target.port;
         if (TextUtils.isEmpty(path)) {
             mPathInput.setError(getString(R.string.workspace_error_path));
             return;
         }
+        if (!saveCurrentWorkspace()) return;
         WorkspaceProfile profile = mProfiles.get(findActiveProfileIndex());
         startActivity(TaskSessionsActivity.newIntent(this, host, sshPort, path,
             mOwnershipStore.getOrCreate(profile.id)));
+    }
+
+    private SshTargetParser.ParsedTarget normalizeSshTarget(boolean required) {
+        String rawHost = mHostInput.getText().toString();
+        if (!required && TextUtils.isEmpty(rawHost.trim())) return null;
+        SshTargetParser.ParsedTarget target = SshTargetParser.parse(
+            rawHost, mPortInput.getText().toString(), 22);
+        if (target == null) {
+            mHostInput.setError(getString(R.string.workspace_error_host));
+            return null;
+        }
+        mHostInput.setText(target.host);
+        mPortInput.setText(String.valueOf(target.port));
+        mHostInput.setSelection(mHostInput.length());
+        return target;
     }
 
     private int parsePort(String value, int defaultValue) {

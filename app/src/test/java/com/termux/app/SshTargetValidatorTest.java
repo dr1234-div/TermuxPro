@@ -22,5 +22,8 @@ public class SshTargetValidatorTest {
         assertFalse(SshTargetValidator.isValid("user@@host"));
         assertFalse(SshTargetValidator.isValid("user@"));
         assertFalse(SshTargetValidator.isValid("host\ncommand"));
+        assertFalse(SshTargetValidator.isValid("host;command"));
+        assertFalse(SshTargetValidator.isValid("host|command"));
+        assertFalse(SshTargetValidator.isValid("host/../config"));
     }
 }
