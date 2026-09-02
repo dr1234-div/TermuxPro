@@ -299,6 +299,10 @@
     <string name="ai_cli_center_command_pair">New: %1$s\nHistory picker: %2$s</string>
     <string name="ai_cli_center_claude_title">Claude Code</string>
     <string name="ai_cli_center_codex_title">Codex CLI</string>
+    <string name="ai_cli_center_claude_new">New Claude</string>
+    <string name="ai_cli_center_claude_history">Claude history</string>
+    <string name="ai_cli_center_codex_new">New Codex</string>
+    <string name="ai_cli_center_codex_history">Codex history</string>
     <string name="ai_cli_center_tmux_warning">On shared accounts or multi-user tmux environments, confirm ownership in the tmux session center first. Unmarked or other-owned sessions should only be attached explicitly, never auto-resumed or managed.</string>
     <string name="ai_cli_center_open_workspace">Return to workbench</string>
     <string name="ai_cli_center_open_templates">Manage quick command templates</string>

@@ -179,6 +179,10 @@
     <string name="ai_cli_center_command_pair">新建：%1$s\n历史选择：%2$s</string>
     <string name="ai_cli_center_claude_title">Claude Code</string>
     <string name="ai_cli_center_codex_title">Codex CLI</string>
+    <string name="ai_cli_center_claude_new">新建 Claude</string>
+    <string name="ai_cli_center_claude_history">Claude 历史</string>
+    <string name="ai_cli_center_codex_new">新建 Codex</string>
+    <string name="ai_cli_center_codex_history">Codex 历史</string>
     <string name="ai_cli_center_tmux_warning">共享账号或多人 tmux 环境下，请先在 tmux 会话中心确认目标会话归属。未标记或其他归属会话只应显式进入，不应被自动恢复或管理。</string>
     <string name="ai_cli_center_open_workspace">回到工作台启动</string>
     <string name="ai_cli_center_open_templates">管理快捷指令模板</string>
